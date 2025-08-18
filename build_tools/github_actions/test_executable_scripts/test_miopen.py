@@ -24,10 +24,14 @@ gtest_final_filter_cmd = (
 
 #############################################
 
-cmd = [f"MIOPEN_LOG_LEVEL=7 {THEROCK_BIN_DIR}/miopen_gtest", gtest_final_filter_cmd]
+env = os.environ.copy()
+env["MIOPEN_LOG_LEVEL"] = "7"
+
+cmd = [f"{THEROCK_BIN_DIR}/miopen_gtest", gtest_final_filter_cmd]
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")
 subprocess.run(
     cmd,
     cwd=THEROCK_DIR,
     check=True,
+    env=env
 )
