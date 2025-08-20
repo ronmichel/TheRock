@@ -111,6 +111,14 @@ test_matrix = {
         "test_script": f"pytest {_get_script_path('test_rccl.py')} -v -s --log-cli-level=info",
         "platform": ["linux"],
     },
+    # rocprofiler tests
+    "rocprofiler-sdk": {
+        "job_name": "rocprofiler-sdk",
+        "fetch_artifact_args": "--rocprofiler-sdk --tests",
+        "timeout_minutes": 15,
+        "test_script": f"pytest {_get_script_path('test_rocprofiler_sdk.py')} -v -s --log-cli-level=info",
+        "platform": ["linux"],
+    }
 }
 
 
