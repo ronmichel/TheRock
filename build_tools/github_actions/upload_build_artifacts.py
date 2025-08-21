@@ -58,6 +58,29 @@ def create_index_file(args: argparse.Namespace):
     process_dir(build_dir, indexer_args)
 
 
+## Enhancement to upload HTML test report to built artifacts dir
+def upload_test_report(report_path: Path, bucket_uri: str):
+    """Upload the HTML test report as multi_node_test_report.html under bucket_uri."""
+    if not report_path.exists():
+        logging.warning("Test report not found at %s — skipping upload.", report_path)
+        return
+
+    dest = f"{bucket_uri}/multi_node_test_report.html"
+    logging.info("Uploading test report: %s -> %s", report_path, dest)
+
+    # Content-Type helps browsers render HTML directly from S3 if public / through proxy
+    cmd = [
+        "aws",
+        "s3",
+        "cp",
+        str(report_path),
+        dest,
+        "--content-type",
+        "text/html",
+    ]
+    exec(cmd, cwd=Path.cwd())
+
+
 def upload_artifacts(args: argparse.Namespace, bucket_uri: str):
     logging.info("Uploading artifacts to S3")
     build_dir = args.build_dir
@@ -94,9 +117,14 @@ def run(args: argparse.Namespace):
     external_repo_path, bucket = retrieve_bucket_info()
     run_id = args.run_id
     bucket_uri = f"s3://{bucket}/{external_repo_path}{run_id}-{PLATFORM}"
-
-    create_index_file(args)
-    upload_artifacts(args, bucket_uri)
+    if args.upload_report:
+        logging.info(
+            "--upload-report is set; uploading rccl-tests  from {args.report_path} on runner to f'{bucket_uri}/multi_node_test_report.html'"
+        )
+        upload_test_report(args.report_path, bucket_uri)
+    else:
+        create_index_file(args)
+        upload_artifacts(args, bucket_uri)
 
 
 def main(argv):
@@ -114,6 +142,21 @@ def main(argv):
         type=Path,
         required=True,
         help="Path to the build directory of TheRock",
+    )
+
+    # Path to the test report we want to upload as multi_node_test_report.html
+    parser.add_argument(
+        "--report-path",
+        type=Path,
+        default=Path("/var/www/html/cvs/ci_test_report.html"),
+        help="Path to the HTML test report to upload as multi_node_test_report.html",
+    )
+
+    parser.add_argument(
+        "--upload-report",
+        action="store_true",  # flips to True if the flag is provided
+        default=False,  # default is False when flag is omitted
+        help="Upload rccl-tests report as multi_node_test_report.html",
     )
 
     args = parser.parse_args(argv)
