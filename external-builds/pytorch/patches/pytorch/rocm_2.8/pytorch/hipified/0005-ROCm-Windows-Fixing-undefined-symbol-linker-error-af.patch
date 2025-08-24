@@ -1,0 +1,107 @@
+From 4023723c42986112eb8855940ddac0b479e5b9e3 Mon Sep 17 00:00:00 2001
+From: tvukovic-amd <tvukovic@amd.com>
+Date: Fri, 27 Jun 2025 07:23:28 +0000
+Subject: [PATCH 5/8] [ROCm][Windows] Fixing undefined symbol linker error
+ after exposing MIOpen symbols (#156479)
+
+Fixing undefined symbol linker error after [exposing MIOpen symbols](https://github.com/pytorch/pytorch/pull/154545).
+This fix:
+
+- Hipifies `aten/src/ATen/miopen` and `aten/src/ATen/native/miopen` files
+- Adds `aten/src/ATen/miopen` and `aten/src/ATen/native/miopen` hipified source files to `all_hip_cpp` list
+
+Pull Request resolved: https://github.com/pytorch/pytorch/pull/156479
+Approved by: https://github.com/jeffdaily
+
+Co-authored-by: Jeff Daily <jeff.daily@amd.com>
+---
+ aten/src/ATen/miopen/Descriptors.h | 12 ++++++------
+ aten/src/ATen/miopen/Handle.h      |  2 +-
+ aten/src/ATen/miopen/Types.h       |  2 +-
+ 3 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/aten/src/ATen/miopen/Descriptors.h b/aten/src/ATen/miopen/Descriptors.h
+index a0ad4a4e109..2eee837cd53 100644
+--- a/aten/src/ATen/miopen/Descriptors.h
++++ b/aten/src/ATen/miopen/Descriptors.h
+@@ -39,7 +39,7 @@ struct DescriptorDeleter {
+ // function.
+ template <typename T, miopenStatus_t (*ctor)(T**), miopenStatus_t (*dtor)(T*)>
+ // NOLINTNEXTLINE(bugprone-exception-escape)
+-class TORCH_CUDA_CPP_API Descriptor {
++class TORCH_HIP_CPP_API Descriptor {
+  public:
+   // Use desc() to access the underlying descriptor pointer in
+   // a read-only fashion.  Most client code should use this.
+@@ -65,7 +65,7 @@ private:
+   std::unique_ptr<T, DescriptorDeleter<T, dtor>> desc_;
+ };
+ 
+-class TORCH_CUDA_CPP_API TensorDescriptor : public Descriptor<
++class TORCH_HIP_CPP_API TensorDescriptor : public Descriptor<
+                                                miopenTensorDescriptor,
+                                                &miopenCreateTensorDescriptor,
+                                                &miopenDestroyTensorDescriptor> {
+@@ -88,7 +88,7 @@ private:
+ 
+ std::ostream& operator<<(std::ostream & out, const TensorDescriptor& d);
+ 
+-class TORCH_CUDA_CPP_API FilterDescriptor : public Descriptor<
++class TORCH_HIP_CPP_API FilterDescriptor : public Descriptor<
+                                                miopenTensorDescriptor,
+                                                &miopenCreateTensorDescriptor,
+                                                &miopenDestroyTensorDescriptor> {
+@@ -105,7 +105,7 @@ private:
+   }
+ };
+ 
+-struct TORCH_CUDA_CPP_API ConvolutionDescriptor
++struct TORCH_HIP_CPP_API ConvolutionDescriptor
+     : public Descriptor<
+           miopenConvolutionDescriptor,
+           &miopenCreateConvolutionDescriptor,
+@@ -121,7 +121,7 @@ struct TORCH_CUDA_CPP_API ConvolutionDescriptor
+ };
+ 
+ // NOLINTNEXTLINE(bugprone-exception-escape)
+-struct TORCH_CUDA_CPP_API DropoutDescriptor
++struct TORCH_HIP_CPP_API DropoutDescriptor
+     : public Descriptor<
+           miopenDropoutDescriptor,
+           &miopenCreateDropoutDescriptor,
+@@ -137,7 +137,7 @@ struct TORCH_CUDA_CPP_API DropoutDescriptor
+     }
+ };
+ 
+-struct TORCH_CUDA_CPP_API RNNDescriptor
++struct TORCH_HIP_CPP_API RNNDescriptor
+   : public Descriptor<miopenRNNDescriptor,
+                       &miopenCreateRNNDescriptor,
+                       &miopenDestroyRNNDescriptor>
+diff --git a/aten/src/ATen/miopen/Handle.h b/aten/src/ATen/miopen/Handle.h
+index 4c80c3aea65..b1637fca0a5 100644
+--- a/aten/src/ATen/miopen/Handle.h
++++ b/aten/src/ATen/miopen/Handle.h
+@@ -5,5 +5,5 @@
+ 
+ namespace at::native {
+ 
+-TORCH_CUDA_CPP_API miopenHandle_t getMiopenHandle();
++TORCH_HIP_CPP_API miopenHandle_t getMiopenHandle();
+ } // namespace at::native
+diff --git a/aten/src/ATen/miopen/Types.h b/aten/src/ATen/miopen/Types.h
+index 0a8a1a952e2..fdc0f6a607b 100644
+--- a/aten/src/ATen/miopen/Types.h
++++ b/aten/src/ATen/miopen/Types.h
+@@ -6,7 +6,7 @@
+ 
+ namespace at::native {
+ 
+-TORCH_CUDA_CPP_API miopenDataType_t getMiopenDataType(const at::Tensor& tensor);
++TORCH_HIP_CPP_API miopenDataType_t getMiopenDataType(const at::Tensor& tensor);
+ 
+ int64_t miopen_version();
+ 
+-- 
+2.50.1.windows.1
+

@@ -1,0 +1,25 @@
+From 4a066a33e344549cf7c4e73e5ec9d65b0ea57e19 Mon Sep 17 00:00:00 2001
+From: Aaryaman Vasishta <aaryaman.vasishta@amd.com>
+Date: Sun, 24 Aug 2025 23:43:53 +0900
+Subject: [PATCH 4/8] Enable USE_ROCM on Windows
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index cf32faa5459..8ee2cc8d070 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -239,7 +239,7 @@ option(USE_XPU "Use XPU" ON)
+ cmake_dependent_option(
+   BUILD_LAZY_CUDA_LINALG "Build cuda linalg ops as separate library" ON
+   "USE_CUDA AND LINUX AND BUILD_PYTHON" OFF)
+-cmake_dependent_option(USE_ROCM "Use ROCm" ON "LINUX" OFF)
++cmake_dependent_option(USE_ROCM "Use ROCm" ON "LINUX OR WIN32" OFF)
+ option(CAFFE2_STATIC_LINK_CUDA "Statically link CUDA libraries" OFF)
+ cmake_dependent_option(USE_CUDNN "Use cuDNN" ON "USE_CUDA" OFF)
+ cmake_dependent_option(USE_STATIC_CUDNN "Use cuDNN static libraries" OFF
+-- 
+2.50.1.windows.1
+

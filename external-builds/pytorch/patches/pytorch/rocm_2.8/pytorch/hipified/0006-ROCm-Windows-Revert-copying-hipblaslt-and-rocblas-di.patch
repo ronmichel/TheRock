@@ -1,0 +1,60 @@
+From 82fd301057be11c9d63bf48b52d871afd8cbf5af Mon Sep 17 00:00:00 2001
+From: Scott Todd <scott.todd0@gmail.com>
+Date: Tue, 12 Aug 2025 02:45:46 +0000
+Subject: [PATCH 6/8] [ROCm][Windows] Revert copying hipblaslt and rocblas
+ dirs. (#159083)
+
+This reverts the changes from https://github.com/pytorch/pytorch/commit/b367e5f6a6c5853d0206bfd43d8b4a7cb76704f1. This will also close https://github.com/pytorch/pytorch/pull/158922.
+
+Since https://github.com/pytorch/pytorch/commit/30387ab2e485384ab2e67084a1e2c5569190ba92, ROCm is bootstrapped using the 'rocm' Python module which contains these files (see https://github.com/ROCm/TheRock/blob/main/docs/packaging/python_packaging.md), so they do not need to be bundled into torch/lib.
+
+There was also a bug in here - if `ROCM_DIR` is unset, the code crashes:
+```
+  File "D:\projects\TheRock\external-builds\pytorch\.venv\Lib\site-packages\setuptools\_distutils\dist.py", line 1002, in run_command
+    cmd_obj.run()
+  File "D:\b\pytorch_main\setup.py", line 853, in run
+    rocm_dir_path = Path(os.environ["ROCM_DIR"])
+                         ~~~~~~~~~~^^^^^^^^^^^^
+  File "<frozen os>", line 714, in __getitem__
+KeyError: 'ROCM_DIR'
+```
+The code could have checked for `ROCM_PATH` too.
+
+Pull Request resolved: https://github.com/pytorch/pytorch/pull/159083
+Approved by: https://github.com/jeffdaily
+---
+ setup.py | 18 ------------------
+ 1 file changed, 18 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index 4db59ecd0b0..fae0d4d1562 100644
+--- a/setup.py
++++ b/setup.py
+@@ -798,24 +798,6 @@ class build_ext(setuptools.command.build_ext.build_ext):
+ 
+             self.copy_file(export_lib, target_lib)
+ 
+-            # In ROCm on Windows case copy rocblas and hipblaslt files into
+-            # torch/lib/rocblas/library and torch/lib/hipblaslt/library
+-            if str2bool(os.getenv("USE_ROCM")):
+-                rocm_dir_path = os.environ.get("ROCM_DIR")
+-                rocm_bin_path = os.path.join(rocm_dir_path, "bin")
+-
+-                rocblas_dir = os.path.join(rocm_bin_path, "rocblas")
+-                target_rocblas_dir = os.path.join(target_dir, "rocblas")
+-                os.makedirs(target_rocblas_dir, exist_ok=True)
+-                self.copy_tree(rocblas_dir, target_rocblas_dir)
+-
+-                hipblaslt_dir = os.path.join(rocm_bin_path, "hipblaslt")
+-                target_hipblaslt_dir = os.path.join(target_dir, "hipblaslt")
+-                os.makedirs(target_hipblaslt_dir, exist_ok=True)
+-                self.copy_tree(hipblaslt_dir, target_hipblaslt_dir)
+-            else:
+-                report("The specified environment variable does not exist.")
+-
+     def build_extensions(self):
+         self.create_compile_commands()
+ 
+-- 
+2.50.1.windows.1
+

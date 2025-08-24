@@ -1,0 +1,54 @@
+From 07fc57ef96b0b5e45c15fdabef128743938267ab Mon Sep 17 00:00:00 2001
+From: Scott Todd <scott.todd0@gmail.com>
+Date: Sat, 16 Aug 2025 02:20:45 +0000
+Subject: [PATCH 7/8] [ROCm][Windows] Add hipcc compatibility flags to
+ cpp_extension.py. (#159790)
+
+This is a similar change to https://github.com/pytorch/pytorch/pull/153986, this time adding flags to the hipcc command under `cpp_extension.py`.
+
+The `-Wno-ignored-attributes` flag in particular avoids about 200MB of warning spam when building torchvision, like these:
+```
+In file included from D:\b\vision_main\torchvision\csrc\ops\hip\deform_conv2d_kernel.hip:72:
+In file included from D:\projects\TheRock\external-builds\pytorch\.venv\Lib\site-packages\torch\include\ATen/ATen.h:13:
+In file included from D:\projects\TheRock\external-builds\pytorch\.venv\Lib\site-packages\torch\include\ATen/Functions.h:386:
+In file included from D:\projects\TheRock\external-builds\pytorch\.venv\Lib\site-packages\torch\include\ATen/ops/_sparse_softmax.h:21:
+D:\projects\TheRock\external-builds\pytorch\.venv\Lib\site-packages\torch\include\ATen/ops/_sparse_softmax_ops.h:18:8: warning: __declspec attribute 'dllimport' is not supported [-Wignored-attributes]
+   18 | struct TORCH_API _sparse_softmax_int {
+      |        ^~~~~~~~~
+D:\projects\TheRock\external-builds\pytorch\.venv\Lib\site-packages\torch\include\torch/headeronly/macros/Export.h:100:19: note: expanded from macro 'TORCH_API'
+  100 | #define TORCH_API C10_IMPORT
+      |                   ^~~~~~~~~~
+D:\projects\TheRock\external-builds\pytorch\.venv\Lib\site-packages\torch\include\torch/headeronly/macros/Export.h:53:31: note: expanded from macro 'C10_IMPORT'
+   53 | #define C10_IMPORT __declspec(dllimport)
+      |                               ^~~~~~~~~
+```
+
+The `-fms-extensions` flag just seems beneficial to include: https://clang.llvm.org/docs/MSVCCompatibility.html.
+
+See also this downstream issue where these changes were tested: https://github.com/ROCm/TheRock/issues/910.
+
+Pull Request resolved: https://github.com/pytorch/pytorch/pull/159790
+Approved by: https://github.com/jeffdaily
+---
+ torch/utils/cpp_extension.py | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/torch/utils/cpp_extension.py b/torch/utils/cpp_extension.py
+index 7fa5237994e..351e769c990 100644
+--- a/torch/utils/cpp_extension.py
++++ b/torch/utils/cpp_extension.py
+@@ -275,6 +275,11 @@ COMMON_HIPCC_FLAGS = [
+     '-DHIP_ENABLE_WARP_SYNC_BUILTINS=1'
+ ]
+ 
++if IS_WINDOWS:
++    # Compatibility flags, similar to those set in cmake/Dependencies.cmake.
++    COMMON_HIPCC_FLAGS.append('-fms-extensions')
++    # Suppress warnings about dllexport.
++    COMMON_HIPCC_FLAGS.append('-Wno-ignored-attributes')
+ 
+ 
+ def _get_sycl_arch_list():
+-- 
+2.50.1.windows.1
+
