@@ -1,0 +1,170 @@
+From a1c0e6471797bb6997a4e488f868498c982601e3 Mon Sep 17 00:00:00 2001
+From: Marius Brehler <marius.brehler@amd.com>
+Date: Mon, 25 Aug 2025 14:54:49 +0000
+Subject: [PATCH] Revert "Fix/rhel10omp (#1114)"
+
+This reverts commit 117130494a0a9794fb23b7699946f863e67a495f.
+---
+ projects/rocsparse/clients/CMakeLists.txt     | 48 +++++--------------
+ .../clients/benchmarks/CMakeLists.txt         | 14 ++++--
+ .../rocsparse/clients/tests/CMakeLists.txt    | 14 ++++--
+ .../rocsparse/clients/tools/CMakeLists.txt    | 14 +++++-
+ 4 files changed, 45 insertions(+), 45 deletions(-)
+
+diff --git a/projects/rocsparse/clients/CMakeLists.txt b/projects/rocsparse/clients/CMakeLists.txt
+index 90eac6b226..5512fdf916 100644
+--- a/projects/rocsparse/clients/CMakeLists.txt
++++ b/projects/rocsparse/clients/CMakeLists.txt
+@@ -24,24 +24,6 @@
+ # The ROCm platform requires Ubuntu 16.04 or Fedora 24, which has cmake 3.5
+ cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+ 
+-function( apply_omp_settings lib_target_ )
+-  if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND TARGET OpenMP::OpenMP_CXX)
+-    set_target_properties( ${lib_target_} PROPERTIES
+-      BUILD_RPATH "${HIP_CLANG_ROOT}/lib"
+-    )
+-    set_target_properties( ${lib_target_} PROPERTIES
+-      INSTALL_RPATH "$ORIGIN/../llvm/lib"
+-    )
+-  elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND TARGET OpenMP::omp)
+-    set_target_properties( ${lib_target_} PROPERTIES
+-      BUILD_RPATH "${HIP_CLANG_ROOT}/${openmp_LIB_DIR}"
+-    )
+-    set_target_properties( ${lib_target_} PROPERTIES
+-      INSTALL_RPATH "$ORIGIN/../llvm/${openmp_LIB_DIR}"
+-    )
+-  endif()
+-endfunction()
+-
+ if (rocblas_FOUND)
+   message("Build rocSPARSE client with rocBLAS")
+   add_compile_options(-DROCSPARSE_WITH_ROCBLAS)
+@@ -87,24 +69,6 @@ if ( BUILD_FORTRAN_CLIENTS )
+ 
+ endif()
+ 
+-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+-  # Look for openmp config in ROCm install to populate openmp_LIB_DIR and openmp_LIB_INSTALL_DIR
+-  find_package(OpenMP CONFIG PATHS "${HIP_CLANG_ROOT}/lib/cmake")
+-endif()
+-
+-# OpenMP
+-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND TARGET OpenMP::omp)
+-  set(ROCSPARSE_CLIENT_LIBS "OpenMP::omp")
+-  message(STATUS "Found openmp-config.cmake at ${OpenMP_DIR}")
+-else()
+-  # if it fails to find OpenMP compile and link flags in strange configurations it can just use non-parallel reference computation
+-  # if there is no omp.h to find the client compilation will fail and this should be obvious, used to be REQUIRED
+-  find_package(OpenMP)
+-  if (TARGET OpenMP::OpenMP_CXX)
+-    set(ROCSPARSE_CLIENT_LIBS "OpenMP::OpenMP_CXX")
+-  endif()
+-endif()
+-
+ # Determine if CXX Compiler is hip-clang
+ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+   message(STATUS "Using hip-clang to build for amdgpu backend")
+@@ -144,6 +108,18 @@ elseif(NOT CMAKE_CXX_STANDARD EQUAL 17)
+   message(FATAL_ERROR "Only C++14 and C++17 are supported")
+ endif()
+ 
++# If OpenMP is available, we can use it to speed up some tests
++find_package(OpenMP QUIET)
++
++if(OPENMP_FOUND)
++  if(NOT TARGET OpenMP::OpenMP_CXX)
++    # OpenMP cmake fix for cmake <= 3.9
++    add_library(OpenMP::OpenMP_CXX IMPORTED INTERFACE)
++    set_property(TARGET OpenMP::OpenMP_CXX PROPERTY INTERFACE_COMPILE_OPTIONS ${OpenMP_CXX_FLAGS})
++    set_property(TARGET OpenMP::OpenMP_CXX PROPERTY INTERFACE_LINK_LIBRARIES ${OpenMP_CXX_FLAGS} Threads::Threads)
++  endif()
++endif()
++
+ if(BUILD_CLIENTS_SAMPLES)
+   add_subdirectory(samples)
+ endif()
+diff --git a/projects/rocsparse/clients/benchmarks/CMakeLists.txt b/projects/rocsparse/clients/benchmarks/CMakeLists.txt
+index e63b38737d..e23bbf9587 100644
+--- a/projects/rocsparse/clients/benchmarks/CMakeLists.txt
++++ b/projects/rocsparse/clients/benchmarks/CMakeLists.txt
+@@ -215,15 +215,21 @@ target_compile_options(rocsparse-bench PRIVATE -Wno-deprecated -Wno-unused-comma
+ # Internal common header
+ target_include_directories(rocsparse-bench PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
+ 
+-# Add OpenMP if available
+-apply_omp_settings(rocsparse-bench)
+-
+ # Target link libraries
+-target_link_libraries(rocsparse-bench PRIVATE roc::rocsparse hip::host hip::device ${ROCSPARSE_CLIENT_LIBS})
++target_link_libraries(rocsparse-bench PRIVATE roc::rocsparse hip::host hip::device)
+ if (rocsparseio_FOUND)
+   target_link_libraries(rocsparse-bench PRIVATE roc::rocsparseio)
+ endif()
+ 
++# Add OpenMP if available
++if(OPENMP_FOUND)
++if (NOT WIN32)
++   target_link_libraries(rocsparse-bench PRIVATE OpenMP::OpenMP_CXX -Wl,-rpath=${HIP_CLANG_ROOT}/lib)
++  else()
++   target_link_libraries(rocsparse-bench PRIVATE libomp)
++  endif()
++endif()
++
+ if (NOT WIN32)
+   if (BUILD_WITH_ROCTX)
+ 
+diff --git a/projects/rocsparse/clients/tests/CMakeLists.txt b/projects/rocsparse/clients/tests/CMakeLists.txt
+index e9cb54f153..164489f6cb 100644
+--- a/projects/rocsparse/clients/tests/CMakeLists.txt
++++ b/projects/rocsparse/clients/tests/CMakeLists.txt
+@@ -403,11 +403,17 @@ target_compile_options(rocsparse-test PRIVATE -ffp-contract=on -mfma -Wno-deprec
+ # Internal common header
+ target_include_directories(rocsparse-test PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>)
+ 
+-# Add OpenMP if available
+-apply_omp_settings(rocsparse-test)
+-
+ # Target link libraries
+-target_link_libraries(rocsparse-test PRIVATE GTest::gtest roc::rocsparse hip::host hip::device ${ROCSPARSE_CLIENT_LIBS})
++target_link_libraries(rocsparse-test PRIVATE GTest::gtest roc::rocsparse hip::host hip::device)
++
++# Add OpenMP if available
++if(OPENMP_FOUND)
++if (NOT WIN32)
++   target_link_libraries(rocsparse-test PRIVATE OpenMP::OpenMP_CXX -Wl,-rpath=${HIP_CLANG_ROOT}/lib)
++  else()
++   target_link_libraries(rocsparse-test PRIVATE libomp)
++  endif()
++endif()
+ 
+ if (NOT WIN32)
+   if (BUILD_WITH_ROCTX)
+diff --git a/projects/rocsparse/clients/tools/CMakeLists.txt b/projects/rocsparse/clients/tools/CMakeLists.txt
+index 301b239c2d..12030aa542 100644
+--- a/projects/rocsparse/clients/tools/CMakeLists.txt
++++ b/projects/rocsparse/clients/tools/CMakeLists.txt
+@@ -35,7 +35,19 @@ foreach(app ${ROCSPARSEIO_TOOLS_SOURCES})
+   add_executable(${app} ${app}.cpp ${ROCSPARSEIO_SOURCES})
+ 
+   # Internal common header
+-  target_include_directories(${app} PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../common>)
++  target_include_directories(${app} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../include ${CMAKE_CURRENT_SOURCE_DIR}/../common)
++
++  # Target link libraries
++  target_link_libraries(${app} PRIVATE roc::rocsparse hip::host ${EXTRA_LIBS})
++
++  # Add OpenMP if available
++  if(OPENMP_FOUND)
++    if (NOT WIN32)
++        target_link_libraries(${app} PRIVATE OpenMP::OpenMP_CXX -Wl,-rpath=${HIP_CLANG_ROOT}/lib)
++    else()
++        target_link_libraries(${app} PRIVATE libomp)
++    endif()
++  endif()
+ 
+   # Set tools output directory
+   set_target_properties(${app} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/staging")
+-- 
+2.43.0
+
