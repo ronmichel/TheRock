@@ -12,6 +12,18 @@ OUTPUT_ARTIFACTS_DIR = os.getenv("OUTPUT_ARTIFACTS_DIR")
 
 logging.basicConfig(level=logging.INFO)
 
+cmake_init_cmd = [
+    "cmake",
+    f"-DCMAKE_PREFIX_PATH={OUTPUT_ARTIFACTS_DIR}"
+]
+logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmake_init_cmd)}")
+
+subprocess.run(
+    cmake_init_cmd,
+    cwd=THEROCK_DIR,
+    check=True
+)
+
 cmake_cmd = [
     "cmake",
     "--build",
@@ -26,7 +38,7 @@ logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmake_cmd)}")
 subprocess.run(
     cmake_cmd,
     cwd=THEROCK_DIR,
-    check=True,
+    check=True
 )
 
 ctest_cmd = [
@@ -40,5 +52,5 @@ logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(ctest_cmd)}")
 subprocess.run(
     ctest_cmd,
     cwd=THEROCK_DIR,
-    check=True,
+    check=True
 )
