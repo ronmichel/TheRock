@@ -68,7 +68,7 @@ jobs:
       - name: Checkout JAX
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          path: jax
+          path: rocm-jax
           repository: rocm/rocm-jax
           ref: ${{ inputs.jax_ref }}
 
@@ -76,4 +76,30 @@ jobs:
         run: |
           git config --global user.name "therockbot"
           git config --global user.email "therockbot@amd.com"
-      # TODO: Pull down JAX plugin wheels into the wheelhouse directory and run the image build script from rocm-jax
+
+      - name: Download JAX plugin wheels
+        run: |
+          mkdir ./wheelhouse
+          # TODO: Pull down JAX plugin wheels into the wheelhouse directory
+
+      - name: Build Docker image
+        run: |
+          pushd rocm-jax
+          python3 build/ci_build \
+            --rocm-version="${{ inputs.rocm_version }}" \
+            --therock-path="${{ inputs.tar_url }}" \
+            build_dockers \
+            -f ubu22
+
+      - name: Log in to Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" \
+            | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push docker image to Container Registry
+        run: |
+          ubu22_img="ghcr.io/rocm/jax-ubu22.rocm${{ inputs.rocm_version }}:${GITHUB_SHA}"
+          echo "Ubuntu 22 image name: ${ubu22_img}"
+          echo "Ubuntu 24 image name: ${ubu24_img}"
+          docker tag "jax-ubu22.therock${ROCM_VERSION//.}" "${ubu22_img}"
+          docker push "${ubu22_img}"
