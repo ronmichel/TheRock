@@ -116,7 +116,7 @@ test_matrix = {
         "job_name": "rocprofiler-sdk",
         "fetch_artifact_args": "--tests",
         "timeout_minutes": 15,
-        "test_script": f"pytest {_get_script_path('test_rocprofiler_sdk.py')} -v -s --log-cli-level=info",
+        "test_script": f"pytest {_get_script_path('test_rocprofiler_sdk.py')} -vv -s --log-cli-level=info",
         "platform": ["linux"],
     }
 }
