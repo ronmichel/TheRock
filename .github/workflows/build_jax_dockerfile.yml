@@ -96,8 +96,8 @@ jobs:
         run: |
           mkdir ./wheelhouse
           # TODO: Parameterize the s3 download for plugin versions and ROCm versions
-          aws s3 cp s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/jax_rocm7_plugin-0.6.0-cp310-cp310-manylinux_2_28_x86_64.whl ./wheelhouse/
-          aws s3 cp s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/jax_rocm7_pjrt-0.6.0-py3-none-manylinux_2_28_x86_64.whl ./wheelhouse/
+          aws s3 cp s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/jax_rocm7_plugin-0.6.0-cp310-cp310-manylinux_2_28_x86_64.whl ./rocm-jax/wheelhouse/
+          aws s3 cp s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/jax_rocm7_pjrt-0.6.0-py3-none-manylinux_2_28_x86_64.whl ./rocm-jax/wheelhouse/
 
       - name: Build Docker image
         run: |
