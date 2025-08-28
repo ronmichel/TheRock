@@ -61,6 +61,7 @@ jobs:
     env:
       PACKAGE_DIST_DIR: ${{ github.workspace }}/jax_rocm_plugin/wheelhouse
       PYTHON_VERSION: "3.12"
+      REGISTRY: ghcr.io
       S3_BUCKET_PY: "therock-${{ inputs.release_type }}-python"
     steps:
       - name: Checkout TheRock
