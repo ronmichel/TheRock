@@ -52,7 +52,7 @@ permissions:
   contents: read
 
 jobs:
-  build_jax_wheels:
+  build_jax_docker:
     strategy:
       matrix:
         jax_ref: [master]
@@ -83,6 +83,14 @@ jobs:
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-${{ inputs.release_type }}-releases
+
+      - name: Install AWS CLI
+        if: always()
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          ./aws/install -i ./aws-cli-files -b ./aws-bin
+          sudo ./aws/install
 
       - name: Download JAX plugin wheels
         run: |
