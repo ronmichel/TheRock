@@ -327,6 +327,7 @@ def main(argv):
         nargs="+",
         type=str,
         default=[
+            "clr",
             "half",
             "hip-tests",
             "rccl",

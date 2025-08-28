@@ -79,7 +79,8 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
   set(HIP_CLR_RUNTIME_DEPS)
   if(WIN32)
     # Windows CLR options
-    set(_compute_pal_dir "${CMAKE_CURRENT_SOURCE_DIR}/amdgpu-windows-interop/20250820a")
+    # TODO(#1347): Switch back to 20250820a (or newer) together with CLR updates
+    set(_compute_pal_dir "${CMAKE_CURRENT_SOURCE_DIR}/amdgpu-windows-interop/20250722a")
     cmake_path(NORMAL_PATH _compute_pal_dir)
     list(APPEND HIP_CLR_CMAKE_ARGS
       "-DUSE_PROF_API=OFF"
@@ -99,8 +100,10 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
 
   therock_cmake_subproject_declare(hip-clr
     USE_DIST_AMDGPU_TARGETS
-    EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/clr"
-    BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/clr"
+    EXTERNAL_SOURCE_DIR "clr"
+    # TODO(#1347): switch to rocm-systems once CLR is working on Windows again
+    # EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/clr"
+    # BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/clr"
     INTERFACE_PROGRAM_DIRS
       bin
     BACKGROUND_BUILD
