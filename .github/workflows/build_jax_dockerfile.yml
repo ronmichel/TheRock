@@ -52,6 +52,9 @@ permissions:
   contents: read
 
 jobs:
+  setup:
+    uses: rocm/TheRock/.github/workflows/setup.yml@main
+
   build_jax_docker:
     strategy:
       matrix:
@@ -106,7 +109,7 @@ jobs:
             --rocm-version="${{ inputs.rocm_version }}" \
             --therock-path="${{ inputs.tar_url }}" \
             build_dockers \
-            -f ubu22
+            -f ubu24
 
       - name: Log in to Container Registry
         run: |
@@ -114,9 +117,10 @@ jobs:
             | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Push docker image to Container Registry
+        env:
+          ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
-          ubu22_img="ghcr.io/rocm/jax-ubu22.rocm${{ inputs.rocm_version }}:${GITHUB_SHA}"
-          echo "Ubuntu 22 image name: ${ubu22_img}"
+          ubu24_img="ghcr.io/rocm/jax-ubu24.rocm${{ inputs.rocm_version }}:${GITHUB_SHA}"
           echo "Ubuntu 24 image name: ${ubu24_img}"
-          docker tag "jax-ubu22.therock${ROCM_VERSION//.}" "${ubu22_img}"
-          docker push "${ubu22_img}"
+          docker tag "jax-ubu24.${ROCM_VERSION//.}" "${ubu22_img}"
+          docker push "${ubu24_img}"
