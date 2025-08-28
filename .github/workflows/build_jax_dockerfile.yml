@@ -26,8 +26,14 @@ on:
   workflow_dispatch:
     inputs:
       amdgpu_family:
-        required: true
-        type: string
+        type: choice
+        options:
+          - gfx110X-dgpu
+          - gfx1151
+          - gfx120X-all
+          - gfx94X-dcgpu
+          - gfx950-dcgpu
+        default: gfx94X-dcgpu
       python_versions:
         required: true
         type: string
@@ -52,9 +58,6 @@ permissions:
   contents: read
 
 jobs:
-  setup:
-    uses: rocm/TheRock/.github/workflows/setup.yml@main
-
   build_jax_docker:
     strategy:
       matrix:
@@ -99,7 +102,7 @@ jobs:
         run: |
           mkdir ./wheelhouse
           # TODO: Parameterize the s3 download for plugin versions and ROCm versions
-          aws s3 cp s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/jax_rocm7_plugin-0.6.0-cp310-cp310-manylinux_2_28_x86_64.whl ./rocm-jax/wheelhouse/
+          aws s3 cp s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/jax_rocm7_plugin-0.6.0-cp312-cp310-manylinux_2_28_x86_64.whl ./rocm-jax/wheelhouse/
           aws s3 cp s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/jax_rocm7_pjrt-0.6.0-py3-none-manylinux_2_28_x86_64.whl ./rocm-jax/wheelhouse/
 
       - name: Build Docker image
@@ -111,10 +114,12 @@ jobs:
             build_dockers \
             -f ubu24
 
-      - name: Log in to Container Registry
-        run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" \
-            | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Log in to the Container registry
+        uses: docker/login-action@184bdaa0721073962dff0199f1fb9940f07167d1 # v3.5.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push docker image to Container Registry
         env:
