@@ -37,6 +37,32 @@ therock_cmake_subproject_provide_package(hipBLAS-common hipblas-common lib/cmake
 therock_cmake_subproject_activate(hipBLAS-common)
 list(APPEND _blas_subproject_names hipBLAS-common)
 
+##############################################################################
+# origami
+##############################################################################
+
+therock_cmake_subproject_declare(Origami
+EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_LIBRARIES_SOURCE_DIR}/shared/origami"
+BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/origami"
+BACKGROUND_BUILD
+CMAKE_ARGS
+  -DHIP_PLATFORM=amd
+CMAKE_INCLUDES
+  therock_explicit_finders.cmake
+COMPILER_TOOLCHAIN
+  amd-hip
+BUILD_DEPS
+  rocm-cmake
+RUNTIME_DEPS
+  hip-clr
+)
+therock_cmake_subproject_glob_c_sources(Origami
+SUBDIRS
+    library
+)
+therock_cmake_subproject_provide_package(Origami origami lib/cmake/origami)
+therock_cmake_subproject_activate(Origami)
+list(APPEND _blas_subproject_names Origami)
 
 ##############################################################################
 # rocRoller
@@ -132,6 +158,7 @@ therock_cmake_subproject_declare(hipBLASLt
     amd-hip
   BUILD_DEPS
     hipBLAS-common
+    Origami
     rocm-cmake
     therock-googletest
     therock-msgpack-cxx
