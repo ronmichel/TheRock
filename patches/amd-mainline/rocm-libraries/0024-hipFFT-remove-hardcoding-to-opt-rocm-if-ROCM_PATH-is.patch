@@ -1,0 +1,38 @@
+From c9207f61b5906da02751de1f00f15cc6d1e2d1e2 Mon Sep 17 00:00:00 2001
+From: Mika Laitio <mika.laitio@amd.com>
+Date: Tue, 19 Aug 2025 20:18:54 -0700
+Subject: [PATCH 1/5] hipFFT remove hardcoding to /opt/rocm if ROCM_PATH is
+ defined
+
+Use the path specified by the ROCM_PATH environment variable
+as a help when setting CMAKE_PREFIX_PATH and CMAKE_MODULE_PATH
+if it is set.
+
+Signed-off-by: Mika Laitio <mika.laitio@amd.com>
+---
+ projects/hipfft/CMakeLists.txt | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git a/projects/hipfft/CMakeLists.txt b/projects/hipfft/CMakeLists.txt
+index d502bb1830..3c0965ac5d 100644
+--- a/projects/hipfft/CMakeLists.txt
++++ b/projects/hipfft/CMakeLists.txt
+@@ -39,8 +39,13 @@ endif()
+ 
+ 
+ # Workarounds..
+-list( APPEND CMAKE_PREFIX_PATH /opt/rocm/llvm /opt/rocm )
+-list( APPEND CMAKE_MODULE_PATH ${ROCM_PATH}/lib/cmake/hip /opt/rocm/lib/cmake/hip /opt/rocm/hip/cmake )
++if (DEFINED ENV{ROCM_PATH})
++  list( APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/llvm ${ROCM_PATH} )
++  list( APPEND CMAKE_MODULE_PATH ${ROCM_PATH}/lib/cmake/hip ${ROCM_PATH}/lib/cmake/hip ${ROCM_PATH}/hip/cmake )
++else()
++ list( APPEND CMAKE_PREFIX_PATH /opt/rocm/llvm /opt/rocm )
++ list( APPEND CMAKE_MODULE_PATH /opt/rocm/lib/cmake/hip /opt/rocm/hip/cmake )
++endif()
+ 
+ # This has to be initialized before the project() command appears
+ # Set the default of CMAKE_BUILD_TYPE to be release, unless user specifies with -D.
+-- 
+2.43.0
+

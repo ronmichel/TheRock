@@ -1,0 +1,191 @@
+From fb097f6ae503f8fd3a0d04ec5f9c879ad9ad4286 Mon Sep 17 00:00:00 2001
+From: Mika Laitio <mika.laitio@amd.com>
+Date: Tue, 9 Sep 2025 09:14:36 -0700
+Subject: [PATCH 2/5] hipFFT integration with fftw-3.3.10 cmake variables
+
+Use the cmake environment variables that the upstream FFTW3
+release 3.3.10 returns for cmake find_package when searching
+the FFTW and FFTWf.
+(double precision and single/float precision builds of fftw3).
+
+These variables are little different compared to one that the
+hipFFT's own FindFFTW.cmake wrapper returns.
+
+1) FFTW_FOUND -->  FFTW3_FOUND and FFTW3f_FOUND
+2) FFTW_INCLUDE_DIRS --> FFTW3_INCLUDE_DIRS
+3) FFTW_LIBRARIES
+    -->FFTW3::fftw3 and
+       FFTW3::fftw3f
+
+FFTW3q and FFTW3qd versions of libraries are not needed
+or tried to be found at the moment.
+(128 bit quadruple prevision and quad double precision
+
+Signed-off-by: Mika Laitio <mika.laitio@amd.com>
+---
+ projects/hipfft/clients/cmake/FindFFTW.cmake | 119 -------------------
+ projects/hipfft/clients/tests/CMakeLists.txt |   8 +-
+ 2 files changed, 5 insertions(+), 122 deletions(-)
+ delete mode 100644 projects/hipfft/clients/cmake/FindFFTW.cmake
+
+diff --git a/projects/hipfft/clients/cmake/FindFFTW.cmake b/projects/hipfft/clients/cmake/FindFFTW.cmake
+deleted file mode 100644
+index 2ef0f0cc99..0000000000
+--- a/projects/hipfft/clients/cmake/FindFFTW.cmake
++++ /dev/null
+@@ -1,119 +0,0 @@
+-# #############################################################################
+-# Copyright (C) 2016 - 2022 Advanced Micro Devices, Inc. All rights reserved.
+-#
+-# Permission is hereby granted, free of charge, to any person obtaining a copy
+-# of this software and associated documentation files (the "Software"), to deal
+-# in the Software without restriction, including without limitation the rights
+-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+-# copies of the Software, and to permit persons to whom the Software is
+-# furnished to do so, subject to the following conditions:
+-#
+-# The above copyright notice and this permission notice shall be included in
+-# all copies or substantial portions of the Software.
+-#
+-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+-# THE SOFTWARE.
+-# #############################################################################
+-
+-#if( FFTW_FIND_VERSION VERSION_LESS "3" )
+-#    message( FFTW_FIND_VERION is ${FFTW_FIND_VERSION})
+-#    message( FATAL_ERROR "FindFFTW can not configure versions less than FFTW 3.0.0" )
+-#endif( )
+-
+-find_path(FFTW_INCLUDE_DIRS
+-    NAMES fftw3.h
+-    HINTS
+-        ${FFTW_ROOT}/include
+-        $ENV{FFTW_ROOT}/include
+-    PATHS
+-        /usr/include
+-        /usr/local/include
+-)
+-mark_as_advanced( FFTW_INCLUDE_DIRS )
+-
+-# message( STATUS "FFTW_FIND_COMPONENTS: ${FFTW_FIND_COMPONENTS}" )
+-# message( STATUS "FFTW_FIND_REQUIRED_FLOAT: ${FFTW_FIND_REQUIRED_FLOAT}" )
+-# message( STATUS "FFTW_FIND_REQUIRED_DOUBLE: ${FFTW_FIND_REQUIRED_DOUBLE}" )
+-
+-set( FFTW_LIBRARIES "" )
+-if( FFTW_FIND_REQUIRED_FLOAT OR FFTW_FIND_REQUIRED_SINGLE )
+-  find_library( FFTW_LIBRARIES_SINGLE
+-      NAMES fftw3f fftw3f-3 fftw3 fftw3-3
+-      HINTS
+-          ${FFTW_ROOT}/lib
+-          $ENV{FFTW_ROOT}/lib
+-      PATHS
+-          /usr/lib
+-          /usr/local/lib
+-      PATH_SUFFIXES
+-          x86_64-linux-gnu
+-      DOC "FFTW dynamic library single"
+-  )
+-  mark_as_advanced( FFTW_LIBRARIES_SINGLE )
+-  list( APPEND FFTW_LIBRARIES ${FFTW_LIBRARIES_SINGLE} )
+-
+-  # Look for omp (preferred) or thread libraries.  These are not a
+-  # hard requirement, but are nice to have to make FFTW run faster.
+-  find_library( FFTWF_OMP_LIBRARY fftw3f_omp )
+-  find_library( FFTWF_THREADS_LIBRARY fftw3f_threads )
+-  if( FFTWF_OMP_LIBRARY )
+-    list( APPEND FFTW_LIBRARIES ${FFTWF_OMP_LIBRARY} )
+-    set( FFTW_MULTITHREAD TRUE )
+-  elseif( FFTWF_THREADS_LIBRARY )
+-    list( APPEND FFTW_LIBRARIES ${FFTWF_THREADS_LIBRARY} )
+-    set( FFTW_MULTITHREAD TRUE )
+-  endif()
+-endif( )
+-
+-if( FFTW_FIND_REQUIRED_DOUBLE )
+-  find_library( FFTW_LIBRARIES_DOUBLE
+-      NAMES fftw3
+-      HINTS
+-          ${FFTW_ROOT}/lib
+-          $ENV{FFTW_ROOT}/lib
+-      PATHS
+-          /usr/lib
+-          /usr/local/lib
+-      PATH_SUFFIXES
+-          x86_64-linux-gnu
+-      DOC "FFTW dynamic library double"
+-  )
+-  mark_as_advanced( FFTW_LIBRARIES_DOUBLE )
+-  list( APPEND FFTW_LIBRARIES ${FFTW_LIBRARIES_DOUBLE} )
+-
+-  # Look for omp (preferred) or thread libraries.  These are not a
+-  # hard requirement, but are nice to have to make FFTW run faster.
+-  find_library( FFTW_OMP_LIBRARY fftw3_omp )
+-  find_library( FFTW_THREADS_LIBRARY fftw3_threads )
+-  if( FFTW_OMP_LIBRARY )
+-    list( APPEND FFTW_LIBRARIES ${FFTW_OMP_LIBRARY} )
+-    set( FFTW_MULTITHREAD TRUE )
+-  elseif( FFTW_THREADS_LIBRARY )
+-    list( APPEND FFTW_LIBRARIES ${FFTW_THREADS_LIBRARY} )
+-    set( FFTW_MULTITHREAD TRUE )
+-  endif()
+-endif( )
+-
+-include( FindPackageHandleStandardArgs )
+-FIND_PACKAGE_HANDLE_STANDARD_ARGS( FFTW
+-    REQUIRED_VARS FFTW_INCLUDE_DIRS FFTW_LIBRARIES )
+-
+-# assume the threads feature is always enabled on Windows, since it's
+-# not a separate library there
+-if( FFTW_FOUND AND WIN32 )
+-  set( FFTW_MULTITHREAD TRUE )
+-endif()
+-
+-if( NOT FFTW_FOUND )
+-    message( STATUS "FindFFTW could not find all of the following fftw libraries" )
+-    message( STATUS "${FFTW_FIND_COMPONENTS}" )
+-else( )
+-    message(STATUS "FindFFTW configured variables:" )
+-    message(STATUS "FFTW_INCLUDE_DIRS: ${FFTW_INCLUDE_DIRS}" )
+-    message(STATUS "FFTW_LIBRARIES: ${FFTW_LIBRARIES}" )
+-endif()
+diff --git a/projects/hipfft/clients/tests/CMakeLists.txt b/projects/hipfft/clients/tests/CMakeLists.txt
+index 7ce9b49987..7e5cd541d2 100644
+--- a/projects/hipfft/clients/tests/CMakeLists.txt
++++ b/projects/hipfft/clients/tests/CMakeLists.txt
+@@ -58,7 +58,8 @@ find_package( Boost REQUIRED)
+ set( Boost_USE_STATIC_LIBS OFF )
+ 
+ 
+-find_package( FFTW 3.0 REQUIRED MODULE COMPONENTS FLOAT DOUBLE )
++find_package(FFTW3 CONFIG REQUIRED)
++find_package(FFTW3f CONFIG REQUIRED)
+ 
+ set( BUILD_WITH_LIB "ROCM" CACHE STRING "Build ${PROJECT_NAME} with ROCM or CUDA libraries" )
+ 
+@@ -181,7 +182,7 @@ foreach( target ${TEST_TARGETS} )
+   target_include_directories( ${target}
+     PRIVATE
+     $<BUILD_INTERFACE:${Boost_INCLUDE_DIRS}>
+-    $<BUILD_INTERFACE:${FFTW_INCLUDE_DIRS}>
++    $<BUILD_INTERFACE:${FFTW3_INCLUDE_DIRS}>
+     $<BUILD_INTERFACE:${hip_INCLUDE_DIRS}>
+     if( HIPFFT_BUILD_SCOPE )
+       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../library/include>
+@@ -191,7 +192,8 @@ foreach( target ${TEST_TARGETS} )
+   target_link_libraries( ${target}
+     PRIVATE
+     hip::hipfft
+-    ${FFTW_LIBRARIES}
++    FFTW3::fftw3
++    FFTW3::fftw3f
+   )
+   
+   if( BUILD_CLIENTS_TESTS_OPENMP )
+-- 
+2.43.0
+

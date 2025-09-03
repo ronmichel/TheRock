@@ -1,0 +1,71 @@
+From 604eac5f61a1dd7ba3dbd1a8651d16376062bb25 Mon Sep 17 00:00:00 2001
+From: Mika Laitio <mika.laitio@amd.com>
+Date: Tue, 9 Sep 2025 11:44:36 -0700
+Subject: [PATCH 4/5] hipFFT Gtest update to 1.16 version
+
+- update GTest to 1.16 or newer so that it is
+  compatible with the version used by TheRock build.
+- This causes some variable name changes:
+  1) GTEST_FOUND --> GTest_Found
+  2) GTEST_LIBRARIES --> GTest::gtest
+     when using the GTest version found by the cmake.
+     If we build gtest with this project,
+     we will still use the GTEST_LIBRARIES variable
+
+Signed-off-by: Mika Laitio <mika.laitio@amd.com>
+---
+ projects/hipfft/clients/CMakeLists.txt       | 8 ++++----
+ projects/hipfft/clients/tests/CMakeLists.txt | 7 ++++---
+ 2 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/projects/hipfft/clients/CMakeLists.txt b/projects/hipfft/clients/CMakeLists.txt
+index 739ef036a2..eb747a1b4b 100644
+--- a/projects/hipfft/clients/CMakeLists.txt
++++ b/projects/hipfft/clients/CMakeLists.txt
+@@ -88,9 +88,9 @@ if( BUILD_CLIENTS_SAMPLES )
+ endif( )
+ 
+ if( BUILD_CLIENTS_TESTS )
+-  find_package( GTest 1.11.0 )
++  find_package( GTest 1.16.0 )
+   include( ExternalProject )
+-  if( NOT GTEST_FOUND )
++  if( NOT GTest_FOUND )
+     set( GTEST_INCLUDE_DIRS
+       ${CMAKE_CURRENT_BINARY_DIR}/src/gtest/googletest/include
+       )
+@@ -100,8 +100,8 @@ if( BUILD_CLIENTS_TESTS )
+       )
+ 
+     ExternalProject_Add( gtest
+-      URL https://github.com/google/googletest/archive/release-1.11.0.tar.gz
+-      URL_HASH SHA256=b4870bf121ff7795ba20d20bcdd8627b8e088f2d1dab299a031c1034eddc93d5
++      URL https://github.com/google/googletest/releases/download/v1.16.0/googletest-1.16.0.tar.gz
++      URL_HASH SHA256=78c676fc63881529bf97bf9d45948d905a66833fbfa5318ea2cd7478cb98f399
+       PREFIX ${CMAKE_CURRENT_BINARY_DIR}
+       CMAKE_ARGS -DCMAKE_CXX_COMPILER_LAUNCHER=${CMAKE_CXX_COMPILER_LAUNCHER} -DBUILD_SHARED_LIBS=OFF
+         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+diff --git a/projects/hipfft/clients/tests/CMakeLists.txt b/projects/hipfft/clients/tests/CMakeLists.txt
+index 7e5cd541d2..cca20d305a 100644
+--- a/projects/hipfft/clients/tests/CMakeLists.txt
++++ b/projects/hipfft/clients/tests/CMakeLists.txt
+@@ -223,12 +223,13 @@ foreach( target ${TEST_TARGETS} )
+   rocm_install(TARGETS ${target} COMPONENT tests)
+ endforeach()
+ 
+-find_package( GTest 1.11.0 )
++find_package( GTest 1.16.0 )
+ 
+-if( GTEST_FOUND )
++if( GTest_FOUND )
+   target_include_directories( hipfft-test PRIVATE $<BUILD_INTERFACE:${GTEST_INCLUDE_DIRS}> )
+-  target_link_libraries( hipfft-test PRIVATE ${GTEST_LIBRARIES} )
++  target_link_libraries( hipfft-test PRIVATE GTest::gtest )
+ else()
++  # gtest version build on the fly by the hipFFT tests
+   add_dependencies( hipfft-test gtest )
+   target_include_directories( hipfft-test PRIVATE hipfft-test_include_dirs ${GTEST_INCLUDE_DIRS} )
+   target_link_libraries( hipfft-test PRIVATE ${GTEST_LIBRARIES} )
+-- 
+2.43.0
+

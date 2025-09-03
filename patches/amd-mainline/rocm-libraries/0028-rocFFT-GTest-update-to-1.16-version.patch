@@ -1,0 +1,104 @@
+From 9a821038629b0180b8a11668498dce959290a805 Mon Sep 17 00:00:00 2001
+From: Mika Laitio <mika.laitio@amd.com>
+Date: Wed, 20 Aug 2025 10:15:52 -0700
+Subject: [PATCH 5/5] rocFFT GTest update to 1.16 version
+
+Try to find the existing GTest that is 1.16 or newer.
+If not found, build that version instead. This allows
+using the existing GTest on TheRock.
+
+Some of the environment variables set by the CMake when
+finding the GTest have been changed in a following way:
+
+1) ${GTEST_FOUND} --> ${GTest_Found}
+2) ${GTEST_LIBRARIES} --> GTest::gtest
+
+Signed-off-by: Mika Laitio <mika.laitio@amd.com>
+Co-authored-by: geomin12 <geomin12@amd.com>
+---
+ projects/rocfft/README.md                                 | 2 +-
+ projects/rocfft/clients/cmake/build-gtest.cmake           | 8 ++++----
+ projects/rocfft/clients/tests/CMakeLists.txt              | 8 ++++----
+ .../rocfft/docs/install/building-installing-rocfft.rst    | 2 +-
+ 4 files changed, 10 insertions(+), 10 deletions(-)
+
+diff --git a/projects/rocfft/README.md b/projects/rocfft/README.md
+index 8f943be337..36cb6830bc 100644
+--- a/projects/rocfft/README.md
++++ b/projects/rocfft/README.md
+@@ -80,7 +80,7 @@ You can install rocFFT using pre-built packages or building from source.
+     sudo apt install libgtest-dev libfftw3-dev libboost-dev
+     ```
+ 
+-    rocFFT uses version 1.11 of GoogleTest.
++    rocFFT uses version 1.16 of GoogleTest.
+ 
+     You can generate a test coverage report with the following:
+     ```bash
+diff --git a/projects/rocfft/clients/cmake/build-gtest.cmake b/projects/rocfft/clients/cmake/build-gtest.cmake
+index 441eca65d3..f4c9593164 100644
+--- a/projects/rocfft/clients/cmake/build-gtest.cmake
++++ b/projects/rocfft/clients/cmake/build-gtest.cmake
+@@ -23,18 +23,18 @@ include( ExternalProject )
+ option( BUILD_GTEST "Download and build GoogleTest" OFF )
+ 
+ if( NOT BUILD_GTEST )
+-    find_package( GTest 1.11.0 )
++    find_package( GTest 1.16.0 )
+ endif()
+ 
+-if( (BUILD_GTEST OR NOT GTEST_FOUND) AND (NOT TARGET gtest) )
++if( (BUILD_GTEST OR NOT GTest_FOUND) AND (NOT TARGET gtest) )
+   set(GTEST_INCLUDE_DIRS
+       ${CMAKE_CURRENT_BINARY_DIR}/src/gtest/googletest/include)
+   set(GTEST_LIBRARIES
+       ${CMAKE_CURRENT_BINARY_DIR}/src/gtest-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gtest${CMAKE_STATIC_LIBRARY_SUFFIX}
+       ${CMAKE_CURRENT_BINARY_DIR}/src/gtest-build/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gtest_main${CMAKE_STATIC_LIBRARY_SUFFIX})
+   
+-  set(GTEST_SRC_URL https://github.com/google/googletest/archive/release-1.11.0.tar.gz CACHE STRING "Location of GTest source code")
+-  set(GTEST_SRC_SHA256 b4870bf121ff7795ba20d20bcdd8627b8e088f2d1dab299a031c1034eddc93d5 CACHE STRING "SHA256 hash of GTest source code")
++  set(GTEST_SRC_URL https://github.com/google/googletest/releases/download/v1.16.0/googletest-1.16.0.tar.gz CACHE STRING "Location of GTest source code")
++  set(GTEST_SRC_SHA256 78c676fc63881529bf97bf9d45948d905a66833fbfa5318ea2cd7478cb98f399 CACHE STRING "SHA256 hash of GTest source code")
+   
+   ExternalProject_Add(gtest
+                       URL ${GTEST_SRC_URL}
+diff --git a/projects/rocfft/clients/tests/CMakeLists.txt b/projects/rocfft/clients/tests/CMakeLists.txt
+index 2894173bf5..428380f3fc 100644
+--- a/projects/rocfft/clients/tests/CMakeLists.txt
++++ b/projects/rocfft/clients/tests/CMakeLists.txt
+@@ -216,15 +216,15 @@ endif()
+ 
+ 
+ 
+-include( ../cmake/build-gtest.cmake )
++find_package( GTest 1.16.0 )
+ 
+-if( BUILD_GTEST OR NOT GTEST_FOUND )
++if( BUILD_GTEST OR NOT GTest_FOUND )
++  include( ../cmake/build-gtest.cmake )
+   add_dependencies( rocfft-test gtest )
+   list( APPEND rocfft-test_include_dirs ${GTEST_INCLUDE_DIRS} )
+   list( APPEND rocfft-test_link_libs ${GTEST_LIBRARIES} )
+ else()  
+-  list( APPEND rocfft-test_include_dirs $<BUILD_INTERFACE:${GTEST_INCLUDE_DIRS}> )
+-  list( APPEND rocfft-test_link_libs ${GTEST_LIBRARIES} )
++  target_link_libraries( rocfft-test PRIVATE GTest::gtest)
+ endif()
+ 
+ target_compile_options( rocfft-test PRIVATE ${WARNING_FLAGS} -Wno-cpp )
+diff --git a/projects/rocfft/docs/install/building-installing-rocfft.rst b/projects/rocfft/docs/install/building-installing-rocfft.rst
+index 5d5f2a1b91..8ab3d359a3 100644
+--- a/projects/rocfft/docs/install/building-installing-rocfft.rst
++++ b/projects/rocfft/docs/install/building-installing-rocfft.rst
+@@ -75,7 +75,7 @@ The following table includes the CMake option to build each client and the clien
+ 
+ The clients are not built by default. To build them, use ``-DBUILD_CLIENTS=on``.
+ The build process downloads and builds GoogleTest and FFTW if they are not already installed.
+-rocFFT uses version 1.11 of GoogleTest.
++rocFFT uses version 1.16 of GoogleTest.
+ 
+ You can build the clients separately from the main library.
+ For example, to build all the clients with an existing rocFFT library, invoke CMake from
+-- 
+2.43.0
+
