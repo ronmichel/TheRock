@@ -243,7 +243,6 @@ def do_checkout(args: argparse.Namespace, custom_hipify=do_hipify):
         exec(["git", "init", "--initial-branch=main"], cwd=repo_dir)
         exec(["git", "config", "advice.detachedHead", "false"], cwd=repo_dir)
         exec(["git", "remote", "add", "origin", args.gitrepo_origin], cwd=repo_dir)
-
     # Fetch and checkout.
     fetch_args = []
     if args.depth is not None:
@@ -261,10 +260,21 @@ def do_checkout(args: argparse.Namespace, custom_hipify=do_hipify):
     except subprocess.CalledProcessError:
         print("Failed to fetch git submodules")
         sys.exit(1)
-    # Delete directories which are the source of flaky pytorch
-    # checkouts on Windows and are not used during the build.
-    # See https://github.com/ROCm/TheRock/issues/1149.
-    exclude_paths = [
+
+    # List contents of specified directories recursively
+    def list_directory_contents(path: Path, indent: str = ""):
+        if not path.exists():
+            print(f"{indent}{path} does not exist")
+            return
+        print(f"{indent}{path}/")
+        for item in path.iterdir():
+            if item.is_dir():
+                list_directory_contents(item, indent + "  ")
+            else:
+                print(f"{indent}  {item.name}")
+
+    # Directories to list
+    target_paths = [
         repo_dir
         / "third_party"
         / "onnx"
@@ -275,10 +285,9 @@ def do_checkout(args: argparse.Namespace, custom_hipify=do_hipify):
         / "node",
         repo_dir / "third_party" / "opentelemetry-cpp" / "tools" / "vcpkg" / "ports",
     ]
-    for exclude_path in exclude_paths:
-        if exclude_path.exists():
-            print(f"Removing excluded directory: {exclude_path}")
-            shutil.rmtree(exclude_path, ignore_errors=True)
+    for target_path in target_paths:
+        print(f"\nListing contents of {target_path}:")
+        list_directory_contents(target_path)
     exec(
         [
             "git",
