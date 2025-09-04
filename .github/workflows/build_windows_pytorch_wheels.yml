@@ -108,9 +108,9 @@ jobs:
           python ./external-builds/pytorch/pytorch_torch_repo.py checkout --no-patch \
             --repo ${{ env.CHECKOUT_ROOT }}/torch \
             --repo-hashtag main
-          python ./external-builds/pytorch/pytorch_audio_repo.py checkout \
+          python ./external-builds/pytorch/pytorch_audio_repo.py checkout --no-patch \
             --repo ${{ env.CHECKOUT_ROOT }}/audio \
             --repo-hashtag main
-          python ./external-builds/pytorch/pytorch_vision_repo.py checkout \
+          python ./external-builds/pytorch/pytorch_vision_repo.py checkout --no-patch \
             --repo ${{ env.CHECKOUT_ROOT }}/vision \
             --repo-hashtag main
