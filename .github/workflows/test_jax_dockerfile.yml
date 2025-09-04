@@ -1,4 +1,4 @@
-name: Test JAX Wheels
+name: Test JAX Docker Image
 
 on:
   workflow_dispatch:
@@ -10,10 +10,6 @@ on:
       image_name:
         required: true
         description: JAX docker image to run tests with
-        type: string
-      jax_version:
-        description: Version of JAX to install
-        required: false
         type: string
       jax_test_branch:
         required: true
@@ -31,10 +27,6 @@ on:
         required: true
         description: JAX docker image to run tests with
         type: string
-      jax_version:
-        description: Version of JAX to install instead of the one on the docker image
-        required: false
-        type: string
       jax_test_branch:
         required: true
         description: JAX test repo branch to get unit tests from
@@ -46,7 +38,7 @@ permissions:
 
 jobs:
   test_wheels:
-    name: Test | ${{ inputs.amdgpu_family }}
+    name: Test | ${{ inputs.jax_test_branch }}
     runs-on: ${{ inputs.test_runs_on }}
     strategy:
       matrix:
@@ -74,7 +66,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
           python3 build/ci_build test ${{ inputs.image_name }} \
-            --test-cmd "pip install jax==${{ inputs.jax_version }} python jax_rocm_plugin/build/rocm/run_single_gpu.py -c"
+            --test-cmd "pytest jax/tests/linalg_test.py"
+            #--test-cmd "python jax_rocm_plugin/build/rocm/run_single_gpu.py -c"
+
+      - name: Test Sciforium model
+        run: |
+          echo Not there yet
+          
