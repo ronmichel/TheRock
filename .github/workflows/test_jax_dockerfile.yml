@@ -18,6 +18,7 @@ on:
       jax_test_branch:
         required: true
         description: JAX test repo branch to get unit tests from
+        type: string
         default: "rocm-jaxlib-v0.6.0"
 
 
@@ -37,6 +38,7 @@ on:
       jax_test_branch:
         required: true
         description: JAX test repo branch to get unit tests from
+        type: string
         default: "rocm-jaxlib-v0.6.0"
 
 permissions:
