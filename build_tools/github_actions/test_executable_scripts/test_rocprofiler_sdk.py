@@ -13,16 +13,7 @@ OUTPUT_ARTIFACTS_DIR = os.getenv("OUTPUT_ARTIFACTS_DIR")
 logging.basicConfig(level=logging.INFO)
 
 # Env setup
-env_init_cmd = [
-    "export",
-    "HIP_PLATFORM=amd"
-]
-logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(env_init_cmd)}")
-subprocess.run(
-    env_init_cmd,
-    cwd=THEROCK_DIR,
-    check=True
-)
+os.environ['HIP_PLATFORM'] = 'amd'
 
 # Dependencies setup (remove once Dockerfile is updated)
 dep_init_cmd = [
