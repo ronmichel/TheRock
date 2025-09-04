@@ -105,7 +105,7 @@ jobs:
       - name: Checkout PyTorch source repos (main branch)
         run: |
           git config --global core.longpaths true
-          python ./external-builds/pytorch/pytorch_torch_repo.py checkout \
+          python ./external-builds/pytorch/pytorch_torch_repo.py checkout --no-patch \
             --repo ${{ env.CHECKOUT_ROOT }}/torch \
             --repo-hashtag main
           python ./external-builds/pytorch/pytorch_audio_repo.py checkout \
