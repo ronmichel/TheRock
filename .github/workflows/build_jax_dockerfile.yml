@@ -121,9 +121,7 @@ jobs:
         env:
           ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
-          ubu24_img="ghcr.io/rocm/jax-ubu24.rocm${{ inputs.rocm_version }}:${GITHUB_SHA}"
+          ubu24_img="ghcr.io/rocm/jax-ubu24.rocm.${ROCM_VERSION//.}:${GITHUB_SHA}"
           echo "Ubuntu 24 image name: ${ubu24_img}"
-          docker images
-          docker tag "jax-ubu24.${ROCM_VERSION//.}" "${ubu22_img}"
-          docker images
+          docker tag "jax-ubu24.${ROCM_VERSION//.}" "${ubu24_img}"
           docker push "${ubu24_img}"
