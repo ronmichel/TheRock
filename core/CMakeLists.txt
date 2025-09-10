@@ -144,10 +144,16 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
         "-DHIP_PLATFORM=amd"
       COMPILER_TOOLCHAIN
         amd-hip
+      IGNORE_PACKAGES
+        # hip-tests/catch/ vendors a customized version of Catch2 that defines
+        # new functions like `hip_add_exe_to_target`
+        # Use that version instead of the version
+        # in TheRock/third-party/Catch2
+        Catch2
       BUILD_DEPS
         rocm-cmake
         therock-boost
-        therock-catch2
+        # therock-catch2
     )
     therock_cmake_subproject_glob_c_sources(hip-tests SUBDIRS .)
     therock_cmake_subproject_activate(hip-tests)
