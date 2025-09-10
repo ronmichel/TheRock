@@ -144,7 +144,6 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
       # COMPILER_TOOLCHAIN
       #   amd-hip
       BUILD_DEPS
-        rocm-cmake
         therock-catch2
       RUNTIME_DEPS
         # amd-llvm
