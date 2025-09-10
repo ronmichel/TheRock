@@ -141,9 +141,10 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
       BACKGROUND_BUILD
       CMAKE_ARGS
         -DHIP_PLATFORM=amd
-      # COMPILER_TOOLCHAIN
-      #   amd-hip
+      COMPILER_TOOLCHAIN
+        amd-hip
       BUILD_DEPS
+        rocm-cmake
         therock-catch2
       RUNTIME_DEPS
         # amd-llvm
