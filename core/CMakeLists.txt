@@ -142,11 +142,12 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
       BACKGROUND_BUILD
       CMAKE_ARGS
         "-DHIP_PLATFORM=amd"
-      # COMPILER_TOOLCHAIN
-      #   amd-hip
-      # BUILD_DEPS
-      #   rocm-cmake
-      #   therock-catch2
+      COMPILER_TOOLCHAIN
+        amd-hip
+      BUILD_DEPS
+        rocm-cmake
+        therock-boost
+        therock-catch2
     )
     therock_cmake_subproject_glob_c_sources(hip-tests SUBDIRS .)
     therock_cmake_subproject_activate(hip-tests)
