@@ -136,7 +136,7 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
 
   if(THEROCK_BUILD_TESTING)
     therock_cmake_subproject_declare(hip-tests
-      EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/hip-tests"
+      EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/hip-tests/catch"
       BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/hip-tests"
       BACKGROUND_BUILD
       CMAKE_ARGS
