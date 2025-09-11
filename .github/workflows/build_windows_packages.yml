@@ -181,9 +181,13 @@ jobs:
             --build-dir ${{ env.BUILD_DIR }} \
             --upload
 
-      - name: Save cache
-        uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
-        if: always()
-        with:
-          path: ${{ env.CACHE_DIR }}
-          key: windows-build-packages-v4-${{ inputs.amdgpu_families }}-${{ github.sha }}
+      - name: Suspend for interactive debugging
+        if: ${{ !cancelled() }}
+        run: sleep 21600
+
+      # - name: Save cache
+      #   uses: actions/cache/save@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+      #   if: always()
+      #   with:
+      #     path: ${{ env.CACHE_DIR }}
+      #     key: windows-build-packages-v4-${{ inputs.amdgpu_families }}-${{ github.sha }}
