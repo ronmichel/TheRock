@@ -11,7 +11,9 @@ THEROCK_DIR = SCRIPT_DIR.parent.parent.parent
 logging.basicConfig(level=logging.INFO)
 
 cmd = [
-    f"{THEROCK_BIN_DIR}/rocroller-tests"
+    f"{THEROCK_BIN_DIR}/rocroller-tests",
+    # "GPU_AssertTest" tests causes intentional errors, causing GPU to crash
+    "--gtest_filter=-AssertTest/GPU_AssertTest.GPU*"
 ]
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")
 
