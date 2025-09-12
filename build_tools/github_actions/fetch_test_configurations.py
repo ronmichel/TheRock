@@ -43,6 +43,13 @@ test_matrix = {
         "test_script": f"python {_get_script_path('test_hipblaslt.py')}",
         "platform": ["linux", "windows"],
     },
+    "rocroller": {
+        "job_name": "rocroller",
+        "fetch_artifact_args": "--blas --tests",
+        "timeout_minutes": 30,
+        "test_script": f"python {_get_script_path('test_rocroller.py')}",
+        "platform": ["linux", "windows"],
+    },
     # PRIM tests
     "rocprim": {
         "job_name": "rocprim",
