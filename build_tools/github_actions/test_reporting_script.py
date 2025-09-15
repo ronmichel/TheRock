@@ -48,14 +48,14 @@ def retrieve_bucket_info() -> tuple[str, str]:
 
 def create_index_file(args: argparse.Namespace):
     logging.info("Creating index file")
-    build_dir = args.build_dir / "artifacts"
+    report_dir = args.report_path
 
     indexer_args = argparse.Namespace()
     indexer_args.filter = ["*.html*"]
     indexer_args.output_file = "index.html"
     indexer_args.verbose = False
     indexer_args.recursive = False
-    process_dir(build_dir, indexer_args)
+    process_dir(report_dir, indexer_args)
 
 
 # Enhancement to upload all HTML test reports in a directory
@@ -120,13 +120,6 @@ def main(argv):
 
     parser.add_argument(
         "--amdgpu-family", type=str, required=True, help="AMD GPU family to upload"
-    )
-
-    parser.add_argument(
-        "--build-dir",
-        type=Path,
-        required=True,
-        help="Path to the build directory of TheRock",
     )
 
     parser.add_argument(
