@@ -104,7 +104,7 @@ jobs:
           gfortran --version
 
           echo "Git version: $(git --version)"
-          git config fetch.parallel 10
+          git config fetch.parallel 1
           nthreads=$(nproc --all)
           echo [*] Logical Processors available: $nthreads...
 
@@ -123,7 +123,7 @@ jobs:
         run: |
           git config --global core.symlinks true
           git config --global core.longpaths true
-          python ./build_tools/fetch_sources.py --jobs 12
+          python ./build_tools/fetch_sources.py --jobs 1
 
       - name: Configure Projects
         env:
