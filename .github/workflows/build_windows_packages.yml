@@ -107,6 +107,7 @@ jobs:
           git config fetch.parallel 10
           nthreads=$(nproc --all)
           echo [*] Logical Processors available: $nthreads...
+          git config lfs.https://github.com/ROCm/rocm-libraries.git.access basic
 
       # TODO: We shouldn't be using a cache on actual release branches, but it
       # really helps for iteration time.

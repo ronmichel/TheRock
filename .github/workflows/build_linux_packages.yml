@@ -76,6 +76,7 @@ jobs:
           echo "Git version: $(git --version)"
           git config --global --add safe.directory $PWD
           git config fetch.parallel 10
+          git config lfs.https://github.com/ROCm/rocm-libraries.git.access basic
 
       - name: Fetch sources
         timeout-minutes: 30

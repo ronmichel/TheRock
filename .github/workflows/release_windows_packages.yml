@@ -200,6 +200,10 @@ jobs:
           restore-keys: |
             windows-package-matrix-v1-${{ matrix.target_bundle.amdgpu_family }}-
 
+      - name: Runner Health Settings
+        run: |
+          git config lfs.https://github.com/ROCm/rocm-libraries.git.access basic
+
       - name: Fetch sources
         timeout-minutes: 30
         run: |

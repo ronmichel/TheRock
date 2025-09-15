@@ -141,6 +141,10 @@ jobs:
       - name: Install the AWS tool
         run: ./dockerfiles/install_awscli.sh
 
+      - name: Runner Health Settings
+        run: |
+          git config lfs.https://github.com/ROCm/rocm-libraries.git.access basic
+
       - name: Fetch sources
         timeout-minutes: 30
         run: |
