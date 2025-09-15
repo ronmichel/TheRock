@@ -62,13 +62,14 @@ def run(args):
     if args.remote:
         update_args += ["--remote"]
     if args.update_submodules:
-        exec(
-            ["git", "submodule", "update", "--init"]
-            + update_args
-            + ["--"]
-            + submodule_paths,
-            cwd=THEROCK_DIR,
-        )
+        for submodule_path in submodule_paths:
+            exec(
+                ["git", "submodule", "update", "--init"]
+                + update_args
+                + ["--"]
+                + [submodule_path],
+                cwd=THEROCK_DIR,
+            )
     if args.dvc_projects:
         pull_large_files(args.dvc_projects, projects)
 
