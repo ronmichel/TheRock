@@ -5,6 +5,7 @@
 
 import argparse
 import hashlib
+import os
 from pathlib import Path
 import platform
 import shlex
@@ -28,9 +29,30 @@ def log(*args, **kwargs):
 
 def exec(args: list[str | Path], cwd: Path):
     args = [str(arg) for arg in args]
-    log(f"++ Exec [{cwd}]$ {shlex.join(args)}")
+    full_env = dict(os.environ)
+    print(f"++ Exec [{cwd}]$ {shlex.join(args)}")
+    env = {
+        "GIT_TRACE": "1",
+        "GIT_CURL_VERBOSE": "1",
+    }
+    if env:
+        print(f":: Env:")
+        for k, v in env.items():
+            print(f"  {k}={v}")
+        full_env.update(env)
     sys.stdout.flush()
-    subprocess.check_call(args, cwd=str(cwd), stdin=subprocess.DEVNULL)
+    with subprocess.Popen(
+        args,
+        cwd=str(cwd),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        env=full_env,
+    ) as process:
+        for line in process.stdout:
+            print(line.rstrip())
+            sys.stdout.flush()
 
 
 def get_enabled_projects(args) -> list[str]:
@@ -64,7 +86,7 @@ def run(args):
     if args.update_submodules:
         for submodule_path in submodule_paths:
             exec(
-                ["git", "submodule", "update", "--init"]
+                ["git", "submodule", "update", "--init", "--progress"]
                 + update_args
                 + ["--"]
                 + [submodule_path],
