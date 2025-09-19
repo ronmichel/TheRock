@@ -89,12 +89,12 @@ if($ps_list_begin_len -eq 0) {
 echo "[*] Found $ps_list_begin_len running build executable(s):"
 $ps_list | % { echo "    > $($_.MainModule.FileName)"}
 
-echo "[*] Attempting to stop executable(s) forcefully with 'Stop-Process' ..."
+echo "[*] Attempting to stop executable(s) forcefully with 'Stop-Process'..."
 $ps_list | ForEach-Object {
     echo "    > $(Get-Process-Info $_)"
     Stop-Process $_ -Force
 }
-$IsAllStopped = Wait-Process-Filter -RegexStr $regex_build_exe -Tries 1
+$IsAllStopped = Wait-Process-Filter -RegexStr $regex_build_exe -Tries 5
 
 
 # Second Attempt with `WMI` (if any processes are still running)
