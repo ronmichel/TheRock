@@ -42,7 +42,7 @@ function Wait-Process-Filter ([String]$RegexStr, [int] $Tries, [int] $Seconds = 
             Write-Host "    > Waiting for $ps_list_len processes..."
             $ps_list | % {
                 Write-Host "      $(Get-Process-Info $_)"
-            } 
+            }
         } else {
             Write-Host "    > Found no processes after waiting $(($i+1) * $Seconds) second(s)"
             return $true;
@@ -103,7 +103,7 @@ $IsAllStopped = Wait-Process-Filter -RegexStr $regex_build_exe -Tries 5
 if(!$IsAllStopped) {
     $ps_list = Get-Process-Filter -RegexStr $regex_build_exe
     if($ps_list.Count -gt 0) {
-        echo "[*] Attemping to stop any remaining executable(s) forcefully with 'Stop-Process':"
+        echo "[*] Attempting to stop any remaining executable(s) forcefully with 'Stop-Process':"
         $ps_list | ForEach-Object {
             #https://stackoverflow.com/questions/40585754/powershell-wont-terminate-hung-process
             echo "    > $(Get-Process-Info $_)"
