@@ -14,6 +14,7 @@ therock_cmake_subproject_declare(therock-fftwf
   CMAKE_ARGS
     -DENABLE_FLOAT=ON
     -DBUILD_SHARED_LIBS=ON
+    -DENABLE_THREADS=ON
 )
 therock_cmake_subproject_provide_package(therock-fftwf FFTW3f lib/cmake/fftw3f)
 therock_cmake_subproject_activate(therock-fftwf)

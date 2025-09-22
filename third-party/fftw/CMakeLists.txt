@@ -13,6 +13,7 @@ therock_cmake_subproject_declare(therock-fftw
   EXTERNAL_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/source"
   CMAKE_ARGS
     -DBUILD_SHARED_LIBS=ON
+    -DENABLE_THREADS=ON
 )
 therock_cmake_subproject_provide_package(therock-fftw FFTW3 lib/cmake/fftw3)
 therock_cmake_subproject_activate(therock-fftw)
