@@ -46,6 +46,12 @@ instructions and configurations for alternatives.
 
 ### Setup - Ubuntu (24.04)
 
+> [!TIP]
+> `dvc` is used for version control of pre-compiled MIOpen kernels.
+> `dvc` is not a hard requirement, but it does reduce compile time.
+> `snap install --classic dvc` can be used to install on Ubuntu.
+> Visit the [DVC website](https://dvc.org/doc/install/linux) for other installation methods.
+
 ```bash
 # Install Ubuntu dependencies
 sudo apt update
@@ -173,7 +179,7 @@ Further flags allow to build components with specific features enabled.
 
 > [!NOTE]
 > Building components with MPI support, currently requires MPI to be
-> pre-installed until [issue #128](https://github.com/ROCm/TheRock/issues/128)
+> pre-installed until [issue #1284](https://github.com/ROCm/TheRock/issues/1284)
 > is resolved.
 
 ### CMake build usage
