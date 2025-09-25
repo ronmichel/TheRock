@@ -5,6 +5,12 @@ therock_subproject_fetch(therock-fftwf-sources
   URL_HASH SHA256=56c932549852cddcfafdab3820b0200c7742675be92179e59e6215b340e26467
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(FFTW3_ENABLE_THREADS TRUE CACHE BOOL "FFTW3_ENABLE_THREADS set TRUE on Linux" FORCE)
+else()
+  set(FFTW3_ENABLE_THREADS FALSE CACHE BOOL "FFTW3_ENABLE_THREADS set FALSE" FORCE)
+endif()
+
 therock_cmake_subproject_declare(therock-fftwf
   BACKGROUND_BUILD
   EXCLUDE_FROM_ALL
@@ -14,7 +20,7 @@ therock_cmake_subproject_declare(therock-fftwf
   CMAKE_ARGS
     -DENABLE_FLOAT=ON
     -DBUILD_SHARED_LIBS=ON
-    -DENABLE_THREADS=ON
+    -DENABLE_THREADS=${FFTW3_ENABLE_THREADS}
 )
 therock_cmake_subproject_provide_package(therock-fftwf FFTW3f lib/cmake/fftw3f)
 therock_cmake_subproject_activate(therock-fftwf)
