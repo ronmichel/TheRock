@@ -154,6 +154,21 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
       libhiprtc-builtins.so
       libhiprtc.so
   )
+  therock_cmake_subproject_declare(hip-tests
+    USE_DIST_AMDGPU_TARGETS
+    EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/hip-tests/catch"
+    BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/hip-tests"
+    BACKGROUND_BUILD
+    CMAKE_ARGS
+      "-DHIP_PLATFORM=amd"
+    BUILD_DEPS
+      rocm-cmake
+    RUNTIME_DEPS
+      amd-llvm
+      amd-comgr
+  )
+  therock_cmake_subproject_glob_c_sources(hip-tests SUBDIRS .)
+  therock_cmake_subproject_activate(hip-tests)
   if(WIN32)
     ##############################################################################
     # hipInfo (from hip-tests)
