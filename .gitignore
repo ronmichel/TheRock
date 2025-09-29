@@ -23,3 +23,5 @@ __pycache__
 /install/
 /output-*/
 /out/
+*therock-build/*
+venv/
