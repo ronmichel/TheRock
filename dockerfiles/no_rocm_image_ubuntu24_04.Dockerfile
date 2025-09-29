@@ -29,7 +29,8 @@ RUN sudo apt-get update -y \
     clang \
     lld \
     wget \
-    psmisc
+    psmisc \
+    libgfortran5
 
 # Added for rocprofiler-sdk
 ENV HIP_PLATFORM=amd

@@ -27,6 +27,19 @@ include(therock_job_pools)
 include(therock_testing)
 
 ################################################################################
+# Notices
+# If there are ongoing issues for specific configurations log them here.
+################################################################################
+
+#   message(WARNING
+#     "*************************************************\n"
+#     ".."
+#     " The last known good commit on {Windows,Linux} is"
+#     " https://github.com/ROCm/TheRock/commit/{HASH}"
+#     " See https://github.com/ROCm/TheRock/issues/{ISSUE} for details.\n"
+#     "*************************************************")
+
+################################################################################
 # Testing Setup
 # Does normal CMake setup so that BUILD_TESTING functions as a master control
 # switch. Then we set THEROCK_BUILD_TESTING if not explicitly set by the user
@@ -117,6 +130,15 @@ block(SCOPE_FOR VARIABLES PROPAGATE THEROCK_HIP_MAJOR_VERSION THEROCK_HIP_MINOR_
   list(GET VERSION_LIST 2 THEROCK_HIP_PATCH_VERSION)
   message(STATUS "HIP version: ${THEROCK_HIP_MAJOR_VERSION}.${THEROCK_HIP_MINOR_VERSION}.${THEROCK_HIP_PATCH_VERSION}")
 endblock()
+
+################################################################################
+# Feature flags
+# Project wide flags for controlling the build system.
+################################################################################
+cmake_dependent_option(
+  THEROCK_FLAG_COMGR_DELAY_LOAD
+  "Enables delay loading and linker namespacing of the amd_comgr library (Linux only)"
+  ON "LINUX" OFF)
 
 ################################################################################
 # Debug Options
@@ -387,8 +409,6 @@ endif()
 ################################################################################
 # External project setup
 ################################################################################
-
-add_subdirectory(build_tools)
 
 # Add subdirectories in dependency DAG order (which happens to be semi-alpha:
 # don't be fooled).
