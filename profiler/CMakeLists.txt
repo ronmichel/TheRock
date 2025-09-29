@@ -71,23 +71,6 @@ if(THEROCK_ENABLE_ROCPROFV3)
   therock_cmake_subproject_provide_package(rocprofiler-sdk rocprofiler-sdk-roctx lib/cmake/rocprofiler-sdk-roctx)
   therock_cmake_subproject_activate(rocprofiler-sdk)
 
-  therock_provide_artifact(rocprofiler-sdk
-    TARGET_NEUTRAL
-    DESCRIPTOR artifact-rocprofiler-sdk.toml
-    COMPONENTS
-      dbg
-      dev
-      doc
-      lib
-      run
-      test
-    SUBPROJECT_DEPS
-      aqlprofile
-      rocprofiler-sdk
-      roctracer
-      ${_rocprofiler_sdk_optional_deps}
-  )
-
   ##############################################################################
   # roctracer
   # This is a very old, deprecated library with a number of quirks. Long term,
@@ -122,5 +105,22 @@ if(THEROCK_ENABLE_ROCPROFV3)
     SUBDIRS .
   )
   therock_cmake_subproject_activate(roctracer)
+
+  therock_provide_artifact(rocprofiler-sdk
+    TARGET_NEUTRAL
+    DESCRIPTOR artifact-rocprofiler-sdk.toml
+    COMPONENTS
+      dbg
+      dev
+      doc
+      lib
+      run
+      test
+    SUBPROJECT_DEPS
+      aqlprofile
+      rocprofiler-sdk
+      roctracer
+      ${_rocprofiler_sdk_optional_deps}
+  )
 
 endif(THEROCK_ENABLE_ROCPROFV3)
