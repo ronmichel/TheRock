@@ -77,6 +77,8 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
   ##############################################################################
   set(HIP_CLR_CMAKE_ARGS)
   set(HIP_CLR_RUNTIME_DEPS)
+  set(_hip_subproject_names)
+
   if(WIN32)
     # Windows CLR options
     set(_compute_pal_dir "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/shared/amdgpu-windows-interop")
@@ -133,27 +135,7 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
   therock_cmake_subproject_provide_package(hip-clr hip-lang lib/cmake/hip-lang)
   therock_cmake_subproject_provide_package(hip-clr hiprtc lib/cmake/hiprtc)
   therock_cmake_subproject_activate(hip-clr)
-
-  therock_provide_artifact(core-hip
-    TARGET_NEUTRAL
-    DESCRIPTOR artifact-core-hip.toml
-    COMPONENTS
-      dbg
-      dev
-      doc
-      lib
-      run
-    SUBPROJECT_DEPS
-      hip-clr
-  )
-
-  therock_test_validate_shared_lib(
-    PATH clr/dist/lib
-    LIB_NAMES
-      libamdhip64.so
-      libhiprtc-builtins.so
-      libhiprtc.so
-  )
+  list(APPEND _hip_subproject_names hip-clr)
 
   if(THEROCK_BUILD_TESTING)
     therock_cmake_subproject_declare(hip-tests
@@ -165,12 +147,40 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
       BACKGROUND_BUILD
       CMAKE_ARGS
         "-DHIP_PLATFORM=amd"
+        "-DROCM_PATH="
+      COMPILER_TOOLCHAIN
+        amd-hip
+      BUILD_DEPS
+        rocm-cmake
+        therock-catch2
       RUNTIME_DEPS
         hip-clr
     )
     therock_cmake_subproject_glob_c_sources(hip-tests SUBDIRS .)
     therock_cmake_subproject_activate(hip-tests)
+    list(APPEND _hip_subproject_names hip-tests)
   endif(THEROCK_BUILD_TESTING)
+
+  therock_provide_artifact(core-hip
+    TARGET_NEUTRAL
+    DESCRIPTOR artifact-core-hip.toml
+    COMPONENTS
+      dbg
+      dev
+      doc
+      lib
+      run
+    SUBPROJECT_DEPS
+      ${_hip_subproject_names}
+  )
+
+  therock_test_validate_shared_lib(
+    PATH clr/dist/lib
+    LIB_NAMES
+      libamdhip64.so
+      libhiprtc-builtins.so
+      libhiprtc.so
+  )
 
   if(WIN32)
     ##############################################################################
