@@ -40,6 +40,7 @@ COMMON_CONSOLE_SCRIPT_TESTS = [
 ]
 
 LINUX_CONSOLE_SCRIPT_TESTS = [
+    ("amd-smi", [], "Management", True),
     ("rocm_agent_enumerator", [], "", True),
     ("rocminfo", [], "", True),
     ("rocm-smi", [], "Management", True),
