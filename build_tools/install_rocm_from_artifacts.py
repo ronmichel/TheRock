@@ -268,6 +268,11 @@ def retrieve_artifacts_by_input_dir(args):
 
 
 def run(args):
+    log("### All Data FROM DynamoDB ###")
+    all_items = get_all_dynamodb_items()
+    for item in all_items:
+        log(f"Retrieved item from DynamoDB: {item}")
+
     log("### Installing TheRock using artifacts ###")
     _create_output_directory(args)
     if args.run_id:
@@ -277,11 +282,6 @@ def run(args):
 
     if args.input_dir:
         retrieve_artifacts_by_input_dir(args)
-
-    log("### All Data FROM DynamoDB ###")
-    all_items = get_all_dynamodb_items()
-    for item in all_items:
-        log(f"Retrieved item from DynamoDB: {item}")
 
 
 def main(argv):
