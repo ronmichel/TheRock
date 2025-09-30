@@ -48,7 +48,22 @@ s3_client = boto3.client(
     verify=False,
     config=Config(max_pool_connections=100, signature_version=UNSIGNED),
 )
-dynamodb_client = boto3.client("dynamodb")
+
+# Initialize DynamoDB client with error handling
+try:
+    dynamodb_client = boto3.client(
+        "dynamodb", 
+        region_name=os.environ.get('AWS_DEFAULT_REGION', 'us-west-1')
+    )
+    # Test if we can actually use DynamoDB
+    dynamodb_client.describe_table(TableName="test-cachedata")
+    DYNAMODB_AVAILABLE = True
+    log("DynamoDB client initialized successfully")
+except Exception as e:
+    log(f"DynamoDB not available: {e}")
+    dynamodb_client = None
+    DYNAMODB_AVAILABLE = False
+
 dynamodb_table_name = "test-cachedata"
 
 

@@ -79,6 +79,8 @@ jobs:
           VENV_DIR: ${{ env.VENV_DIR }}
           FETCH_ARTIFACT_ARGS: "--base-only"
           IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_SECRET }}
 
       - name: Set HIP_CLANG_PATH for windows
         if: ${{ runner.os == 'Windows' }}
