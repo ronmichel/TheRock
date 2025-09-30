@@ -60,7 +60,7 @@ try:
         region_name=os.environ.get('AWS_DEFAULT_REGION', 'us-west-1')
     )
     # Test if we can actually use DynamoDB
-    dynamodb_client.describe_table(TableName="test-cachedata")
+    dynamodb_client.describe_table(TableName="TestsCache")
     DYNAMODB_AVAILABLE = True
     log("DynamoDB client initialized successfully")
 except Exception as e:
@@ -73,7 +73,7 @@ except Exception as e:
     dynamodb_client = None
     DYNAMODB_AVAILABLE = False
 
-dynamodb_table_name = "test-cachedata"
+dynamodb_table_name = "TestsCache"
 
 
 def _untar_files(output_dir, destination):
@@ -88,7 +88,7 @@ def _untar_files(output_dir, destination):
 
 def get_dynamodb_item(test_suite, test_name):
     """
-    Retrieves an item from the test-cachedata DynamoDB table using test_suite and test_name as keys
+    Retrieves an item from the TestsCache DynamoDB table using test_suite and test_name as keys
     Returns the item if found, None if not found
     """
     try:
@@ -112,7 +112,7 @@ def get_dynamodb_item(test_suite, test_name):
 
 def put_dynamodb_item(test_suite, test_name, item_data):
     """
-    Stores an item in the test-cachedata DynamoDB table with test_suite and test_name as keys
+    Stores an item in the TestsCache DynamoDB table with test_suite and test_name as keys
     item_data should be a dictionary with DynamoDB attribute format
     Returns True if successful, False otherwise
     """
@@ -140,7 +140,7 @@ def put_dynamodb_item(test_suite, test_name, item_data):
 
 def get_all_dynamodb_items():
     """
-    Retrieves all items from the test-cachedata DynamoDB table
+    Retrieves all items from the TestsCache DynamoDB table
     Returns a list of all items if successful, empty list if none found or on error
     """
     try:
