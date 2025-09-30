@@ -49,15 +49,16 @@ s3_client = boto3.client(
     config=Config(max_pool_connections=100, signature_version=UNSIGNED),
 )
 
+
 def log(*args, **kwargs):
     print(*args, **kwargs)
     sys.stdout.flush()
 
+
 # Initialize DynamoDB client with error handling
 try:
     dynamodb_client = boto3.client(
-        "dynamodb", 
-        region_name=os.environ.get('AWS_DEFAULT_REGION', 'us-west-1')
+        "dynamodb", region_name=os.environ.get("AWS_DEFAULT_REGION", "us-west-1")
     )
     # Test if we can actually use DynamoDB
     dynamodb_client.describe_table(TableName="TestsCache")
@@ -65,7 +66,6 @@ try:
     log("DynamoDB client initialized successfully")
 except Exception as e:
     log(f"DynamoDB not available: {e}")
-
 
     # Print all environment variables
     for key, value in os.environ.items():
@@ -94,16 +94,17 @@ def get_dynamodb_item(test_suite, test_name):
     try:
         response = dynamodb_client.get_item(
             TableName=dynamodb_table_name,
-            Key={
-                'test_suite': {'S': test_suite},
-                'test_name': {'S': test_name}
-            }
+            Key={"test_suite": {"S": test_suite}, "test_name": {"S": test_name}},
         )
-        if 'Item' in response:
-            log(f"Retrieved cache data for test_suite: {test_suite}, test_name: {test_name}")
-            return response['Item']
+        if "Item" in response:
+            log(
+                f"Retrieved cache data for test_suite: {test_suite}, test_name: {test_name}"
+            )
+            return response["Item"]
         else:
-            log(f"No cache data found for test_suite: {test_suite}, test_name: {test_name}")
+            log(
+                f"No cache data found for test_suite: {test_suite}, test_name: {test_name}"
+            )
             return None
     except Exception as e:
         log(f"Error retrieving cache data from DynamoDB: {str(e)}")
@@ -118,20 +119,16 @@ def put_dynamodb_item(test_suite, test_name, item_data):
     """
     try:
         # Ensure required keys are present
-        item = {
-            'test_suite': {'S': test_suite},
-            'test_name': {'S': test_name}
-        }
-        
+        item = {"test_suite": {"S": test_suite}, "test_name": {"S": test_name}}
+
         # Add additional data from item_data
         if item_data:
             item.update(item_data)
-        
-        dynamodb_client.put_item(
-            TableName=dynamodb_table_name,
-            Item=item
+
+        dynamodb_client.put_item(TableName=dynamodb_table_name, Item=item)
+        log(
+            f"Successfully stored cache data for test_suite: {test_suite}, test_name: {test_name}"
         )
-        log(f"Successfully stored cache data for test_suite: {test_suite}, test_name: {test_name}")
         return True
     except Exception as e:
         log(f"Error storing cache data to DynamoDB: {str(e)}")
@@ -146,21 +143,23 @@ def get_all_dynamodb_items():
     try:
         all_items = []
         response = dynamodb_client.scan(TableName=dynamodb_table_name)
-        
+
         # Add items from first page
-        if 'Items' in response:
-            all_items.extend(response['Items'])
-        
+        if "Items" in response:
+            all_items.extend(response["Items"])
+
         # Handle pagination if there are more items
-        while 'LastEvaluatedKey' in response:
+        while "LastEvaluatedKey" in response:
             response = dynamodb_client.scan(
                 TableName=dynamodb_table_name,
-                ExclusiveStartKey=response['LastEvaluatedKey']
+                ExclusiveStartKey=response["LastEvaluatedKey"],
             )
-            if 'Items' in response:
-                all_items.extend(response['Items'])
-        
-        log(f"Retrieved {len(all_items)} items from DynamoDB table {dynamodb_table_name}")
+            if "Items" in response:
+                all_items.extend(response["Items"])
+
+        log(
+            f"Retrieved {len(all_items)} items from DynamoDB table {dynamodb_table_name}"
+        )
         return all_items
     except Exception as e:
         log(f"Error retrieving all items from DynamoDB: {str(e)}")
