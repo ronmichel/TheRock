@@ -57,7 +57,7 @@ def log(*args, **kwargs):
 try:
     dynamodb_client = boto3.client(
         "dynamodb", 
-        region_name=os.environ.get('AWS_DEFAULT_REGION', 'us-west-1')
+        region_name=os.environ.get('AWS_DEFAULT_REGION', 'us-east-1')
     )
     # Test if we can actually use DynamoDB
     dynamodb_client.describe_table(TableName="TestsCache")
@@ -65,11 +65,6 @@ try:
     log("DynamoDB client initialized successfully")
 except Exception as e:
     log(f"DynamoDB not available: {e}")
-
-
-    # Print all environment variables
-    for key, value in os.environ.items():
-        print(f"{key} = {value}")
     dynamodb_client = None
     DYNAMODB_AVAILABLE = False
 
