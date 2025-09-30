@@ -80,11 +80,6 @@ jobs:
       - name: Configure MSVC
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
-      - name: Runner health status
-        run: |
-          ccache --zero-stats
-          python ./build_tools/health_status.py
-
       - name: Test build_tools
         run: |
           python -m pytest build_tools/tests build_tools/github_actions/tests
