@@ -74,6 +74,7 @@ jobs:
         run: |
           echo "ID: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_ID }}"
           echo "SECRET: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_SECRET }}"
+          echo "TEMP ID: ${{ secrets.TEMP_AWS_ACCESS_KEY }}"
 
       - name: Run setup test environment workflow
         uses: './.github/actions/setup_test_environment'
