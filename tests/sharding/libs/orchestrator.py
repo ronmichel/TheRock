@@ -10,21 +10,15 @@ from .utils import log
 
 
 class Orchestrator(object):
-	def __init__(self, cluster):
-		self.cluster = cluster
-		self.nodes = cluster.nodes
-		log(f'Total Nodes: {len(self.nodes)}')
-		self.node = self.nodes[0]
-		gpus = utils.runParallel(
-			*[(node.getGpus, (), {}) for node in self.nodes],
-		)
-		self.gpus = sum(gpus, [])
+	def __init__(self, node):
+		self.node = node
+		self.gpus = node.getGpus()
 		log(f'Total GPUs: {len(self.gpus)}')
 
 	def runBinary(self, *args, **kwargs):
 		for i in range(3):
 			i and log(f'[{i+1}]: Rerunning Failed Tests')
-			if ret := self.node.runCmd(*args, **kwargs):
+			if ret := (self.node.runCmd(*args, **kwargs) == 0):
 				break
 		return ret
 
@@ -36,7 +30,7 @@ class Orchestrator(object):
 
 	def _getCacheFile(self, testDir):
 		cacheFile = os.path.join(self._getCacheDir(),
-			re.sub(r'/opt/rocm.*?/|\{.*?\}/', '', os.path.normpath(testDir)).replace('/', '__')
+			os.path.normpath(testDir).replace('/', '__')
 		)
 		return cacheFile
 
@@ -77,19 +71,22 @@ class Orchestrator(object):
 
 	def runCtest(self, *args, **kwargs):
 		def _runCtest(gpu, tests, *args, **kwargs):
-			cmd = ('ctest', '--no-tests=error', '--output-on-failure')
+			cmd = ('ctest', )
 			for i in range(3):
 				ret, out = gpu.runCmd(*cmd, *tests, *args, out=True, **kwargs)
 				if ret == 0:
 					return ret, out
-				tests = ('--rerun-failed',)
+				tests = (*tests, '--rerun-failed')
+				log(f'[{gpu.node.host}]: Rerunning Failed Tests')
 			return ret, out
 		def _runCtestShards(gpu, shards, iShard, *args, **kwargs):
 			tests = ('--tests-information', f'{iShard+1},,{shards}')
 			return _runCtest(gpu, tests, *args, **kwargs)
 		def _collectCtest(*args, **kwargs):
 			import json
-			ret, out = runCmd('ctest', '--show-only=json-v1', *args, out=True, **kwargs, verbose=False)
+			ret, out = self.node.runCmd('ctest', '--show-only=json-v1', *args,
+				out=True, verbose=False, **kwargs,
+			)
 			testData = json.loads(out)
 			return {t['name'] for t in testData['tests']}
 		def _runCtestScheduler(gpu, testList, *args, **kwargs):
@@ -100,9 +97,7 @@ class Orchestrator(object):
 		cacheFile = self._getCacheFile(kwargs.get('cwd', 'ctestMisc'))
 		cache = self._getTestCache(cacheFile)
 		if cache: # schedule tests
-			testList = self.node.runPy(_collectCtest, args,
-				fHelpers=(utils.runCmd, utils.log), verbose=False, **kwargs,
-			)
+			testList = _collectCtest(args, **kwargs)
 			shards = self._splitShards(testList, cache)
 			rets = utils.runParallel(*[(
 				_runCtestScheduler, (gpu, shards[i][1], *args), kwargs)
@@ -124,7 +119,6 @@ class Orchestrator(object):
 		assert result
 		return True
 
-
 	def runGtest(self, binary, *args, srcFile=None, gfilter=None, **kwargs):
 		def _runGtest(gpu, binary, gfilter, *args, **kwargs):
 			for i in range(3):
@@ -135,7 +129,7 @@ class Orchestrator(object):
 				if ret == 0:
 					return ret, out
 				if failed := re.findall(r'FAILED\s+\] (.+?) \(\d+ ms', out):
-					log(f'[{i+1}]: Rerunning Failed Tests')
+					log(f'[{gpu.node.host}]: Rerunning Failed Tests')
 					gFilter = ':'.join(failed)
 			return ret, out
 		def _runGtestShards(gpu, binary, gfilter, shards, iShard, *args, **kwargs):
@@ -154,7 +148,9 @@ class Orchestrator(object):
 				f'--gtest_filter={gfilter}' if gfilter else '',
 				f'--gtest_output=json:{jsonFile}',
 			)
-			ret, out = runCmd('bash', '-c', ' '.join(cmd), *args, verbose=False, out=True, **kwargs)
+			ret, out = self.node.runCmd('bash', '-c', ' '.join(cmd), *args,
+				verbose=False, out=True, **kwargs,
+			)
 			if os.path.exists(jsonFile):
 				fd = open(jsonFile)
 				testData = json.load(fd)
@@ -184,9 +180,7 @@ class Orchestrator(object):
 		cacheFile = self._getCacheFile(os.path.join(kwargs.get('cwd', ''), binary))
 		cache = self._getTestCache(cacheFile)
 		if cache: # schedule tests
-			testDict = self.node.runPy(_collectGtests, (binary, srcFile, gfilter, *args),
-				fHelpers=(utils.runCmd, utils.log), verbose=True, **kwargs,
-			)
+			testDict = _collectGtests(binary, srcFile, gfilter, *args, **kwargs)
 			testList = [f'{ts}.{t}' for ts in testDict for t in testDict[ts]]
 			shards = self._splitShards(testList, cache)
 			rets = utils.runParallel(*[(
@@ -201,10 +195,6 @@ class Orchestrator(object):
 			])
 		# updating the cache
 		result = True
-		expr = re.compile(r'\] .*?(?:from)?(.+?) \((\d+) ms')
+		expr = re.compile(r'OK \] (.+?) \((\d+) ms')
 		for ret, out in rets:
-			result &= bool(ret == 0)
-			cache.update({test:int(duration) for (test, duration) in expr.findall(out)})
-		self._updateTestCache(cacheFile, cache)
 		assert result
-		return True

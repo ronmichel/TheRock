@@ -54,50 +54,6 @@ def logExp(e):
 	log(f'{error}{tbHeader}{"".join(tbLines)}')
 
 
-def runCmd(*cmd, cwd=None, env={}, stdin=None, nowait=False, verbose=True, out=False, **kwargs):
-	import subprocess
-	if verbose != None:
-		cwdStr = f'cd {cwd}; ' if cwd else ''
-		envStr = ''
-		for key, value in env.items():
-			envStr += f"{key}='{value}' "
-		log(f'RunCmd: {cwdStr}{envStr}{" ".join(cmd)}')
-	# launch process
-	cmdEnv = os.environ.copy()
-	env and cmdEnv.update({k:str(v) for k,v in env.items()})
-	process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-		stderr=subprocess.STDOUT, cwd=cwd, env=cmdEnv, **kwargs
-	)
-	# handling stdin
-	if isinstance(stdin, str):
-		process.stdin.write(stdin if isinstance(stdin, bytes) else stdin.encode())
-	elif isinstance(stdin, bytes):
-		process.stdin.write(stdin if isinstance(stdin, bytes) else stdin.encode())
-	elif isinstance(stdin, type(process.stdout)):
-		chunk = None
-		while chunk != b'':
-			chunk = stdin.read(1024)
-			process.stdin.write(chunk)
-	process.stdin.close()
-	if nowait:  # background process
-		return process
-	# following process stdout / stderr
-	verbose and log('out:')
-	out = ''
-	chunk = None
-	while chunk != b'':
-		chunk = process.stdout.read(1)
-		verbose and sys.stdout.buffer.write(chunk) and sys.stdout.flush()
-		out += chunk.decode(errors='replace')
-	# handling return value
-	ret = process.wait()
-	if ret != 0 and verbose != None:
-		log(f'cmd failed: {" ".join(cmd)}')
-		verbose or log(f'err: {out}')
-	verbose and log(f'ret: {ret}')
-	return (ret, out) if out else ret 
-
-
 def request(method, url, allowCodes=(), ignoreExp=False, verbose=False, **kwargs):
 	# /usr/lib/python3/dist-packages/requests/api.py
 	# method: GET, POST, DELETE, OPTIONS

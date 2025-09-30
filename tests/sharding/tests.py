@@ -18,7 +18,7 @@ class TestSuite:
 			r'Device Type:\s+GPU',
 			r'L2:\s+.*? KB',
 		)
-		ret, out = orch.runBinary('./bin/rocminfo', cwd=rock, out=True)
+		ret, out = orch.node.runCmd('./bin/rocminfo', cwd=rock, out=True)
 		result.testVerdict = all((bool(ret == 0), *[
 			re.search(expr, out) or log(f'Expr Not Match: {expr}') for expr in exprList
 		]))
@@ -26,7 +26,7 @@ class TestSuite:
 
 
 	def test_roctracer(self, orch, rock, result):
-		result.testVerdict = orch.runBinary('./run_tests.sh', cwd=f'{rock}/share/roctracer') == 0
+		result.testVerdict = orch.runBinary('./run_tests.sh', cwd=f'{rock}/share/roctracer')
 		assert result.testVerdict
 
 

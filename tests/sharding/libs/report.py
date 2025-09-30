@@ -88,7 +88,8 @@ class Table():
 		if not self.data:
 			return 'No Data Found in Report'
 		table = self.formTable()
-		fmt = tabulate.tabulate(table[1:], headers=table[0],
+		fmt = f'{self.title}\n'
+		fmt += tabulate.tabulate(table[1:], headers=table[0],
 			tablefmt='simple_outline', rowalign='center',
 		)
 		return fmt
@@ -99,12 +100,9 @@ class Report(object):
 		self.title = title
 		self.text = ' '
 		self.facts = {}
-		self.buttons = {}
 		self.tables = []
 		self.errors = []
 		self.errTitle = ''
-		self.exceptions = []
-		self.expTitle = ''
 
 	def setTitle(self, title, append=True):
 		self.title = self.title+title if append else title
@@ -115,9 +113,6 @@ class Report(object):
 	def addFacts(self, **kwargs):
 		self.facts.update(kwargs)
 
-	def addButtons(self, **kwargs):
-		self.buttons.update(kwargs)
-
 	def addTable(self, title):
 		table = Table(title)
 		self.tables.append(table)
@@ -127,87 +122,12 @@ class Report(object):
 		self.errors.extend(error)
 		self.errTitle = title
 
-	def addException(self, exception):
-		self.exceptions.append(exception)
-
-	def sendMsg(self, verdict):
-		url = 'https://amdcloud.webhook.office.com/webhookb2'
-		channelId = '89053b43-3579-452c-b12c-126f4a429f7f'	# AGS DevOps Team
-		grpId = '3dd8961f-e488-4e60-8e11-a82d994e183d'
-		compId = '323214c2-5f5e-4599-9bea-c32b2102d047'
-		#webhookId, keyId = '8c00abb05ec2481783f43e6637ae0c92', 'V2vGIgfc3jI03EFaYcHNF7PWIaTP8MmmPpYgvSVH1Wojw1' # MyNotification
-		webhookId, keyId = '50c40b95934a48a081db423032bd9384', 'V2muGEtUmxdPPmvboFHxr1Izu2fbT-TLL13zTpWN7wZ8c1' # Rocm-Tests
-		webhookUrl = f'{url}/{channelId}@{grpId}/IncomingWebhook/{webhookId}/{compId}/{keyId}'
-		msg = pymsteams.connectorcard(webhookUrl)
-		msg.title(f'{self.title} - {("FAIL", "PASS")[verdict]}')
-		msg.color(('#FF0000', '#00FF00')[verdict])
-		msg.title(self.title)
-		msg.text(self.text)
-		mainSection = pymsteams.cardsection()
-		msg.addSection(mainSection)
-		# facts
-		for fact, value in self.facts.items():
-			mainSection.addFact(fact, value)
-		# buttons
-		for button, url in self.buttons.items():
-			msg.addLinkButton(buttontext=button, buttonurl=url)
-		# tables
-		for table in self.tables:
-			tableSection = pymsteams.cardsection()
-			tableSection.title(table.title)
-			data = table.formTable()
-			# table title and header
-			style = ' style="border:2px solid grey; padding: 3px;"'
-			html = f'<table{style}>'
-			html += f'<tr{style}>'
-			for element in data[0]:
-				html += f'<th{style}>{element}</th>'
-			html += '</tr>'
-			# table data
-			for tr in data[1:]:
-				html += f'<tr{style}>'
-				for td in tr:
-					html += f'<td{style}>{td}</td>'
-				html += '</tr>'
-			html += '</table><br>'
-			tableSection.text(html)
-			msg.addSection(tableSection)
-		if len(json.dumps(msg.payload)) > 20000: # squeeze pkg size
-			for i,section in enumerate(msg.payload['sections']):
-				if 'text' in section:
-					msg.payload['sections'][i]['text'] = re.sub(' style=".*?"', '', section['text'])
-		# errors
-		if self.errors:
-			errSection = pymsteams.cardsection()
-			errSection.addFact(f'{self.errTitle} Errors:', '')
-			for error in self.errors:
-				cmd, ret, out = error
-				out.strip() and errSection.addFact('', f'<pre><strong>$ {cmd}</strong>\n{out}</pre>')
-			msg.addSection(errSection)
-		# exceptions
-		if self.exceptions:
-			msg.color('#FF0000')
-			msg.title(f'{self.title} - EXCEPTION')
-			expSection = pymsteams.cardsection()
-			expSection.addFact(f'{self.expTitle} Exceptions:', '')
-			for exception in self.exceptions:
-				header, *expLines, error = traceback.format_exception(
-					type(exception), exception, exception.__traceback__
-				)
-				expLines = '\n'.join(expLines)
-				expSection.addFact('', f'<pre><strong>{error}</strong>{header}{expLines}</pre>')
-			msg.addSection(expSection)
-		msg.send()
-		log('Notification Sent')
-
-	def toHtml(self, title=True, facts=True, buttons=True, tables=True, errors=True, exceptions=True):
+	def toHtml(self, title=True, facts=True, tables=True, errors=True):
 		htmlVars = {
 			'title': '',
 			'facts': '',
-			'buttons': '',
 			'tables': '',
 			'errors': '',
-			'exceptions': '',
 		}
 		# title
 		if title:
@@ -218,12 +138,6 @@ class Report(object):
 			for fact, value in self.facts.items():
 				factList += FACT_HTML.format(style=FACT_STYLE, fact=fact, value=value)
 			htmlVars['facts'] += FACTS_HTML.format(style=FACTS_STYLE, factList=factList)
-		# buttons
-		if buttons and self.buttons:
-			buttonList = ''
-			for button, url in self.buttons.items():
-				buttonList += BUTTON_HTML.format(style=BUTTON_STYLE, button=button, url=url)
-			htmlVars['buttons'] += BUTTONS_HTML.format(style=BUTTONS_STYLE, buttonList=buttonList)
 		# tables
 		if tables:
 			for table in self.tables:
@@ -247,35 +161,26 @@ class Report(object):
 					errorHead=cmd, errorOut=out.strip()
 				)
 			htmlVars['errors'] += ERRORS_HTML.format(title=f'{self.errTitle} Errors', errorList=errorList)
-		# exceptions
-		if exceptions and self.exceptions:
-			expList = ''
-			for exception in self.exceptions:
-				header, *expLines, error = traceback.format_exception(
-					type(exception), exception, exception.__traceback__
-				)
-				expLines = '\n'.join(expLines)
-				expList += ERROR_HTML.format(errorStyle=ERROR_STYLE,
-					errorHeadStyle=ERRORHEAD_STYLE, errorOutStyle=ERROROUT_STYLE,
-					errorHead=error.strip(), errorOut=f'{header}{expLines}'
-				)
-			htmlVars['exceptions'] += ERRORS_HTML.format(title=f'{self.expTitle} Exceptions', errorList=expList.strip())
 		html = HTML.format(**htmlVars)
 		return html
 
-	def sendEmail(self, verdict, recipients=('kasula.madhusudhan@amd.com',)):
-		emailMsg = email.mime.multipart.MIMEMultipart('alternative')
-		emailMsg['Subject'] = f'{self.title} - {("FAIL", "PASS")[verdict]}'
-		emailMsg['From'] = 'jenkins-compute@amd.com'
-		emailMsg['To'] = ', '.join(recipients)
-		emailMsg.attach(email.mime.text.MIMEText(self.toHtml(buttons=False), 'html'))
-		session = smtplib.SMTP('torsmtp10.amd.com')
-		session.send_message(emailMsg)
-		session.quit()
-		log('Email Sent')
-
-	def setPipelineDesc(self, pObj, **kwargs):
-		pObj.setDesc(self.toHtml(title=False, facts=False, buttons=False), **kwargs)
+	def pprint(self):
+		log('\n')
+		log(f': {self.title} :'.center(100, '-'))
+		# facts
+		for fact, value in self.facts.items():
+			log(f'{fact:>24} : {value}')
+		log(''.center(60, '-'))
+		# tables
+		for table in self.tables:
+			log(table.pprint())
+		# errors
+		for title, errors in self.errors.items():
+			for i, error in enumerate(errors):
+				log(f': {title} - Errors[{i+1}/{len(errors)}] :'.center(60, '-'))
+				cmd, ret, out = error
+				log(f'{cmd}\n{out}')
+		log(''.center(100, '-'))
 
 
 HTML = '''\
@@ -289,10 +194,8 @@ HTML = '''\
 <body style="font-family: sans-serif; margin: 20px;">
     <h1>{title}</h1>
 	{facts}
-	{buttons}
 	{tables}
 	{errors}
-	{exceptions}
 </body>
 </html>
 '''
@@ -312,33 +215,6 @@ FACTS_HTML = '''
 '''
 FACT_STYLE = 'font-weight: bold;'
 FACT_HTML = '<div style="{style}">{fact}</div><div>: {value}</div>\n'
-
-BUTTONS_STYLE = '''
-display: flex;
-gap: 10px;
-border: 1px solid #ccc;
-padding: 10px;
-border-radius: 5px;
-margin-bottom: 10px;
-'''
-BUTTONS_HTML = '''
-	<div style="{style}">
-		{buttonList}
-	</div>
-'''
-BUTTON_STYLE = '''
-padding: 10px 20px;
-font-size: 16px;
-text-align: center;
-text-decoration: none;
-display: inline-block;
-border: none;
-border-radius: 5px;
-cursor: pointer;
-background-color: #cccccc;
-color: #333;
-'''
-BUTTON_HTML = '<a style="{style}" href="{url}" target="_blank">{button}</a>\n'
 
 TABLE_STYLE = '''
 width: 100%;
