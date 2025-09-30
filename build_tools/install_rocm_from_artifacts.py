@@ -65,6 +65,11 @@ try:
     log("DynamoDB client initialized successfully")
 except Exception as e:
     log(f"DynamoDB not available: {e}")
+
+
+    # Print all environment variables
+    for key, value in os.environ.items():
+        print(f"{key} = {value}")
     dynamodb_client = None
     DYNAMODB_AVAILABLE = False
 
