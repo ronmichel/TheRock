@@ -15,6 +15,19 @@ logging.basicConfig(level=logging.INFO)
 # Env setup
 os.environ['HIP_PLATFORM'] = 'amd'
 
+# Update
+dep_update_cmd = [
+    "sudo",
+    "apt-get",
+    "update"
+]
+logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(dep_update_cmd)}")
+subprocess.run(
+    dep_update_cmd,
+    cwd=THEROCK_DIR,
+    check=True
+)
+
 # Dependencies setup (remove once Dockerfile is updated)
 dep_init_cmd = [
     "sudo",
