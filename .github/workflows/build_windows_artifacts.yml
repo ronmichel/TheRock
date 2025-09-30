@@ -32,7 +32,7 @@ permissions:
 jobs:
   build_windows_artifacts:
     name: Build Artifacts (xfail ${{ inputs.expect_failure }})
-    runs-on: azure-windows-scale-rocm
+    runs-on: windows-latest
     continue-on-error: ${{ inputs.expect_failure }}
     permissions:
       id-token: write
