@@ -49,6 +49,10 @@ s3_client = boto3.client(
     config=Config(max_pool_connections=100, signature_version=UNSIGNED),
 )
 
+def log(*args, **kwargs):
+    print(*args, **kwargs)
+    sys.stdout.flush()
+
 # Initialize DynamoDB client with error handling
 try:
     dynamodb_client = boto3.client(
@@ -65,11 +69,6 @@ except Exception as e:
     DYNAMODB_AVAILABLE = False
 
 dynamodb_table_name = "test-cachedata"
-
-
-def log(*args, **kwargs):
-    print(*args, **kwargs)
-    sys.stdout.flush()
 
 
 def _untar_files(output_dir, destination):
