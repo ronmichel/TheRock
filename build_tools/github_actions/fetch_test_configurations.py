@@ -129,6 +129,7 @@ test_matrix = {
         "timeout_minutes": 15,
         "test_script": f"pytest {_get_script_path('test_rocprofiler_sdk.py')} -vv -s --log-cli-level=info",
         "platform": ["linux"],
+        "total_shards": 1
     }
 }
 
