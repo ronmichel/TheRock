@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: true
     env:
-      BUILD_DIR: B:\build
+      BUILD_DIR: ${{ github.workspace }}\build
       CACHE_DIR: "${{github.workspace}}/.cache"
       CCACHE_DIR: "${{github.workspace}}/.cache/ccache"
       CCACHE_MAXSIZE: "4000M"
