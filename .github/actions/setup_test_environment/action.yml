@@ -60,6 +60,9 @@ runs:
         FETCH_ARTIFACT_ARGS: ${{ inputs.FETCH_ARTIFACT_ARGS }}
         GITHUB_TOKEN: ${{ github.token }}
         IS_PR_FROM_FORK: ${{ inputs.IS_PR_FROM_FORK }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_SECRET }}
+        AWS_DEFAULT_REGION: us-west-1
       run: |
         python ./build_tools/install_rocm_from_artifacts.py \
           --run-id=${ARTIFACT_RUN_ID} \
