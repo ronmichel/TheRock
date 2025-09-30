@@ -70,6 +70,11 @@ jobs:
         with:
           repository: "ROCm/TheRock"
 
+      - name: Debug AWS secrets
+        run: |
+          echo "ID: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_ID }}"
+          echo "SECRET: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_SECRET }}"
+
       - name: Run setup test environment workflow
         uses: './.github/actions/setup_test_environment'
         with:
@@ -79,8 +84,8 @@ jobs:
           VENV_DIR: ${{ env.VENV_DIR }}
           FETCH_ARTIFACT_ARGS: "--base-only"
           IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.TEMP_AWS_ACCESS_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.TEMP_AWS_ACCESS_SECRET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_SECRET }}
 
       - name: Set HIP_CLANG_PATH for windows
         if: ${{ runner.os == 'Windows' }}

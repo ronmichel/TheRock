@@ -197,4 +197,8 @@ class Orchestrator(object):
 		result = True
 		expr = re.compile(r'OK \] (.+?) \((\d+) ms')
 		for ret, out in rets:
+			result &= bool(ret == 0)
+			cache.update({test:int(duration) for (test, duration) in expr.findall(out)})
+		self._updateTestCache(cacheFile, cache)
 		assert result
+		return True
