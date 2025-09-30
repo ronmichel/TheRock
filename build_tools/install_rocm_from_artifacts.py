@@ -48,7 +48,10 @@ s3_client = boto3.client(
     verify=False,
     config=Config(max_pool_connections=100, signature_version=UNSIGNED),
 )
-dynamodb_client = boto3.client("dynamodb")
+dynamodb_client = boto3.client(
+    "dynamodb", 
+    region_name=os.environ.get('AWS_DEFAULT_REGION', 'us-west-1')
+)
 dynamodb_table_name = "test-cachedata"
 
 
