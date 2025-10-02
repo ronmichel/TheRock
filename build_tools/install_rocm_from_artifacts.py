@@ -58,10 +58,10 @@ def log(*args, **kwargs):
 # Initialize DynamoDB client with error handling
 try:
     dynamodb_client = boto3.client(
-        "dynamodb", region_name=os.environ.get("AWS_DEFAULT_REGION", "us-west-1")
+        "dynamodb", region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
     )
     # Test if we can actually use DynamoDB
-    dynamodb_client.describe_table(TableName="TestsCache")
+    dynamodb_client.describe_table(TableName="test-cachedata")
     DYNAMODB_AVAILABLE = True
     log("DynamoDB client initialized successfully")
 except Exception as e:
