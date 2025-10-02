@@ -62,6 +62,17 @@ jobs:
         id: configure
         run: python ./build_tools/github_actions/fetch_test_configurations.py
 
+  test_orchestrator:
+    name: 'Test Sanity Check'
+    needs: configure_test_matrix
+    uses: './.github/workflows/test_orchestrator.yml'
+    with:
+      artifact_run_id: ${{ inputs.artifact_run_id }}
+      amdgpu_families: ${{ inputs.amdgpu_families }}
+      test_runs_on: ${{ inputs.test_runs_on }}
+      platform: ${{ needs.configure_test_matrix.outputs.platform }}
+
+
   test_sanity_check:
     name: 'Test Sanity Check'
     needs: configure_test_matrix
