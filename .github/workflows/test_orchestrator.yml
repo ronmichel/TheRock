@@ -1,4 +1,4 @@
-name: TheRock Sanity Check
+name: Test Orchestrator for Sharded Tests
 
 on:
   workflow_dispatch:
@@ -29,11 +29,13 @@ on:
     branches:
       - ADHOCBUILD
 
+# See the details regarding permissions from the link:
+# https://github.com/aws-actions/configure-aws-credentials?tab=readme-ov-file#oidc
 permissions:
   contents: read
 
 jobs:
-  test_sanity_check:
+  test_orchestrator:
     name: "Sanity ROCM Test"
     runs-on: ${{ inputs.test_runs_on }}
     container:
@@ -44,16 +46,25 @@ jobs:
         --device /dev/dri
         --group-add 992
         --env-file /etc/podinfo/gha-gpu-isolation-settings
+        -v /runner/config:/home/awsconfig/
     defaults:
       run:
         shell: bash
     env:
+      AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
       VENV_DIR: ${{ github.workspace }}/.venv
       ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
       OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
       THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
 
     steps:
+      - name: Configure AWS Credentials for non-forked repos
+        if: ${{ always() && !github.event.pull_request.head.repo.fork }}
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::692859939525:role/therock-tests
+
       - name: "Fetch 'build_tools' from repository"
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -79,23 +90,3 @@ jobs:
           VENV_DIR: ${{ env.VENV_DIR }}
           FETCH_ARTIFACT_ARGS: "--base-only"
           IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.THEROCK_EXTERNAL_AWS_ACCESS_SECRET }}
-
-      - name: Set HIP_CLANG_PATH for windows
-        if: ${{ runner.os == 'Windows' }}
-        run: echo "HIP_CLANG_PATH=${OUTPUT_ARTIFACTS_DIR}\lib\llvm\bin" >> $GITHUB_ENV
-
-      - name: Run ROCm Sanity Tests
-        timeout-minutes: 5
-        env:
-          # Enable verbose logging, see
-          # https://rocm.docs.amd.com/projects/HIP/en/latest/how-to/debugging.html
-          AMD_LOG_LEVEL: 4
-        run: |
-          pytest tests/ --log-cli-level=info --timeout=60
-
-      - name: Post-job cleanup processes on Windows
-        if: ${{ always() && runner.os == 'Windows' }}
-        shell: powershell
-        run: . '${{ github.workspace }}\build_tools\github_actions\cleanup_processes.ps1'
