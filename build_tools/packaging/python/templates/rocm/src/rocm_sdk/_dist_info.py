@@ -199,8 +199,8 @@ LibraryEntry("hipsparse", "libraries", "libhipsparse.so.4", "hipsparse.dll")
 LibraryEntry("hipsolver", "libraries", "libhipsolver.so.1", "hipsolver.dll")
 LibraryEntry("rccl", "libraries", "librccl.so.1", "")
 LibraryEntry("miopen", "libraries", "libMIOpen.so.1", "MIOpen.dll")
-LibraryEntry("amd_smi", "core", "libamd_smi.so.26", "amd_smi.dll")
-#LibraryEntry("goamdsmi_shim64", "core", "libgoamdsmi_shim64.so.1", "goamdsmi_shim64.dll")
+LibraryEntry("goamdsmi_shim64", "core", "libgoamdsmi_shim64.so.1", "")
+LibraryEntry("amd_smi", "core", "libamd_smi.so.26", "")
 
 
 # Overall ROCM package version.
