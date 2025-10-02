@@ -18,6 +18,7 @@ on:
         default: "-DBUILD_TESTING=ON"
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:

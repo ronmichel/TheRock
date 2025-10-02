@@ -45,6 +45,7 @@ on:
       - synchronize
 
 permissions:
+  id-token: write
   contents: read
 
 concurrency:
