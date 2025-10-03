@@ -1,11 +1,8 @@
-name: Build Portable Linux Artifacts
+name: Test Artifacts
 
 on:
   workflow_dispatch:
     inputs:
-      package_version:
-        type: string
-        default: ADHOCBUILD
       artifact_run_id:
         type: string
         default: ""
@@ -13,17 +10,8 @@ on:
         type: string
       test_runs_on:
         type: string
-      expect_failure:
-        type: boolean
-        default: false
-      extra_cmake_options:
-        type: string
-
   workflow_call:
     inputs:
-      package_version:
-        type: string
-        default: ADHOCBUILD
       artifact_run_id:
         type: string
         default: ""
@@ -31,45 +19,26 @@ on:
         type: string
       test_runs_on:
         type: string
-      expect_failure:
-        type: boolean
-      extra_cmake_options:
-        type: string
+  push:
+    branches:
+      - ADHOCBUILD
 
-# See the details regarding permissions from the link:
-# https://github.com/aws-actions/configure-aws-credentials?tab=readme-ov-file#oidc
 permissions:
+  id-token: write
   contents: read
 
-jobs:
-  test_orchestrator:
-    name: Test Orchestrator (xfail ${{ inputs.expect_failure }})
-    runs-on: ${{ inputs.test_runs_on }}
-    continue-on-error: ${{ inputs.expect_failure }}
-    permissions:
-      id-token: write
-    container:
-      image: ghcr.io/rocm/therock_build_manylinux_x86_64@sha256:3ac188c17f88f08ce522297b616d8308361b8e9a9b31bcc3c3bbb9429b1efa6c
-      # options: -v /runner/config:/home/awsconfig/
-    env:
-      # AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
-      CACHE_DIR: ${{ github.workspace }}/.container-cache
-      # The ccache.conf will be written by setup_ccache.py before this gets used.
-      CCACHE_CONFIGPATH: ${{ github.workspace }}/.ccache/ccache.conf
-      AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
-      TEATIME_FORCE_INTERACTIVE: 0
-      IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
-      VENV_DIR: ${{ github.workspace }}/.venv
-      ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
-      OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
-      THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
-    steps:
-      - name: Configure AWS Credentials - Tests Demo
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          aws-region: us-east-2
-          role-to-assume: arn:aws:iam::692859939525:role/therock-tests
 
+jobs:
+  configure_test_matrix:
+    name: "Configure test matrix"
+    # if there is a test machine available
+    if: ${{ inputs.test_runs_on != '' }}
+    runs-on: ${{ inputs.test_runs_on }}
+    outputs:
+      components: ${{ steps.configure.outputs.components }}
+      platform: ${{ steps.configure.outputs.platform }}
+      shard_arr: ${{ steps.configure.outputs.shard_arr }}
+    steps:
       - name: "Fetch 'build_tools' from repository"
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -83,94 +52,190 @@ jobs:
         shell: powershell
         run: . '${{ github.workspace }}\prejob\build_tools\github_actions\cleanup_processes.ps1'
 
-      - name: Checkout Repository
+      - name: "Checking out repository"
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      # safe.directory must be set before Runner Health Status
-      - name: Adjust git config
-        run: |
-          git config --global --add safe.directory $PWD
-          git config fetch.parallel 10
+      - name: Setting up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: 3.12
 
-      # TODO: We shouldn't be using a cache on actual release branches, but it
-      # really helps for iteration time.
-      - name: Setup ccache
-        run: |
-          ./build_tools/setup_ccache.py \
-            --config-preset "github-oss-presubmit" \
-            --dir "$(dirname $CCACHE_CONFIGPATH)" \
-            --local-path "$CACHE_DIR/ccache"
+      - name: "Configuring CI options"
+        id: configure
+        env:
+          AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
+        run: python ./build_tools/github_actions/fetch_test_configurations.py
 
-      - name: Runner health status
-        run: |
-          ./build_tools/health_status.py
+  test_sanity_check:
+    name: 'Test Sanity Check'
+    needs: configure_test_matrix
+    uses: './.github/workflows/test_sanity_check.yml'
+    with:
+      artifact_run_id: ${{ inputs.artifact_run_id }}
+      amdgpu_families: ${{ inputs.amdgpu_families }}
+      test_runs_on: ${{ inputs.test_runs_on }}
+      platform: ${{ needs.configure_test_matrix.outputs.platform }}
 
-      - name: Configure AWS Credentials - Tests
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+  # First job: Get AWS credentials at host level
+  setup_credentials:
+    name: Setup AWS Credentials
+    runs-on: ${{ inputs.test_runs_on }}
+    permissions:
+      id-token: write
+    outputs:
+      aws_access_key_id: ${{ steps.aws_creds.outputs.aws-access-key-id }}
+      aws_secret_access_key: ${{ steps.aws_creds.outputs.aws-secret-access-key }}
+      aws_session_token: ${{ steps.aws_creds.outputs.aws-session-token }}
+    steps:
+      - name: Configure AWS Credentials
+        id: aws_creds
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-tests
+          output-credentials: true
 
-      # - name: Run setup test environment workflow
-      #   uses: './.github/actions/setup_test_environment'
-      #   with:
-      #     ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
-      #     AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
-      #     OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
-      #     VENV_DIR: ${{ env.VENV_DIR }}
-      #     FETCH_ARTIFACT_ARGS: "--base-only"
-      #     IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
+  # Second job: Run tests in a container
+  test_orchestrator:
+    name: 'Test Orchestrator'
+    needs: setup_credentials
+    uses: './.github/workflows/test_components_sharded.yml'
+    with:
+      artifact_run_id: ${{ inputs.artifact_run_id }}
+      amdgpu_families: ${{ inputs.amdgpu_families }}
+      test_runs_on: ${{ inputs.test_runs_on }}
+      platform: ${{ needs.configure_test_matrix.outputs.platform }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ needs.setup_credentials.outputs.aws_access_key_id }}
+      AWS_SECRET_ACCESS_KEY: ${{ needs.setup_credentials.outputs.aws_secret_access_key }}
+      AWS_SESSION_TOKEN: ${{ needs.setup_credentials.outputs.aws_session_token }}
+      AWS_DEFAULT_REGION: us-east-2
+      # Pass AWS credentials from setup job
 
-      - name: Create Python venv
-        shell: bash
-        env:
-          VENV_DIR: ${{ env.VENV_DIR }}
-        run: |
-          python build_tools/setup_venv.py ${VENV_DIR} \
-            --activate-in-future-github-actions-steps
 
-      - name: Install test requirements
-        shell: bash
-        run: |
-          pip install -r requirements-test.txt
-          pip freeze
+  # test_orchestrator:
+  #   name: Test Orchestrator (xfail ${{ inputs.expect_failure }})
+  #   runs-on: ${{ inputs.test_runs_on }}
+  #   continue-on-error: ${{ inputs.expect_failure }}
+  #   permissions:
+  #     id-token: write
+  #   container:
+  #     image: ${{ inputs.platform == 'linux' && 'ghcr.io/rocm/no_rocm_image_ubuntu24_04@sha256:405945a40deaff9db90b9839c0f41d4cba4a383c1a7459b28627047bf6302a26' || null }}
+  #     options: --ipc host
+  #       --group-add video
+  #       --device /dev/kfd
+  #       --device /dev/dri
+  #       --group-add 992
+  #       --env-file /etc/podinfo/gha-gpu-isolation-settings
+  #   env:
+  #     VENV_DIR: ${{ github.workspace }}/.venv
+  #     ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
+  #     OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
+  #     THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
 
-      - name: Install the AWS tool
-        if: ${{ runner.os == 'Linux' }}
-        shell: bash
-        run: ./dockerfiles/install_awscli.sh
+  #   steps:
 
-      - name: Install the AWS tool
-        if: ${{ runner.os == 'Windows' }}
-        shell: bash
-        run: |
-          choco install --no-progress -y awscli
-          echo "$PATH;C:\Program Files\Amazon\AWSCLIV2" >> $GITHUB_PATH
+  #     - name: "Fetch 'build_tools' from repository"
+  #       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+  #       with:
+  #         sparse-checkout: build_tools
+  #         path: "prejob"
 
-      - name: Download and Unpack Artifacts
-        shell: bash
-        env:
-          OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
-          ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
-          AMDGPU_FAMILIES: ${{ env.AMDGPU_FAMILIES }}
-          FETCH_ARTIFACT_ARGS: ${{ env.FETCH_ARTIFACT_ARGS }}
-          GITHUB_TOKEN: ${{ github.token }}
-          IS_PR_FROM_FORK: ${{ env.IS_PR_FROM_FORK }}
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-2
-        run: |
-          python ./build_tools/install_rocm_from_artifacts.py \
-            --run-id=${ARTIFACT_RUN_ID} \
-            --amdgpu-family=${AMDGPU_FAMILIES} \
-            --output-dir=${OUTPUT_ARTIFACTS_DIR} \
-            ${FETCH_ARTIFACT_ARGS}
+  #     # Checkout failure is possible on Windows, as it's the first job on a GPU test runner.
+  #     # Post-job cleanup isn't necessary since no executables are launched in this job.
+  #     - name: Pre-job cleanup processes on Windows
+  #       if: ${{ runner.os == 'Windows' }}
+  #       shell: powershell
+  #       run: . '${{ github.workspace }}\prejob\build_tools\github_actions\cleanup_processes.ps1'
 
-      - name: Sharded Tests
-        env:
-          OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
-        run: |
-          cd tests/sharding && \
-          python3 -m venv .venv && source .venv/bin/activate
-          pip install -r requirements.txt
-          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} -k rocminfo;
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+  #     # safe.directory must be set before Runner Health Status
+  #     - name: Adjust git config
+  #       run: |
+  #         git config --global --add safe.directory $PWD
+  #         git config fetch.parallel 10
+
+  #     # TODO: We shouldn't be using a cache on actual release branches, but it
+  #     # really helps for iteration time.
+  #     - name: Setup ccache
+  #       run: |
+  #         ./build_tools/setup_ccache.py \
+  #           --config-preset "github-oss-presubmit" \
+  #           --dir "$(dirname $CCACHE_CONFIGPATH)" \
+  #           --local-path "$CACHE_DIR/ccache"
+
+  #     - name: Runner health status
+  #       run: |
+  #         ./build_tools/health_status.py
+
+  #     - name: Configure AWS Credentials - Tests
+  #       uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+  #       with:
+  #         aws-region: us-east-2
+  #         role-to-assume: arn:aws:iam::692859939525:role/therock-tests
+
+  #     # - name: Run setup test environment workflow
+  #     #   uses: './.github/actions/setup_test_environment'
+  #     #   with:
+  #     #     ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
+  #     #     AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
+  #     #     OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
+  #     #     VENV_DIR: ${{ env.VENV_DIR }}
+  #     #     FETCH_ARTIFACT_ARGS: "--base-only"
+  #     #     IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
+
+  #     - name: Create Python venv
+  #       shell: bash
+  #       env:
+  #         VENV_DIR: ${{ env.VENV_DIR }}
+  #       run: |
+  #         python build_tools/setup_venv.py ${VENV_DIR} \
+  #           --activate-in-future-github-actions-steps
+
+  #     - name: Install test requirements
+  #       shell: bash
+  #       run: |
+  #         pip install -r requirements-test.txt
+  #         pip freeze
+
+  #     - name: Install the AWS tool
+  #       if: ${{ runner.os == 'Linux' }}
+  #       shell: bash
+  #       run: ./dockerfiles/install_awscli.sh
+
+  #     - name: Install the AWS tool
+  #       if: ${{ runner.os == 'Windows' }}
+  #       shell: bash
+  #       run: |
+  #         choco install --no-progress -y awscli
+  #         echo "$PATH;C:\Program Files\Amazon\AWSCLIV2" >> $GITHUB_PATH
+
+  #     - name: Download and Unpack Artifacts
+  #       shell: bash
+  #       env:
+  #         OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
+  #         ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
+  #         AMDGPU_FAMILIES: ${{ env.AMDGPU_FAMILIES }}
+  #         FETCH_ARTIFACT_ARGS: ${{ env.FETCH_ARTIFACT_ARGS }}
+  #         GITHUB_TOKEN: ${{ github.token }}
+  #         IS_PR_FROM_FORK: ${{ env.IS_PR_FROM_FORK }}
+  #         AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+  #         AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+  #         AWS_DEFAULT_REGION: us-east-2
+  #       run: |
+  #         python ./build_tools/install_rocm_from_artifacts.py \
+  #           --run-id=${ARTIFACT_RUN_ID} \
+  #           --amdgpu-family=${AMDGPU_FAMILIES} \
+  #           --output-dir=${OUTPUT_ARTIFACTS_DIR} \
+  #           ${FETCH_ARTIFACT_ARGS}
+
+  #     - name: Sharded Tests
+  #       env:
+  #         OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
+  #       run: |
+  #         cd tests/sharding && \
+  #         python3 -m venv .venv && source .venv/bin/activate
+  #         pip install -r requirements.txt
+  #         pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} -k rocminfo;
