@@ -38,6 +38,7 @@ on:
         type: string
         description: "If provided, the tests will run on this artifact ID"
         default: ""
+      enable_build_jobs
   pull_request:
     types:
       - labeled
@@ -65,8 +66,7 @@ jobs:
     needs: setup
     if: >-
       ${{
-        needs.setup.outputs.linux_amdgpu_families != '[]' &&
-        needs.setup.outputs.enable_build_jobs == 'true'
+        needs.setup.outputs.linux_amdgpu_families != '[]'
       }}
     strategy:
       fail-fast: false
