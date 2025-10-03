@@ -109,20 +109,22 @@ jobs:
 
           PY_VER="${{ inputs.python_versions }}"
           CP="${PY_VER//./}"
-          BASE="s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}"
+          BASE="s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/"
 
           echo "Copying wheels from ${BASE} -> ${WHEELHOUSE_DIR}"
           echo "Using Python ${PY_VER}, CP=${CP}"
 
-          # Plugin wheel (cp ABI)
-          aws s3 cp \
-            "${BASE}/jax_rocm7_plugin-0.6.0-cp${CP}-cp${CP}-manylinux_2_28_x86_64.whl" \
-            "${WHEELHOUSE_DIR}/"
+          # Plugin wheel
+          aws s3 cp "${BASE}" "${WHEELHOUSE_DIR}/" \
+            --recursive \
+            --exclude "*" \
+            --include "jax_rocm7_plugin-*-cp${CP}-cp${CP}-manylinux_*_x86_64.whl"
 
-          # PJRT wheel (py3 ABI)
-          aws s3 cp \
-            "${BASE}/jax_rocm7_pjrt-0.6.0-py3-none-manylinux_2_28_x86_64.whl" \
-            "${WHEELHOUSE_DIR}/"
+          # PJRT wheel
+          aws s3 cp "${BASE}" "${WHEELHOUSE_DIR}/" \
+            --recursive \
+            --exclude "*" \
+            --include "jax_rocm7_pjrt-*-py3-none-manylinux_*_x86_64.whl"
 
           ls -lah "${WHEELHOUSE_DIR}"
 
