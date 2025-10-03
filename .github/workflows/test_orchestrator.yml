@@ -56,7 +56,7 @@ jobs:
         --device /dev/kfd
         --device /dev/dri
         --group-add 992
-        --env-file /etc/podinfo/gha-gpu-isolation-settings
+        # --env-file /etc/podinfo/gha-gpu-isolation-settings
     env:
       AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
       CACHE_DIR: ${{ github.workspace }}/.container-cache
