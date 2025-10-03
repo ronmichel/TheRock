@@ -52,7 +52,7 @@ jobs:
       image: ghcr.io/rocm/therock_build_manylinux_x86_64@sha256:3ac188c17f88f08ce522297b616d8308361b8e9a9b31bcc3c3bbb9429b1efa6c
       # options: -v /runner/config:/home/awsconfig/
     env:
-      AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
+      # AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
       CACHE_DIR: ${{ github.workspace }}/.container-cache
       # The ccache.conf will be written by setup_ccache.py before this gets used.
       CCACHE_CONFIGPATH: ${{ github.workspace }}/.ccache/ccache.conf
