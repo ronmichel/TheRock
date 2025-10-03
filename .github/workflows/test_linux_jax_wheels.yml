@@ -32,6 +32,16 @@ on:
         required: false
         type: string
         default: master
+      jax_test_branch:
+        description: JAX test repo branch to get unit tests from
+        required: false
+        type: string
+        default: "rocm-jaxlib-v0.7.1"
+      test_runs_on:
+        description: Runner label to use for testing (GPU-capable recommended)
+        required: false
+        type: string
+
   workflow_dispatch:
     inputs:
       amdgpu_family:
@@ -63,6 +73,14 @@ on:
       jax_ref:
         type: string
         default: master
+      jax_test_branch:
+        type: string
+        description: JAX test repo branch to get unit tests from
+        default: "rocm-jaxlib-v0.7.1"
+      test_runs_on:
+        type: string
+        description: Runner label to use for testing (GPU-capable recommended)
+        default: "linux-mi325-1gpu-ossci-rocm"
 
 permissions:
   id-token: write
@@ -80,7 +98,7 @@ jobs:
       - name: Checkout TheRock
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-      - name: Checkout rocm-jax
+      - name: Checkout rocm-jax (plugin + build scripts)
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           path: jax
@@ -125,7 +143,8 @@ jobs:
             --recursive \
             --exclude "*" \
             --include "jax_rocm7_pjrt-*-py3-none-manylinux_*_x86_64.whl"
-
+          echo "Contents of wheelhouse:"
+          pwd
           ls -lah "${WHEELHOUSE_DIR}"
 
       - name: Build JAX Docker image (ubu24)
@@ -151,6 +170,13 @@ jobs:
           echo "Local images after build:"
           docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | sort
 
+      - name: Checkout JAX tests repo (for extended tests)
+        uses: actions/checkout@v4
+        with:
+          repository: rocm/jax
+          ref: ${{ inputs.jax_test_branch }}
+          path: jax_tests
+
       - name: Run unit tests (on local image)
         working-directory: jax
         env:
@@ -162,7 +188,7 @@ jobs:
           IMAGE_NAME="jax-ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
           echo "Running tests in image: ${IMAGE_NAME}"
           python3 build/ci_build test "${IMAGE_NAME}" \
-            --test-cmd "pytest jax/tests/core_test.py"
+            --test-cmd "pytest jax_tests/tests/core_test.py"
 
             # TODO will enable another test after basic sanity running on GPU nodes
             # --test-cmd "pytest jax/tests/linalg_test.py"
