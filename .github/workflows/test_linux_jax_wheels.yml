@@ -1,4 +1,4 @@
-name: Build Portable Linux JAX Docker, Test, and Push
+name: Test JAX Wheels
 
 on:
   workflow_call:
