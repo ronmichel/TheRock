@@ -54,6 +54,9 @@ jobs:
         shell: bash
     env:
       AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
+      CACHE_DIR: ${{ github.workspace }}/.container-cache
+      # The ccache.conf will be written by setup_ccache.py before this gets used.
+      CCACHE_CONFIGPATH: ${{ github.workspace }}/.ccache/ccache.conf
       VENV_DIR: ${{ github.workspace }}/.venv
       ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
       OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
@@ -81,6 +84,13 @@ jobs:
 
       - name: Install the AWS tool
         run: ./dockerfiles/install_awscli.sh
+
+      - name: Configure AWS Credentials for non-forked repos
+        if: ${{ always() && !github.event.pull_request.head.repo.fork }}
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::692859939525:role/therock-artifacts
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
