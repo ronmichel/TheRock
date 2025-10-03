@@ -1,4 +1,4 @@
-name: Test JAX Wheels
+name: Test JAX  Wheels and Build Docker
 
 on:
   workflow_call:
