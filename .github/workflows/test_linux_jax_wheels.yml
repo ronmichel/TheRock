@@ -134,8 +134,16 @@ jobs:
           ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
           set -euo pipefail
+
+          # Extract major.minor.patch from ROCM_VERSION
+          # e.g., "7.9.0.dev0+abcdef" -> "7.9.0"
+          # Replacement: \1.\2.\3 reconstructs the version as "major.minor.patch" using the three captured groups.
+          ROCM_SEMVER="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
+          echo "Full ROCm version: ${ROCM_VERSION}"
+          echo "Using semantic ROCm version: ${ROCM_SEMVER}"
+
           python3 build/ci_build \
-            --rocm-version="${ROCM_VERSION}" \
+            --rocm-version="${ROCM_SEMVER}" \
             --therock-path="${{ inputs.tar_url }}" \
             build_dockers \
             -f ubu24
@@ -150,14 +158,16 @@ jobs:
         run: |
           set -euo pipefail
           # Local image name expected from build: jax-ubu24.rocm${ROCM_VERSION//.}
-          IMAGE_NAME="jax-ubu24.rocm${ROCM_VERSION//.}"
+          ROCM_SEMVER="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
+          IMAGE_NAME="jax-ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
           echo "Running tests in image: ${IMAGE_NAME}"
           python3 build/ci_build test "${IMAGE_NAME}" \
             --test-cmd "pytest jax/tests/core_test.py"
+
             # TODO will enable another test after basic sanity running on GPU nodes
             # --test-cmd "pytest jax/tests/linalg_test.py"
             # TODO will enable another test after basic sanity tests
-            #--test-cmd "python jax_rocm_plugin/build/rocm/run_single_gpu.py -c"
+            # --test-cmd "python jax_rocm_plugin/build/rocm/run_single_gpu.py -c"
 
       - name: Log in to GHCR
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
@@ -171,8 +181,12 @@ jobs:
           ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
           set -euo pipefail
-          ubu24_img="ghcr.io/rocm/jax-ubu24.therock.${ROCM_VERSION//.}:${GITHUB_SHA}"
+          # Compute semantic version and matching local image name
+          ROCM_SEMVER="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
+          LOCAL_IMAGE="jax-ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
+          ubu24_img="ghcr.io/rocm/jax-ubu24.therock.$(echo "${ROCM_SEMVER}" | tr -d '.'):${GITHUB_SHA}"
+
           echo "Ubuntu 24 image name: ${ubu24_img}"
           docker images
-          docker tag "jax-ubu24.rocm${ROCM_VERSION//.}" "${ubu24_img}"
+          docker tag "${LOCAL_IMAGE}" "${ubu24_img}"
           docker push "${ubu24_img}"
