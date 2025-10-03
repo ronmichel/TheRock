@@ -139,4 +139,4 @@ jobs:
       rocm_version: ${{ inputs.rocm_version }}
       tar_url: ${{ inputs.tar_url }}
       python_versions: ${{ inputs.python_versions }}
-      jax_ref: maste
+      jax_ref: master
