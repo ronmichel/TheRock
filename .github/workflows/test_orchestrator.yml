@@ -53,8 +53,8 @@ jobs:
       options: -v /runner/config:/home/awsconfig/
         --ipc host
         --group-add video
-        --device /dev/kfd
-        --device /dev/dri
+        # --device /dev/kfd
+        # --device /dev/dri
         --group-add 992
         # --env-file /etc/podinfo/gha-gpu-isolation-settings
     env:
