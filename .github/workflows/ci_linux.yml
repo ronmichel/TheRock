@@ -19,6 +19,19 @@ permissions:
   contents: read
 
 jobs:
+  
+  test_orchestrator:
+    name: 'Test ORchestrator'
+    uses: './.github/workflows/test_orchestrator.yml'
+    secrets: inherit
+    with:
+      artifact_run_id: ${{ inputs.artifact_run_id }}
+      amdgpu_families: ${{ inputs.amdgpu_families }}
+      test_runs_on: ${{ inputs.test_runs_on }}
+    permissions:
+      contents: read
+      id-token: write
+
   build_portable_linux_artifacts:
     name: Build Artifacts
     if: ${{ inputs.use_prebuilt_artifacts == 'false' }}
