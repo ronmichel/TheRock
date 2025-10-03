@@ -64,11 +64,6 @@ jobs:
       OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
       THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
     steps:
-      - name: Test OIDC endpoint connectivity
-        run: |
-          curl -v https://token.actions.githubusercontent.com/.well-known/openid-configuration
-          curl -v https://sts.amazonaws.com
-
       - name: Configure AWS Credentials - Tests Demo
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
