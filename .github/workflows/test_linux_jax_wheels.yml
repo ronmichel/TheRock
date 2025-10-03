@@ -153,7 +153,9 @@ jobs:
           IMAGE_NAME="jax-ubu24.rocm${ROCM_VERSION//.}"
           echo "Running tests in image: ${IMAGE_NAME}"
           python3 build/ci_build test "${IMAGE_NAME}" \
-            --test-cmd "pytest jax/tests/linalg_test.py"
+            --test-cmd "pytest jax/tests/core_test.py"
+            # TODO will enable another test after basic sanity running on GPU nodes
+            # --test-cmd "pytest jax/tests/linalg_test.py"
             # TODO will enable another test after basic sanity tests
             #--test-cmd "python jax_rocm_plugin/build/rocm/run_single_gpu.py -c"
 
