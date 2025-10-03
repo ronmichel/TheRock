@@ -86,23 +86,23 @@ jobs:
       contents: read
       id-token: write
 
-  build_portable_linux_python_packages:
-    needs: [build_portable_linux_artifacts]
-    name: Build Python
-    # If the dependent job failed/cancelled, this job will not be run
-    # The use_prebuilt_artifacts "or" statement ensures that tests will run if
-    # previous build step is run or skipped.concurrency.
-    if: >-
-      ${{
-        !failure() &&
-        !cancelled() &&
-        (
-          inputs.use_prebuilt_artifacts == 'false' ||
-          inputs.use_prebuilt_artifacts == 'true'
-        )
-      }}
-    uses: ./.github/workflows/build_portable_linux_python_packages.yml
-    with:
-      artifact_run_id: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
-      amdgpu_family: ${{ inputs.amdgpu_families }}
-      package_version: "7.0.0.dev0"  # TODO: setup version with a script/workflow
+  # build_portable_linux_python_packages:
+  #   needs: [build_portable_linux_artifacts]
+  #   name: Build Python
+  #   # If the dependent job failed/cancelled, this job will not be run
+  #   # The use_prebuilt_artifacts "or" statement ensures that tests will run if
+  #   # previous build step is run or skipped.concurrency.
+  #   if: >-
+  #     ${{
+  #       !failure() &&
+  #       !cancelled() &&
+  #       (
+  #         inputs.use_prebuilt_artifacts == 'false' ||
+  #         inputs.use_prebuilt_artifacts == 'true'
+  #       )
+  #     }}
+  #   uses: ./.github/workflows/build_portable_linux_python_packages.yml
+  #   with:
+  #     artifact_run_id: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
+  #     amdgpu_family: ${{ inputs.amdgpu_families }}
+  #     package_version: "7.0.0.dev0"  # TODO: setup version with a script/workflow
