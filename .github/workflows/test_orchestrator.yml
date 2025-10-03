@@ -115,6 +115,51 @@ jobs:
       #     FETCH_ARTIFACT_ARGS: "--base-only"
       #     IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
 
+      - name: Create Python venv
+        shell: bash
+        env:
+          VENV_DIR: ${{ env.VENV_DIR }}
+        run: |
+          python build_tools/setup_venv.py ${VENV_DIR} \
+            --activate-in-future-github-actions-steps
+
+      - name: Install test requirements
+        shell: bash
+        run: |
+          pip install -r requirements-test.txt
+          pip freeze
+
+      - name: Install the AWS tool
+        if: ${{ runner.os == 'Linux' }}
+        shell: bash
+        run: ./dockerfiles/install_awscli.sh
+
+      - name: Install the AWS tool
+        if: ${{ runner.os == 'Windows' }}
+        shell: bash
+        run: |
+          choco install --no-progress -y awscli
+          echo "$PATH;C:\Program Files\Amazon\AWSCLIV2" >> $GITHUB_PATH
+
+      - name: Download and Unpack Artifacts
+        shell: bash
+        env:
+          OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
+          ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
+          AMDGPU_FAMILIES: ${{ env.AMDGPU_FAMILIES }}
+          FETCH_ARTIFACT_ARGS: ${{ env.FETCH_ARTIFACT_ARGS }}
+          GITHUB_TOKEN: ${{ github.token }}
+          IS_PR_FROM_FORK: ${{ env.IS_PR_FROM_FORK }}
+          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-2
+        run: |
+          python ./build_tools/install_rocm_from_artifacts.py \
+            --run-id=${ARTIFACT_RUN_ID} \
+            --amdgpu-family=${AMDGPU_FAMILIES} \
+            --output-dir=${OUTPUT_ARTIFACTS_DIR} \
+            ${FETCH_ARTIFACT_ARGS}
+
       - name: Sharded Tests
         env:
           OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
