@@ -33,8 +33,8 @@ permissions:
   contents: read
 
 jobs:
-  build_portable_linux_artifacts:
-    name: Build Artifacts (xfail ${{ inputs.expect_failure }})
+  test_orchestrator:
+    name: Test Orchestrator (xfail ${{ inputs.expect_failure }})
     runs-on: azure-linux-scale-rocm
     continue-on-error: ${{ inputs.expect_failure }}
     permissions:
@@ -100,6 +100,13 @@ jobs:
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-tests
+
+      - name: Post Build Upload
+        if: always()
+        run: |
+          cd tests/sharding && \
+          pytest -v -s --tb=short tests.py -k rocminfo;
+
 
       # - name: Run setup test environment workflow
       #   uses: './.github/actions/setup_test_environment'

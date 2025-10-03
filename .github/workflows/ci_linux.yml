@@ -21,7 +21,7 @@ permissions:
 jobs:
   
   test_orchestrator:
-    name: 'Test ORchestrator'
+    name: 'Test Orchestrator'
     uses: './.github/workflows/test_orchestrator.yml'
     secrets: inherit
     with:
