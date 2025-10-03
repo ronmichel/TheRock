@@ -131,7 +131,11 @@ jobs:
     name: Build, Test, and Push JAX Docker | ${{ inputs.amdgpu_family }}
     needs: [build_jax_wheels]
     if: ${{ github.repository_owner == 'ROCm' }}
-    uses: ./.github/workflows/test_linux_jax_wheels.yml
+    permissions:
+      id-token: write
+      contents: read
+      packages: write
+    uses: ROCm/TheRock/.github/workflows/test_linux_jax_wheels.yml@1635e1d4d8d97398f9bacd2dee12dce8b82bb70c
     with:
       amdgpu_family: ${{ inputs.amdgpu_family }}
       release_type: ${{ inputs.release_type }}
