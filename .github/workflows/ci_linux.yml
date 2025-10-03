@@ -19,16 +19,6 @@ permissions:
   contents: read
 
 jobs:
-  
-  test_orchestrator:
-    name: 'Test Orchestrator'
-    uses: './.github/workflows/test_orchestrator.yml'
-    secrets: inherit
-    with:
-      amdgpu_families: ${{ inputs.amdgpu_families }}
-    permissions:
-      contents: read
-      id-token: write
 
   build_portable_linux_artifacts:
     name: Build Artifacts
@@ -49,9 +39,31 @@ jobs:
   #   (implicit) run id, or it could be an explicit run id.
   #   How about having the "build artifacts" job run as a passthrough?
 
-  test_linux_artifacts:
+  # test_linux_artifacts:
+  #   needs: [build_portable_linux_artifacts]
+  #   name: Test Artifacts
+  #   # If the dependent job failed/cancelled, this job will not be run
+  #   # The use_prebuilt_artifacts "or" statement ensures that tests will run if
+  #   # previous build step is run or skipped.concurrency.
+  #   if: >-
+  #     ${{
+  #       !failure() &&
+  #       !cancelled() &&
+  #       (
+  #         inputs.use_prebuilt_artifacts == 'false' ||
+  #         inputs.use_prebuilt_artifacts == 'true'
+  #       )
+  #     }}
+  #   uses: ./.github/workflows/test_artifacts.yml
+  #   with:
+  #     amdgpu_families: ${{ inputs.amdgpu_families }}
+  #     test_runs_on: ${{ inputs.test_runs_on }}
+  #     artifact_run_id: ${{ inputs.artifact_run_id }}
+  
+  test_orchestrator:
     needs: [build_portable_linux_artifacts]
-    name: Test Artifacts
+    name: 'Test Orchestrator'
+
     # If the dependent job failed/cancelled, this job will not be run
     # The use_prebuilt_artifacts "or" statement ensures that tests will run if
     # previous build step is run or skipped.concurrency.
@@ -64,11 +76,15 @@ jobs:
           inputs.use_prebuilt_artifacts == 'true'
         )
       }}
-    uses: ./.github/workflows/test_artifacts.yml
+    uses: './.github/workflows/test_orchestrator.yml'
+    secrets: inherit
     with:
       amdgpu_families: ${{ inputs.amdgpu_families }}
       test_runs_on: ${{ inputs.test_runs_on }}
       artifact_run_id: ${{ inputs.artifact_run_id }}
+    permissions:
+      contents: read
+      id-token: write
 
   build_portable_linux_python_packages:
     needs: [build_portable_linux_artifacts]
