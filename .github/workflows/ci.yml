@@ -38,7 +38,6 @@ on:
         type: string
         description: "If provided, the tests will run on this artifact ID"
         default: ""
-      enable_build_jobs
   pull_request:
     types:
       - labeled
