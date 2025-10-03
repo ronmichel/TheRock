@@ -44,7 +44,7 @@ permissions:
 jobs:
   test_orchestrator:
     name: Test Orchestrator (xfail ${{ inputs.expect_failure }})
-    runs-on: azure-linux-scale-rocm
+    runs-on: ${{ inputs.test_runs_on }}
     continue-on-error: ${{ inputs.expect_failure }}
     permissions:
       id-token: write
