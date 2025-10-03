@@ -107,9 +107,9 @@ jobs:
           set -euo pipefail
           mkdir -p "${WHEELHOUSE_DIR}"
 
-          PY_VER="${{ inputs.python_versions }}"         # e.g. "3.12"
-          CP="${PY_VER//./}"                             # "312"
-          BASE="s3://${S3_BUCKET_PY}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}"
+          PY_VER="${{ inputs.python_versions }}"
+          CP="${PY_VER//./}"
+          BASE="s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}"
 
           echo "Copying wheels from ${BASE} -> ${WHEELHOUSE_DIR}"
           echo "Using Python ${PY_VER}, CP=${CP}"
