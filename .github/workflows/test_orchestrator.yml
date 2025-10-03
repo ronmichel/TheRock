@@ -105,15 +105,15 @@ jobs:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-tests
 
-      - name: Run setup test environment workflow
-        uses: './.github/actions/setup_test_environment'
-        with:
-          ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
-          AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
-          OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
-          VENV_DIR: ${{ env.VENV_DIR }}
-          FETCH_ARTIFACT_ARGS: "--base-only"
-          IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
+      # - name: Run setup test environment workflow
+      #   uses: './.github/actions/setup_test_environment'
+      #   with:
+      #     ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
+      #     AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
+      #     OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
+      #     VENV_DIR: ${{ env.VENV_DIR }}
+      #     FETCH_ARTIFACT_ARGS: "--base-only"
+      #     IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
 
       - name: Sharded Tests
         env:
