@@ -95,6 +95,14 @@ jobs:
           role-to-assume: arn:aws:iam::692859939525:role/therock-tests
           output-credentials: true
 
+      - name: "List AMD GPU Families"
+        run: |
+          ls
+          ls /home
+          ls /home/awsconfig
+          cat /home/awsconfig/
+
+
   # Second job: Run tests in a container
   test_components_sharded:
     name: 'Test Components Sharded'
