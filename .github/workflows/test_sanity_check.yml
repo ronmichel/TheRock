@@ -35,7 +35,9 @@ permissions:
 jobs:
   test_sanity_check:
     name: "Sanity ROCM Test"
-    runs-on: ${{ inputs.test_runs_on }}
+    #runs-on: ${{ inputs.test_runs_on }}
+    runs-on: azure-linux-scale-rocm
+
     permissions:
       id-token: write    
     container:
@@ -57,7 +59,7 @@ jobs:
       ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
       OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
       THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
-
+      # Pass AWS credentials to the container
     steps:
       - name: Configure AWS Credentials - Tests
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
