@@ -96,8 +96,8 @@ jobs:
           output-credentials: true
 
   # Second job: Run tests in a container
-  test_orchestrator:
-    name: 'Test Orchestrator'
+  test_components_sharded:
+    name: 'Test Components Sharded'
     needs: setup_credentials
     uses: './.github/workflows/test_components_sharded.yml'
     with:

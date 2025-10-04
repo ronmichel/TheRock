@@ -1,4 +1,4 @@
-name: Test component
+name: Test component sharded
 
 on:
   workflow_call:

@@ -94,6 +94,11 @@ jobs:
           pip install -r tests/sharding/requirements.txt
           pytest tests/ --log-cli-level=info --timeout=60
 
+      - name: Sharded Tests
+        run: |
+          cd tests/sharding && \
+          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} -k rocminfo;
+
       - name: Post-job cleanup processes on Windows
         if: ${{ always() && runner.os == 'Windows' }}
         shell: powershell
