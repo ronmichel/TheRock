@@ -1,0 +1,152 @@
+name: TheRock Sanity Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_run_id:
+        type: string
+        default: ""
+      amdgpu_families:
+        type: string
+        default: ""
+      test_runs_on:
+        type: string
+      platform:
+        type: string
+  workflow_call:
+    inputs:
+      artifact_run_id:
+        type: string
+        default: ""
+      amdgpu_families:
+        type: string
+        default: ""
+      test_runs_on:
+        type: string
+      platform:
+        type: string
+  push:
+    branches:
+      - ADHOCBUILD
+
+permissions:
+  contents: read
+  id-token: write  # Move to top level for OIDC
+
+jobs:
+  # First job: Setup AWS credentials on the runner
+  setup-aws-credentials:
+    name: Setup AWS Credentials
+    runs-on: ${{ inputs.test_runs_on }}
+    outputs:
+      aws-config-path: ${{ steps.setup.outputs.aws-config-path }}
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::692859939525:role/therock-tests
+      
+      - name: Setup AWS credentials file
+        id: setup
+        run: |
+          # Create a directory for AWS credentials
+          sudo mkdir -p /runner/aws-creds
+          
+          # Write credentials to a file
+          echo "[default]" | sudo tee /runner/aws-creds/credentials
+          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" | sudo tee -a /runner/aws-creds/credentials
+          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" | sudo tee -a /runner/aws-creds/credentials
+          echo "aws_session_token=$AWS_SESSION_TOKEN" | sudo tee -a /runner/aws-creds/credentials
+          
+          # Set permissions
+          sudo chmod 644 /runner/aws-creds/credentials
+          
+          echo "aws-config-path=/runner/aws-creds" >> $GITHUB_OUTPUT
+
+  test_sanity_check:
+    name: "Sanity ROCM Test"
+    needs: setup-aws-credentials
+    runs-on: ${{ inputs.test_runs_on }}
+    container:
+      image: ${{ inputs.platform == 'linux' && 'ghcr.io/rocm/no_rocm_image_ubuntu24_04@sha256:405945a40deaff9db90b9839c0f41d4cba4a383c1a7459b28627047bf6302a26' || null }}
+      options: --ipc host
+        --group-add video
+        --device /dev/kfd
+        --device /dev/dri
+        --group-add 992
+        --env-file /etc/podinfo/gha-gpu-isolation-settings
+        --env-file /etc/environment
+        -v /runner/aws-creds:/root/.aws:ro
+        -v /runner/config:/home/awsconfig/
+
+    defaults:
+      run:
+        shell: bash
+    env:
+      AWS_SHARED_CREDENTIALS_FILE: /root/.aws/credentials
+      VENV_DIR: ${{ github.workspace }}/.venv
+      ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
+      OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
+      THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
+      CACHE_DIR: ${{ github.workspace }}/.container-cache
+      CCACHE_CONFIGPATH: ${{ github.workspace }}/.ccache/ccache.conf
+      
+    steps:
+      - name: "List AMD GPU Families"
+        run: |
+          ls
+          
+      - name: Verify AWS credentials in container
+        run: |
+          echo "Testing AWS credentials..."
+          aws sts get-caller-identity || echo "Failed to get AWS identity"
+          
+      - name: "Fetch 'build_tools' from repository"
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          sparse-checkout: build_tools
+          path: prejob
+
+      - name: Pre-job cleanup processes on Windows
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: . '${{ github.workspace }}\prejob\build_tools\github_actions\cleanup_processes.ps1'
+
+      - name: Checkout Repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: "ROCm/TheRock"
+
+      - name: Run setup test environment workflow
+        uses: './.github/actions/setup_test_environment'
+        with:
+          ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
+          AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
+          OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
+          VENV_DIR: ${{ env.VENV_DIR }}
+          FETCH_ARTIFACT_ARGS: "--base-only"
+          IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
+
+      - name: Set HIP_CLANG_PATH for windows
+        if: ${{ runner.os == 'Windows' }}
+        run: echo "HIP_CLANG_PATH=${OUTPUT_ARTIFACTS_DIR}\lib\llvm\bin" >> $GITHUB_ENV
+
+      - name: Run ROCm Sanity Tests
+        timeout-minutes: 5
+        env:
+          AMD_LOG_LEVEL: 4
+        run: |
+          pip install -r tests/sharding/requirements.txt
+          pytest tests/ --log-cli-level=info --timeout=60
+
+      - name: Sharded Tests
+        timeout-minutes: 10
+        run: |
+          cd tests/sharding && \
+          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} -k rocminfo;
+
+      - name: Post-job cleanup processes on Windows
+        if: ${{ always() && runner.os == 'Windows' }}
+        shell: powershell
+        run: . '${{ github.workspace }}\build_tools\github_actions\cleanup_processes.ps1'
