@@ -98,7 +98,6 @@ jobs:
       - name: "List AMD GPU Families"
         run: |
           ls
-          ls /runner/config
           cat /runner/config/credentials.ini
 
 
@@ -112,12 +111,6 @@ jobs:
       amdgpu_families: ${{ inputs.amdgpu_families }}
       test_runs_on: ${{ inputs.test_runs_on }}
       platform: ${{ needs.configure_test_matrix.outputs.platform }}
-      AWS_ACCESS_KEY_ID: ${{ needs.setup_credentials.outputs.aws_access_key_id }}
-      AWS_SECRET_ACCESS_KEY: ${{ needs.setup_credentials.outputs.aws_secret_access_key }}
-      AWS_SESSION_TOKEN: ${{ needs.setup_credentials.outputs.aws_session_token }}
-      AWS_DEFAULT_REGION: us-east-2
-      # Pass AWS credentials from setup job
-
 
   # test_orchestrator:
   #   name: Test Orchestrator (xfail ${{ inputs.expect_failure }})

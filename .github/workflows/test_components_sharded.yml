@@ -39,6 +39,7 @@ jobs:
         --device /dev/dri
         --group-add 992
         --env-file /etc/podinfo/gha-gpu-isolation-settings
+        -v /runner/config:/home/awsconfig/
     # strategy:
     #   fail-fast: false
     #   matrix:
@@ -54,8 +55,17 @@ jobs:
       OUTPUT_ARTIFACTS_DIR: "./build"
       THEROCK_BIN_DIR: "./build/bin"
       AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
+      AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
+
       # Add AWS credentials from secrets to environment
     steps:
+
+      - name: Configure AWS Credentials - Tests
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::692859939525:role/therock-tests
+
       - name: "Fetch 'build_tools' from repository"
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
