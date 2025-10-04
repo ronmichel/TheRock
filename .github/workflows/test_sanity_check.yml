@@ -50,10 +50,7 @@ jobs:
 
     defaults:
       run:
-        shell: |
-          echo "Running tests on ${{ inputs.platform }}"
-          echo "environment variables - ${{ toJson(env) }}"
-          bash
+        shell: bash
     env:
       AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
       VENV_DIR: ${{ github.workspace }}/.venv
