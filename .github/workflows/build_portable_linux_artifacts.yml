@@ -30,6 +30,7 @@ on:
 # See the details regarding permissions from the link:
 # https://github.com/aws-actions/configure-aws-credentials?tab=readme-ov-file#oidc
 permissions:
+  id-token: write
   contents: read
 
 jobs:
