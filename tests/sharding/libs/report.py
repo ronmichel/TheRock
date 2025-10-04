@@ -15,10 +15,12 @@ from . import utils
 from libs.utils import log
 
 
-class Table():
-	''' A class to create table entries in the test report '''
-	def __init__(self, title):
-		self.title = title
+class Table:
+    """A class to create table entries in the test report"""
+
+    def __init__(self, title):
+        self.title = title
+        self.data = []
 
     def addRow(self, *row):
         self.data.append(list(row))
@@ -100,14 +102,15 @@ class Table():
 
 
 class Report(object):
-	''' A class to create test reports '''
-	def __init__(self, title=''):
-		self.title = title
-		self.text = ' '
-		self.facts = {}
-		self.tables = []
-		self.errors = {}
-		self.errTitle = ''
+    """A class to create test reports"""
+
+    def __init__(self, title=""):
+        self.title = title
+        self.text = " "
+        self.facts = {}
+        self.tables = []
+        self.errors = {}
+        self.errTitle = ""
 
     def setTitle(self, title, append=True):
         self.title = self.title + title if append else title
@@ -123,9 +126,9 @@ class Report(object):
         self.tables.append(table)
         return table
 
-	def addErrors(self, errors, title=''):
-		self.errors[title] = self.errors.get(title, [])
-		self.errors[title].extend(errors)
+    def addErrors(self, errors, title=""):
+        self.errors[title] = self.errors.get(title, [])
+        self.errors[title].extend(errors)
 
     def toHtml(self, title=True, facts=True, tables=True, errors=True):
         htmlVars = {
@@ -177,14 +180,15 @@ class Report(object):
         # errors
         if errors and self.errors:
             errorList = ""
-            for cmd, ret, out in self.errors:
-                errorList += ERROR_HTML.format(
-                    errorStyle=ERROR_STYLE,
-                    errorHeadStyle=ERRORHEAD_STYLE,
-                    errorOutStyle=ERROROUT_STYLE,
-                    errorHead=cmd,
-                    errorOut=out.strip(),
-                )
+            for title, errors in self.errors.items():
+                for cmd, ret, out in errors:
+                    errorList += ERROR_HTML.format(
+                        errorStyle=ERROR_STYLE,
+                        errorHeadStyle=ERRORHEAD_STYLE,
+                        errorOutStyle=ERROROUT_STYLE,
+                        errorHead=cmd,
+                        errorOut=out.strip(),
+                    )
             htmlVars["errors"] += ERRORS_HTML.format(
                 title=f"{self.errTitle} Errors", errorList=errorList
             )
@@ -220,9 +224,9 @@ HTML = """\
 </head>
 <body style="font-family: sans-serif; margin: 20px;">
     <h1>{title}</h1>
-	{facts}
-	{tables}
-	{errors}
+    {facts}
+    {tables}
+    {errors}
 </body>
 </html>
 """
@@ -236,9 +240,9 @@ border-radius: 5px;
 margin-bottom: 10px;
 """
 FACTS_HTML = """
-	<div style="{style}">
-		{factList}
-	</div>
+    <div style="{style}">
+        {factList}
+    </div>
 """
 FACT_STYLE = "font-weight: bold;"
 FACT_HTML = '<div style="{style}">{fact}</div><div>: {value}</div>\n'
@@ -258,15 +262,15 @@ white-space: nowrap;
 """
 TABLE_HTML = """
 <table style="{tableStyle}">
-	<caption style="{captionStyle}">{title}</caption>
-	<thead>
-		<tr>
-			{ths}
-		</tr>
-	</thead>
-	<tbody>
-		{trs}
-	</tbody>
+    <caption style="{captionStyle}">{title}</caption>
+    <thead>
+        <tr>
+            {ths}
+        </tr>
+    </thead>
+    <tbody>
+        {trs}
+    </tbody>
 </table>
 """
 TABLE_TH_STYLE = """
@@ -285,8 +289,8 @@ TABLE_TD_STYLE = TABLE_TR_STYLE
 TABLE_TD_HTML = '<td style="{style}">{td}</td>\n'
 
 ERRORS_HTML = """\
-	<h3>{title}: </h3>
-	{errorList}
+    <h3>{title}: </h3>
+    {errorList}
 """
 ERROR_STYLE = """
 border: 1px solid #ccc;
@@ -308,8 +312,8 @@ border-radius: 5px;
 white-space: pre-wrap;
 """
 ERROR_HTML = """\
-	<div style="{errorStyle}">
-		<div style="{errorHeadStyle}">{errorHead}</div>
-		<div style="{errorOutStyle}">{errorOut}</div>
-	</div>
+    <div style="{errorStyle}">
+        <div style="{errorHeadStyle}">{errorHead}</div>
+        <div style="{errorOutStyle}">{errorOut}</div>
+    </div>
 """
