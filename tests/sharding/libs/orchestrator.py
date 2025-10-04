@@ -10,12 +10,14 @@ from .utils import log
 
 
 class Orchestrator(object):
+	''' Orchestrator class to run sharded tests as per the GPUs available '''
 	def __init__(self, node):
 		self.node = node
 		self.gpus = node.getGpus()
 		log(f'Total GPUs: {len(self.gpus)}')
 
 	def runBinary(self, *args, **kwargs):
+		''' Runs the binary tests and collects the results with auto retries '''
 		for i in range(3):
 			i and log(f'[{i+1}]: Rerunning Failed Tests')
 			if ret := (self.node.runCmd(*args, **kwargs) == 0):
@@ -35,6 +37,7 @@ class Orchestrator(object):
 		return cacheFile
 
 	def _getTestCache(self, cacheFile):
+		''' Gets the test durations from the cache '''
 		if not os.path.exists(cacheFile):
 			return {}
 		fd = open(cacheFile, 'r')
@@ -48,6 +51,7 @@ class Orchestrator(object):
 		return cache
 
 	def _updateTestCache(self, cacheFile, cache):
+		''' Updates the test durations into the cache '''
 		fd = open(cacheFile, 'w')
 		fcntl.flock(fd.fileno(), fcntl.LOCK_EX)
 		fd.write('\n'.join([f'{test}|{duration}' for (test, duration) in cache.items()]))
@@ -55,6 +59,7 @@ class Orchestrator(object):
 		fd.close()
 
 	def _splitShards(self, testList, cache):
+		''' Splits the tests into efficient shards for a given GPU count '''
 		testList = sorted(testList, key=lambda test: cache.get(test, 500) or 1, reverse=True)
 		# group all tests as per their execution timings in cache
 		shards = [[0, []] for i in range(len(self.gpus))]
@@ -70,7 +75,9 @@ class Orchestrator(object):
 		return shards
 
 	def runCtest(self, *args, **kwargs):
+		''' Runs the CTest based tests in sharded parallel threads '''
 		def _runCtest(gpu, tests, *args, **kwargs):
+			''' Runs an single CTest shard on an assigned GPU with auto retry of failed tests '''
 			cmd = ('ctest', )
 			for i in range(3):
 				ret, out = gpu.runCmd(*cmd, *tests, *args, out=True, **kwargs)
@@ -80,9 +87,11 @@ class Orchestrator(object):
 				log(f'[{gpu.node.host}]: Rerunning Failed Tests')
 			return ret, out
 		def _runCtestShards(gpu, shards, iShard, *args, **kwargs):
+			''' Runs all the tests in default CTest sharding mode '''
 			tests = ('--tests-information', f'{iShard+1},,{shards}')
 			return _runCtest(gpu, tests, *args, **kwargs)
 		def _collectCtest(*args, **kwargs):
+			''' Collects all the tests of CTest applying given test filters '''
 			import json
 			ret, out = self.node.runCmd('ctest', '--show-only=json-v1', *args,
 				out=True, verbose=False, **kwargs,
@@ -90,6 +99,7 @@ class Orchestrator(object):
 			testData = json.loads(out)
 			return {t['name'] for t in testData['tests']}
 		def _runCtestScheduler(gpu, testList, *args, **kwargs):
+			''' Runs an all the tests in efficiently choosed shards as per their duration '''
 			testListFile = f'/tmp/testList{gpu.index}'
 			gpu.node.writeFile(testListFile, '\n'.join(testList))
 			tests = ('--tests-from-file', testListFile)
@@ -120,7 +130,9 @@ class Orchestrator(object):
 		return True
 
 	def runGtest(self, binary, *args, srcFile=None, gfilter=None, **kwargs):
+		''' Runs the GTest based tests in sharded parallel threads '''
 		def _runGtest(gpu, binary, gfilter, *args, **kwargs):
+			''' Runs an single GTest shard on an assigned GPU with auto retry of failed tests '''
 			for i in range(3):
 				ret, out = gpu.runCmd(binary,
 					f'--gtest_filter={gfilter}' if gfilter else '',
@@ -133,6 +145,7 @@ class Orchestrator(object):
 					gFilter = ':'.join(failed)
 			return ret, out
 		def _runGtestShards(gpu, binary, gfilter, shards, iShard, *args, **kwargs):
+			''' Runs all the tests in default GTest sharding mode '''
 			env = kwargs.pop('env', {})
 			env.update({
 				'GTEST_TOTAL_SHARDS': shards,
@@ -140,6 +153,7 @@ class Orchestrator(object):
 			})
 			return _runGtest(gpu, binary, gfilter, *args, env=env, **kwargs)
 		def _collectGtests(binary, srcFile, gfilter, *args, **kwargs):
+			''' Collects all the tests of GTest applying given gfilters '''
 			import json
 			srcCmd = ('source', f'{srcFile};') if srcFile else ()
 			jsonFile = f'/tmp/{binary.split()[-1]}.json'
@@ -169,6 +183,7 @@ class Orchestrator(object):
 					testDict[suite].append(mtch.group(1))
 			return testDict
 		def _runGtestScheduler(gpu, binary, testList, *args, **kwargs):
+			''' Runs an all the tests in efficiently choosed shards as per their duration '''
 			maxArgLen = 127*1024  # split the filter so that it should not exceed max bash arg size
 			ret, out = 0, ''
 			for gFilter in re.findall(rf':?(.{{1,{maxArgLen}}}[^:$]+)', ':'.join(testList)):

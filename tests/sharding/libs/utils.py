@@ -9,15 +9,8 @@ import logging
 import traceback
 
 
-class Singleton(type):
-	_instances = {}
-	def __call__(cls, *args, **kwargs):
-		if cls not in cls._instances:
-			cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-		return cls._instances[cls]
-
-
 def _callOnce(funcPointer):
+	''' Decorator function enables calling function to get called only once per execution '''
 	def funcWrapper(*args, **kwargs):
 		if 'ret' not in funcPointer.__dict__:
 			funcPointer.ret = funcPointer(*args, **kwargs)
@@ -25,24 +18,8 @@ def _callOnce(funcPointer):
 	return funcWrapper
 
 
-@_callOnce
-def getLogger(level=logging.INFO, logFile=None):
-	logger = logging.getLogger()
-	logger.setLevel(level)
-	formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-	cHandler = logging.StreamHandler(sys.stdout)
-	cHandler.setLevel(logging.DEBUG)
-	cHandler.setFormatter(formatter)
-	logger.addHandler(cHandler)
-	if logFile:
-		fHandler = logging.FileHandler(logFile)
-		fHandler.setLevel(level)
-		fHandler.setFormatter(formatter)
-		logger.addHandler(fHandler)
-	return logger
-
-
 def log(msg, newline=True):
+	''' Common logger '''
 	if isinstance(msg, bytes):
 		msg = msg.decode('utf-8', errors='ignore')
 	msg = msg + ('', '\n')[newline]
@@ -50,14 +27,21 @@ def log(msg, newline=True):
 
 
 def logExp(e):
+	''' Common Exception logger '''
 	(tbHeader, *tbLines, error) = traceback.format_exception(type(e), e, e.__traceback__)
 	log(f'{error}{tbHeader}{"".join(tbLines)}')
 
 
 def request(method, url, allowCodes=(), ignoreExp=False, verbose=False, **kwargs):
-	# /usr/lib/python3/dist-packages/requests/api.py
-	# method: GET, POST, DELETE, OPTIONS
-	# kwargs: headers, json, data, params, cookies
+	''' Common request wrapper for all http/https comms.
+		Returns the response in dict format if json else as url text
+		method[str]: can be any of GET, POST, DELETE, OPTIONS operations
+		url[str]: http/https url location
+		allowCodes[tuple(int,...)]: list of error codes which can be allowed before retry
+		ignoreExp[bool]: whether to ignore the n/w exceptions
+		verbose[bool]: verbose level, True=FullLog, False=OnlyInfo-NoLog, None=NoInfo-NoLog
+		kwargs: headers, json, data, params, cookies ... supported by requests.request()
+	'''
 	import urllib3
 	urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 	import requests
@@ -92,6 +76,9 @@ def request(method, url, allowCodes=(), ignoreExp=False, verbose=False, **kwargs
 
 
 def runParallel(*funcs):
+	''' Runs the given list of funcs in parallel threads and returns their respective return values
+		*funcs[(funcPtr, args, kwargs), ...]: list of funcpts along with their args and kwargs
+	'''
 	import threading
 	rets = [None] * len(funcs)
 	def proxy(i, funcPtr, *args, **kwargs):
