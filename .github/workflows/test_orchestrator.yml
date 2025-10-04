@@ -105,7 +105,6 @@ jobs:
       amdgpu_families: ${{ inputs.amdgpu_families }}
       test_runs_on: ${{ inputs.test_runs_on }}
       platform: ${{ needs.configure_test_matrix.outputs.platform }}
-    secrets:
       AWS_ACCESS_KEY_ID: ${{ needs.setup_credentials.outputs.aws_access_key_id }}
       AWS_SECRET_ACCESS_KEY: ${{ needs.setup_credentials.outputs.aws_secret_access_key }}
       AWS_SESSION_TOKEN: ${{ needs.setup_credentials.outputs.aws_session_token }}

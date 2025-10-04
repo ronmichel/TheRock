@@ -15,15 +15,14 @@ on:
       component:
         type: string
         default: "rocinfo"
-    secrets:
       AWS_ACCESS_KEY_ID:
-        required: false
+        type: string
       AWS_SECRET_ACCESS_KEY:
-        required: false
+        type: string
       AWS_SESSION_TOKEN:
-        required: false
+        type: string
       AWS_DEFAULT_REGION:
-        required: false
+        type: string
 
 permissions:
   contents: read
@@ -56,10 +55,6 @@ jobs:
       THEROCK_BIN_DIR: "./build/bin"
       AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
       # Add AWS credentials from secrets to environment
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-      AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION || 'us-east-2' }}
     steps:
       - name: "Fetch 'build_tools' from repository"
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0

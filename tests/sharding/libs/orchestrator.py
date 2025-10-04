@@ -24,7 +24,6 @@ class Orchestrator(object):
 				break
 		return ret
 
-    @utils._callOnce
     def _getCacheDir(self):
         cacheDir = os.path.join(os.environ["HOME"], "testCaches")
         os.makedirs(cacheDir, exist_ok=True)
