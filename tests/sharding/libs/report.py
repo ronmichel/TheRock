@@ -15,9 +15,10 @@ from . import utils
 from libs.utils import log
 
 
-class Table:
-    def __init__(self, title):
-        self.title = title
+class Table():
+	''' A class to create table entries in the test report '''
+	def __init__(self, title):
+		self.title = title
 
     def addRow(self, *row):
         self.data.append(list(row))
@@ -99,13 +100,14 @@ class Table:
 
 
 class Report(object):
-    def __init__(self, title=""):
-        self.title = title
-        self.text = " "
-        self.facts = {}
-        self.tables = []
-        self.errors = []
-        self.errTitle = ""
+	''' A class to create test reports '''
+	def __init__(self, title=''):
+		self.title = title
+		self.text = ' '
+		self.facts = {}
+		self.tables = []
+		self.errors = {}
+		self.errTitle = ''
 
     def setTitle(self, title, append=True):
         self.title = self.title + title if append else title
@@ -121,9 +123,9 @@ class Report(object):
         self.tables.append(table)
         return table
 
-    def addErrors(self, *error, title=""):
-        self.errors.extend(error)
-        self.errTitle = title
+	def addErrors(self, errors, title=''):
+		self.errors[title] = self.errors.get(title, [])
+		self.errors[title].extend(errors)
 
     def toHtml(self, title=True, facts=True, tables=True, errors=True):
         htmlVars = {
