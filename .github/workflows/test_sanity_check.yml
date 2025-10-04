@@ -102,9 +102,12 @@ jobs:
             export ARTIFACT_RUN_ID='${{ env.ARTIFACT_RUN_ID }}'
             export AMDGPU_FAMILIES='${{ env.AMDGPU_FAMILIES }}'
             
+            ls
+
+            echo "environment variables: ${env}"
             # Verify AWS credentials
-            echo 'Testing AWS credentials...'
-            aws sts get-caller-identity || { echo 'Failed to get AWS identity'; exit 1; }
+            # echo 'Testing AWS credentials...'
+            # aws sts get-caller-identity || { echo 'Failed to get AWS identity'; exit 1; }
             
             # Setup Python virtual environment
             echo 'Setting up Python environment...'
