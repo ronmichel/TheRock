@@ -98,9 +98,8 @@ jobs:
       - name: "List AMD GPU Families"
         run: |
           ls
-          ls /home
-          ls /home/awsconfig
-          cat /home/awsconfig/
+          ls /runner/config
+          cat /runner/config/credentials.ini
 
 
   # Second job: Run tests in a container
