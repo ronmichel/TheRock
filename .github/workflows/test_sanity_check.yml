@@ -91,6 +91,7 @@ jobs:
           # https://rocm.docs.amd.com/projects/HIP/en/latest/how-to/debugging.html
           AMD_LOG_LEVEL: 4
         run: |
+          pip install -r tests/sharding/requirements.txt
           pytest tests/ --log-cli-level=info --timeout=60
 
       - name: Post-job cleanup processes on Windows
