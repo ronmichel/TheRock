@@ -76,38 +76,8 @@ jobs:
       test_runs_on: ${{ inputs.test_runs_on }}
       platform: ${{ needs.configure_test_matrix.outputs.platform }}
 
-  # First job: Get AWS credentials at host level
-  setup_credentials:
-    name: Setup AWS Credentials
-    runs-on: ${{ inputs.test_runs_on }}
-    permissions:
-      id-token: write
-    outputs:
-      aws_access_key_id: ${{ steps.aws_creds.outputs.aws-access-key-id }}
-      aws_secret_access_key: ${{ steps.aws_creds.outputs.aws-secret-access-key }}
-      aws_session_token: ${{ steps.aws_creds.outputs.aws-session-token }}
-    steps:
-      - name: Configure AWS Credentials
-        id: aws_creds
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
-        with:
-          aws-region: us-east-2
-          role-to-assume: arn:aws:iam::692859939525:role/therock-tests
-      - name: Configure AWS Credentials - Tests
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
-        with:
-          aws-region: us-east-2
-          role-to-assume: arn:aws:iam::692859939525:role/therock-tests
-
-      - name: "List AMD GPU Families"
-        run: |
-          ls
-
-
-  # Second job: Run tests in a container
   test_components_sharded:
     name: 'Test Components Sharded'
-    needs: setup_credentials
     uses: './.github/workflows/test_components_sharded.yml'
     with:
       artifact_run_id: ${{ inputs.artifact_run_id }}
