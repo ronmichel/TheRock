@@ -45,13 +45,12 @@ jobs:
         --device /dev/kfd
         --device /dev/dri
         --group-add 992
-        --env-file /etc/podinfo/gha-gpu-isolation-settings
         --env-file /etc/environment
         -v /runner/config:/home/awsconfig/
 
     defaults:
       run:
-        shell: bash
+        shell: ls && bash
     env:
       AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
       VENV_DIR: ${{ github.workspace }}/.venv
@@ -60,6 +59,9 @@ jobs:
       THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
       # Pass AWS credentials to the container
     steps:
+      - name: "List AMD GPU Families"
+        run: |
+          ls
       - name: Configure AWS Credentials - Tests
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
