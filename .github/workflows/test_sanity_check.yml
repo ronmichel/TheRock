@@ -35,9 +35,7 @@ permissions:
 jobs:
   test_sanity_check:
     name: "Sanity ROCM Test"
-    #runs-on: ${{ inputs.test_runs_on }}
-    runs-on: azure-linux-scale-rocm
-
+    runs-on: ${{ inputs.test_runs_on }}
     permissions:
       id-token: write    
     container:
@@ -48,6 +46,7 @@ jobs:
         --device /dev/dri
         --group-add 992
         --env-file /etc/podinfo/gha-gpu-isolation-settings
+        --env-file /etc/environment
         -v /runner/config:/home/awsconfig/
 
     defaults:
