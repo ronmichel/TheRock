@@ -12,7 +12,7 @@ import email.mime.text
 import email.mime.multipart
 
 from . import utils
-from libs.utils import log
+from .utils import log
 
 
 class Table:
