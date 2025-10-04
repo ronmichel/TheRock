@@ -87,13 +87,13 @@ jobs:
       aws_secret_access_key: ${{ steps.aws_creds.outputs.aws-secret-access-key }}
       aws_session_token: ${{ steps.aws_creds.outputs.aws-session-token }}
     steps:
-      - name: Configure AWS Credentials
-        id: aws_creds
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
-        with:
-          aws-region: us-east-2
-          role-to-assume: arn:aws:iam::692859939525:role/therock-tests
-          output-credentials: true
+      # - name: Configure AWS Credentials
+      #   id: aws_creds
+      #   uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+      #   with:
+      #     aws-region: us-east-2
+      #     role-to-assume: arn:aws:iam::692859939525:role/therock-tests
+      #     output-credentials: true
 
       - name: "List AMD GPU Families"
         run: |
