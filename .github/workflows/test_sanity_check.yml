@@ -31,112 +31,73 @@ on:
 
 permissions:
   contents: read
-  id-token: write
+  id-token: write  # Move to top level for OIDC
 
 jobs:
   test_sanity_check:
     name: "Sanity ROCM Test"
     runs-on: ${{ inputs.test_runs_on }}
-    defaults:
-      run:
-        shell: bash
     env:
+      VENV_DIR: ${{ github.workspace }}/.venv
       ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
-      AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
+      OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
+      THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
     steps:
-      # First, checkout the repository on the host to get the test files
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          repository: "ROCm/TheRock"
-      
-      # Configure AWS credentials on the host
-      - name: Configure AWS Credentials on Host
-        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838
+      - name: "List AMD GPU Families"
+        run: |
+          ls
+          
+      - name: Configure AWS Credentials - Tests
+        uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-tests
-      
-      - name: Setup AWS credentials file for container
-        run: |
-          # Create a directory for AWS credentials
-          sudo mkdir -p /tmp/aws-creds
-          
-          # Write credentials to a file
-          echo "[default]" | sudo tee /tmp/aws-creds/credentials
-          echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" | sudo tee -a /tmp/aws-creds/credentials
-          echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" | sudo tee -a /tmp/aws-creds/credentials
-          echo "aws_session_token=$AWS_SESSION_TOKEN" | sudo tee -a /tmp/aws-creds/credentials
-          echo "region=us-east-2" | sudo tee -a /tmp/aws-creds/credentials
-          
-          # Also create config file
-          echo "[default]" | sudo tee /tmp/aws-creds/config
-          echo "region=us-east-2" | sudo tee -a /tmp/aws-creds/config
-          
-          # Set permissions
-          sudo chmod 644 /tmp/aws-creds/credentials
-          sudo chmod 644 /tmp/aws-creds/config
-      
-      # Now run the container with all test steps
-      - name: Run Tests in Container
-        uses: docker://ghcr.io/rocm/no_rocm_image_ubuntu24_04@sha256:405945a40deaff9db90b9839c0f41d4cba4a383c1a7459b28627047bf6302a26
-        with:
-          options: --ipc host
-            --group-add video
-            --device /dev/kfd
-            --device /dev/dri
-            --group-add 992
-            --env-file /etc/podinfo/gha-gpu-isolation-settings
-            -v /tmp/aws-creds:/root/.aws:ro
-            -v ${{ github.workspace }}:/workspace
-            --workdir /workspace
-          args: |
-            bash -c "
-            set -e
-            
-            # Export environment variables
-            export AWS_SHARED_CREDENTIALS_FILE=/root/.aws/credentials
-            export VENV_DIR=/workspace/.venv
-            export OUTPUT_ARTIFACTS_DIR=/workspace/build
-            export THEROCK_BIN_DIR=/workspace/build/bin
-            export ARTIFACT_RUN_ID='${{ env.ARTIFACT_RUN_ID }}'
-            export AMDGPU_FAMILIES='${{ env.AMDGPU_FAMILIES }}'
-            
-            ls
 
-            echo "environment variables: ${env}"
-            # Verify AWS credentials
-            # echo 'Testing AWS credentials...'
-            # aws sts get-caller-identity || { echo 'Failed to get AWS identity'; exit 1; }
-            
-            # Setup Python virtual environment
-            echo 'Setting up Python environment...'
-            python3 -m venv \$VENV_DIR
-            source \$VENV_DIR/bin/activate
-            
-            # Install Python packages
-            pip install --upgrade pip
-            pip install -r build_tools/requirements.txt
-            
-            # Run setup test environment
-            echo 'Setting up test environment...'
-            python3 build_tools/setup_test_environment.py \
-              --artifact-run-id \$ARTIFACT_RUN_ID \
-              --amdgpu-families \$AMDGPU_FAMILIES \
-              --output-artifacts-dir \$OUTPUT_ARTIFACTS_DIR \
-              --fetch-artifact-args '--base-only'
-            
-            # Install test dependencies
-            echo 'Installing test dependencies...'
-            pip install -r tests/sharding/requirements.txt
-            
-            # Run ROCm Sanity Tests
-            echo 'Running ROCm Sanity Tests...'
-            export AMD_LOG_LEVEL=4
-            pytest tests/ --log-cli-level=info --timeout=60 -v || true
-            
-            # Run Sharded Tests
-            echo 'Running Sharded Tests...'
-            cd tests/sharding
-            pytest -v -s --tb=short tests.py --rock=\$OUTPUT_ARTIFACTS_DIR -k rocminfo --timeout=300 || true
-            "
+      - name: "Fetch 'build_tools' from repository"
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          sparse-checkout: build_tools
+          path: prejob
+
+      - name: Pre-job cleanup processes on Windows
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: . '${{ github.workspace }}\prejob\build_tools\github_actions\cleanup_processes.ps1'
+
+      - name: Checkout Repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: "ROCm/TheRock"
+
+      - name: Run setup test environment workflow
+        uses: './.github/actions/setup_test_environment'
+        with:
+          ARTIFACT_RUN_ID: ${{ env.ARTIFACT_RUN_ID }}
+          AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
+          OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
+          VENV_DIR: ${{ env.VENV_DIR }}
+          FETCH_ARTIFACT_ARGS: "--base-only"
+          IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
+
+      - name: Set HIP_CLANG_PATH for windows
+        if: ${{ runner.os == 'Windows' }}
+        run: echo "HIP_CLANG_PATH=${OUTPUT_ARTIFACTS_DIR}\lib\llvm\bin" >> $GITHUB_ENV
+
+      - name: Run ROCm Sanity Tests
+        timeout-minutes: 5
+        env:
+          AMD_LOG_LEVEL: 4
+        run: |
+          pip install -r tests/sharding/requirements.txt
+          pytest tests/ --log-cli-level=info --timeout=60
+
+      - name: Sharded Tests
+        timeout-minutes: 10
+        run: |
+          cd tests/sharding && \
+          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} -k rocminfo;
+
+      - name: Post-job cleanup processes on Windows
+        if: ${{ always() && runner.os == 'Windows' }}
+        shell: powershell
+        run: . '${{ github.workspace }}\build_tools\github_actions\cleanup_processes.ps1'
