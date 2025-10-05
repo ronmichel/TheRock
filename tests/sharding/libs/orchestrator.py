@@ -11,7 +11,7 @@ from .utils import log
 
 
 # Initialize DynamoDB client with error handling
-dynamodb_table_name = "TestCache"
+dynamodb_table_name = "TestsCache"
 try:
     dynamodb_client = boto3.client(
         "dynamodb", region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
