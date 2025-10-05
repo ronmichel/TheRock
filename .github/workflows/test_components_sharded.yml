@@ -96,7 +96,10 @@ jobs:
         env:
           AMD_LOG_LEVEL: 4
         run: |
-          cd tests/sharding && \
+          ls /home/runner/_work/TheRock/TheRock
+          ls /home/runner/_work/TheRock/TheRock/build
+          ls /home/runner/_work/TheRock/TheRock/build/bin
+          cd tests/sharding
           pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR};
 
       - name: Post-job cleanup processes on Windows

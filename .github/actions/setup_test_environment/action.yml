@@ -59,12 +59,6 @@ runs:
         choco install --no-progress -y awscli
         echo "$PATH;C:\Program Files\Amazon\AWSCLIV2" >> $GITHUB_PATH
 
-    - name: Check AWS
-      shell: bash
-      run: |
-        aws sts get-caller-identity || echo "Failed to get AWS identity"
-        aws s3 ls || echo "Failed to list S3 buckets"
-
     - name: Download and Unpack Artifacts
       shell: bash
       env:
