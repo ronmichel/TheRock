@@ -254,10 +254,20 @@ class Orchestrator(object):
                     for iShard, gpu in enumerate(self.gpus)
                 ]
             )
+        
+        # Check if rets is valid before processing
+        if rets is None:
+            log("Error: runParallel returned None", rets)
+            return False
+        
         # updating the cache
         result = True
         expr = re.compile(r"Test\s+#\d+: (.+?) \..*?Passed\s+([\d\.]+) sec")
         for ret, out in rets:
+            if ret is None or out is None:
+                log(f"Warning: Skipping invalid result (ret={ret}, out={out})")
+                result = False
+                continue
             result &= bool(ret == 0)
             cache.update(
                 {
