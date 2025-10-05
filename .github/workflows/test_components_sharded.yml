@@ -95,6 +95,8 @@ jobs:
       - name: Test Path
         run: |
           echo "Testing path: ${OUTPUT_ARTIFACTS_DIR}"
+          ls ${OUTPUT_ARTIFACTS_DIR}
+          echo "TP - ${THEROCK_BIN_DIR}"
           ls /home/runner/_work/TheRock/TheRock/build/bin
       - name: Sharded Tests
         timeout-minutes: 10
