@@ -45,7 +45,7 @@ def get_dynamodb_item(test_suite):
             return response["Item"]
         else:
             log(f"No cache data found for test_suite: {test_suite}")
-            return None
+            return dict()
     except Exception as e:
         log(f"Error retrieving cache data from DynamoDB: {str(e)}")
         return dict()
