@@ -78,6 +78,7 @@ jobs:
 
   test_components_sharded:
     name: 'Test Components Sharded'
+    needs: configure_test_matrix
     uses: './.github/workflows/test_components_sharded.yml'
     with:
       artifact_run_id: ${{ inputs.artifact_run_id }}

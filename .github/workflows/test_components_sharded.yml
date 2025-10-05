@@ -1,6 +1,18 @@
-name: Test component sharded
+name: TheRock Test Components Sharded
 
 on:
+  workflow_dispatch:
+    inputs:
+      artifact_run_id:
+        type: string
+        default: ""
+      amdgpu_families:
+        type: string
+        default: ""
+      test_runs_on:
+        type: string
+      platform:
+        type: string
   workflow_call:
     inputs:
       artifact_run_id:
@@ -8,57 +20,32 @@ on:
         default: ""
       amdgpu_families:
         type: string
+        default: ""
       test_runs_on:
         type: string
       platform:
         type: string
-      component:
-        type: string
-        default: "rocinfo"
-      AWS_ACCESS_KEY_ID:
-        type: string
-      AWS_SECRET_ACCESS_KEY:
-        type: string
-      AWS_SESSION_TOKEN:
-        type: string
-      AWS_DEFAULT_REGION:
-        type: string
+  push:
+    branches:
+      - ADHOCBUILD
 
 permissions:
   contents: read
+  id-token: write  # Move to top level for OIDC
 
 jobs:
-  test_component:
-    name: 'Test ${{ fromJSON(inputs.component).job_name }} (shard ${{ matrix.shard }} of ${{ fromJSON(inputs.component).total_shards }})'
+  test_components_sharded:
+    name: "Sharded ROCM Test"
     runs-on: ${{ inputs.test_runs_on }}
-    container:
-      image: ${{ inputs.platform == 'linux' && 'ghcr.io/rocm/no_rocm_image_ubuntu24_04@sha256:4150afe4759d14822f0e3f8930e1124f26e11f68b5c7b91ec9a02b20b1ebbb98' || null }}
-      options: --ipc host
-        --group-add video
-        --device /dev/kfd
-        --device /dev/dri
-        --group-add 992
-        --env-file /etc/podinfo/gha-gpu-isolation-settings
-        -v /runner/config:/home/awsconfig/
-    # strategy:
-    #   fail-fast: false
-    #   matrix:
-    #     # The shard array is based on "total_shards" from "fetch_test_configurations.py"
-    #     # The test executable will shard based on the array. (ex: [1, 2, 3, 4] = four test shards)
-    #     shard: ${{ fromJSON(inputs.component).shard_arr }}
-    defaults:
-      run:
-        shell: bash
     env:
       VENV_DIR: ${{ github.workspace }}/.venv
       ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
-      OUTPUT_ARTIFACTS_DIR: "./build"
-      THEROCK_BIN_DIR: "./build/bin"
-      AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
-      AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
-
-      # Add AWS credentials from secrets to environment
+      OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
+      THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
     steps:
+      - name: "List AMD GPU Families"
+        run: |
+          ls
 
       - name: Configure AWS Credentials - Tests
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
@@ -70,7 +57,7 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           sparse-checkout: build_tools
-          path: "prejob"
+          path: prejob
 
       - name: Pre-job cleanup processes on Windows
         if: ${{ runner.os == 'Windows' }}
@@ -89,28 +76,29 @@ jobs:
           AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
           OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
           VENV_DIR: ${{ env.VENV_DIR }}
-          FETCH_ARTIFACT_ARGS: ${{ fromJSON(inputs.component).fetch_artifact_args }}
+          FETCH_ARTIFACT_ARGS: "--base-only"
           IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
 
-      - name: Sharded Tests
+      - name: Set HIP_CLANG_PATH for windows
+        if: ${{ runner.os == 'Windows' }}
+        run: echo "HIP_CLANG_PATH=${OUTPUT_ARTIFACTS_DIR}\lib\llvm\bin" >> $GITHUB_ENV
+
+      - name: Run ROCm Sanity Tests
+        timeout-minutes: 5
         env:
-          OUTPUT_ARTIFACTS_DIR: ${{ env.OUTPUT_ARTIFACTS_DIR }}
+          AMD_LOG_LEVEL: 4
+        run: |
+          pip install -r tests/sharding/requirements.txt
+          pytest tests/ --log-cli-level=info --timeout=60
+
+      - name: Sharded Tests
+        timeout-minutes: 10
+        env:
+          AMD_LOG_LEVEL: 4
         run: |
           cd tests/sharding && \
-          python3 -m venv .venv && source .venv/bin/activate
-          pip install -r requirements.txt
-          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} -k rocminfo;
+          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR};
 
-      # - name: Test
-      #   timeout-minutes: ${{ fromJSON(inputs.component).timeout_minutes }}
-      #   env:
-      #     SHARD_INDEX: ${{ matrix.shard }}
-      #     TOTAL_SHARDS: ${{ fromJSON(inputs.component).total_shards }}
-      #   run: |
-      #     ${{ fromJSON(inputs.component).test_script }}
-
-      # GitHub's 'Complete job' step is unaware of launched executables
-      # and will fail to clean up orphan processes.
       - name: Post-job cleanup processes on Windows
         if: ${{ always() && runner.os == 'Windows' }}
         shell: powershell
