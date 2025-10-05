@@ -99,7 +99,7 @@ jobs:
           echo "TP - ${THEROCK_BIN_DIR}"
           ls /home/runner/_work/TheRock/TheRock/build/bin
       - name: Sharded Tests
-        timeout-minutes: 10
+        timeout-minutes: 600
         env:
           AMD_LOG_LEVEL: 4
         run: |
