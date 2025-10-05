@@ -107,9 +107,9 @@ class Report(object):
     def __init__(self, title=""):
         self.title = title
         self.text = " "
-        self.facts = {}
+        self.facts = dict()
         self.tables = []
-        self.errors = {}
+        self.errors = dict()
         self.errTitle = ""
 
     def setTitle(self, title, append=True):
