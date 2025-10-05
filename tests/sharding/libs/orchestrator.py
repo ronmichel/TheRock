@@ -122,7 +122,11 @@ class Orchestrator(object):
 
     def _getTestCache(self, test_suite):
         """Gets the test durations from the cache"""
-        cache = get_dynamodb_item(test_suite).get("cache", {}).get("M", {})
+        cache = get_dynamodb_item(test_suite)
+        if cache:
+            cache = cache.get("cache", {}).get("M", {})
+        else:
+            cache = {}
         return {test: int(duration["N"]) for test, duration in cache.items()}
 
     def _updateTestCache(self, test_suite, cache):

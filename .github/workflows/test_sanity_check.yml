@@ -91,7 +91,7 @@ jobs:
           pip install -r tests/sharding/requirements.txt
           pytest tests/ --log-cli-level=info --timeout=60
 
-      - name: Sharded Tests
+      - name: Rocinfo Test
         timeout-minutes: 10
         run: |
           cd tests/sharding && \
