@@ -40,7 +40,7 @@ class TestRock:
     def test_roctracer(self, orch, rock, result):
         """A Test case to verify roctracer"""
         result.testVerdict = orch.runBinary(
-            "./run_tests.sh", cwd=f"{rock}/share/roctracer"
+            f"{rock}/share/roctracer/run_tests.sh"
         )
         assert result.testVerdict
 
