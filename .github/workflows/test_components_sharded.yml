@@ -101,7 +101,7 @@ jobs:
       - name: Sharded Tests
         timeout-minutes: 600
         env:
-          AMD_LOG_LEVEL: 4
+          AMD_LOG_LEVEL: 2
         run: |
           cd tests/sharding
           pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR};
