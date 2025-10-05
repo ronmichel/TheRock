@@ -91,14 +91,19 @@ jobs:
           pip install -r tests/sharding/requirements.txt
           pytest tests/ --log-cli-level=info --timeout=60
 
+
+      - name: Test Path
+        run: |
+          echo "Testing path: ${OUTPUT_ARTIFACTS_DIR}"
+          ls ${OUTPUT_ARTIFACTS_DIR}
+          ls /home/runner/_work/TheRock/TheRock
+          ls /home/runner/_work/TheRock/TheRock/build
+          ls /home/runner/_work/TheRock/TheRock/build/bin
       - name: Sharded Tests
         timeout-minutes: 10
         env:
           AMD_LOG_LEVEL: 4
         run: |
-          ls /home/runner/_work/TheRock/TheRock
-          ls /home/runner/_work/TheRock/TheRock/build
-          ls /home/runner/_work/TheRock/TheRock/build/bin
           cd tests/sharding
           pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR};
 
