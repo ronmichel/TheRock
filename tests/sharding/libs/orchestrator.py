@@ -254,12 +254,12 @@ class Orchestrator(object):
                     for iShard, gpu in enumerate(self.gpus)
                 ]
             )
-        
+
         # Check if rets is valid before processing
         if rets is None:
             log("Error: runParallel returned None", rets)
             return False
-        
+
         # updating the cache
         result = True
         expr = re.compile(r"Test\s+#\d+: (.+?) \..*?Passed\s+([\d\.]+) sec")
