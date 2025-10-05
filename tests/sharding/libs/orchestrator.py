@@ -5,8 +5,103 @@ import sys
 import time
 import fcntl
 
+import boto3
 from . import utils
 from .utils import log
+
+
+# Initialize DynamoDB client with error handling
+dynamodb_table_name = "TestCache"
+try:
+    dynamodb_client = boto3.client(
+        "dynamodb", region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
+    )
+    # Test if we can actually use DynamoDB
+    dynamodb_client.describe_table(TableName=dynamodb_table_name)
+    DYNAMODB_AVAILABLE = True
+    log("DynamoDB client initialized successfully")
+except Exception as e:
+    log(f"DynamoDB not available: {e}")
+
+    # Print all environment variables
+    for key, value in os.environ.items():
+        print(f"{key} = {value}")
+    dynamodb_client = None
+    DYNAMODB_AVAILABLE = False
+
+
+def get_dynamodb_item(test_suite):
+    """
+    Retrieves an item from the TestsCache DynamoDB table using test_suite and test_name as keys
+    Returns the item if found, None if not found
+    """
+    try:
+        response = dynamodb_client.get_item(
+            TableName=dynamodb_table_name,
+            Key={"test_suite": {"S": test_suite}},
+        )
+        if "Item" in response:
+            log(f"Retrieved cache data for test_suite: {test_suite}")
+            return response["Item"]
+        else:
+            log(f"No cache data found for test_suite: {test_suite}")
+            return None
+    except Exception as e:
+        log(f"Error retrieving cache data from DynamoDB: {str(e)}")
+        return dict()
+
+
+def put_dynamodb_item(test_suite, item_data):
+    """
+    Stores an item in the TestsCache DynamoDB table with test_suite as key
+    item_data should be a dictionary with DynamoDB attribute format
+    Returns True if successful, False otherwise
+    """
+    try:
+        # Ensure required keys are present
+        item = {"test_suite": {"S": test_suite}}
+
+        # Add additional data from item_data
+        if item_data:
+            item.update(item_data)
+
+        dynamodb_client.put_item(TableName=dynamodb_table_name, Item=item)
+        log(f"Successfully stored cache data for test_suite: {test_suite}")
+        return True
+    except Exception as e:
+        log(f"Error storing cache data to DynamoDB: {str(e)}")
+        return False
+
+
+def get_all_dynamodb_items():
+    """
+    Retrieves all items from the TestsCache DynamoDB table
+    Returns a list of all items if successful, empty list if none found or on error
+    """
+    try:
+        all_items = []
+        response = dynamodb_client.scan(TableName=dynamodb_table_name)
+
+        # Add items from first page
+        if "Items" in response:
+            all_items.extend(response["Items"])
+
+        # Handle pagination if there are more items
+        while "LastEvaluatedKey" in response:
+            response = dynamodb_client.scan(
+                TableName=dynamodb_table_name,
+                ExclusiveStartKey=response["LastEvaluatedKey"],
+            )
+            if "Items" in response:
+                all_items.extend(response["Items"])
+
+        log(
+            f"Retrieved {len(all_items)} items from DynamoDB table {dynamodb_table_name}"
+        )
+        return all_items
+    except Exception as e:
+        log(f"Error retrieving all items from DynamoDB: {str(e)}")
+        return []
 
 
 class Orchestrator(object):
@@ -25,42 +120,55 @@ class Orchestrator(object):
                 break
         return ret
 
-    @utils._callOnce
-    def _getCacheDir(self):
-        cacheDir = os.path.join(os.environ["HOME"], "testCaches")
-        os.makedirs(cacheDir, exist_ok=True)
-        return cacheDir
-
-    def _getCacheFile(self, testDir):
-        cacheFile = os.path.join(
-            self._getCacheDir(), os.path.normpath(testDir).replace("/", "__")
-        )
-        return cacheFile
-
-    def _getTestCache(self, cacheFile):
+    def _getTestCache(self, test_suite):
         """Gets the test durations from the cache"""
-        if not os.path.exists(cacheFile):
-            return {}
-        fd = open(cacheFile, "r")
-        fcntl.flock(fd.fileno(), fcntl.LOCK_EX)
-        content = fd.read()
-        fcntl.flock(fd.fileno(), fcntl.LOCK_UN)
-        fd.close()
-        cache = {
-            test: int(duration)
-            for (test, duration) in re.findall(r"(.*?)\|(\d+)", content)
-        }
-        return cache
+        cache = get_dynamodb_item(test_suite).get("cache", {}).get("M", {})
+        return {test: int(duration["N"]) for test, duration in cache.items()}
 
-    def _updateTestCache(self, cacheFile, cache):
+    def _updateTestCache(self, test_suite, cache):
         """Updates the test durations into the cache"""
-        fd = open(cacheFile, "w")
-        fcntl.flock(fd.fileno(), fcntl.LOCK_EX)
-        fd.write(
-            "\n".join([f"{test}|{duration}" for (test, duration) in cache.items()])
-        )
-        fcntl.flock(fd.fileno(), fcntl.LOCK_UN)
-        fd.close()
+        item = {
+            "test_suite": {"S": test_suite},
+            "cache": {
+                "M": {test: {"N": str(duration)} for test, duration in cache.items()}
+            },
+        }
+        put_dynamodb_item(test_suite, item)
+
+    #     cacheDir = os.path.join(os.environ["HOME"], "testCaches")
+    #     os.makedirs(cacheDir, exist_ok=True)
+    #     return cacheDir
+
+    # def _getCacheFile(self, testDir):
+    #     cacheFile = os.path.join(
+    #         self._getCacheDir(), os.path.normpath(testDir).replace("/", "__")
+    #     )
+    #     return cacheFile
+
+    # def _getTestCache(self, cacheFile):
+    #     """Gets the test durations from the cache"""
+    #     if not os.path.exists(cacheFile):
+    #         return {}
+    #     fd = open(cacheFile, "r")
+    #     fcntl.flock(fd.fileno(), fcntl.LOCK_EX)
+    #     content = fd.read()
+    #     fcntl.flock(fd.fileno(), fcntl.LOCK_UN)
+    #     fd.close()
+    #     cache = {
+    #         test: int(duration)
+    #         for (test, duration) in re.findall(r"(.*?)\|(\d+)", content)
+    #     }
+    #     return cache
+
+    # def _updateTestCache(self, cacheFile, cache):
+    #     """Updates the test durations into the cache"""
+    #     fd = open(cacheFile, "w")
+    #     fcntl.flock(fd.fileno(), fcntl.LOCK_EX)
+    #     fd.write(
+    #         "\n".join([f"{test}|{duration}" for (test, duration) in cache.items()])
+    #     )
+    #     fcntl.flock(fd.fileno(), fcntl.LOCK_UN)
+    #     fd.close()
 
     def _splitShards(self, testList, cache):
         """Splits the tests into efficient shards for a given GPU count"""
@@ -123,7 +231,7 @@ class Orchestrator(object):
             tests = ("--tests-from-file", testListFile)
             return _runCtest(gpu, tests, *args, **kwargs)
 
-        cacheFile = self._getCacheFile(kwargs.get("cwd", "ctestMisc"))
+        cacheFile = kwargs.get("cwd", "ctestMisc")
         cache = self._getTestCache(cacheFile)
         if cache:  # schedule tests
             testList = _collectCtest(args, **kwargs)
@@ -247,7 +355,7 @@ class Orchestrator(object):
                     break
             return ret, out
 
-        cacheFile = self._getCacheFile(os.path.join(kwargs.get("cwd", ""), binary))
+        cacheFile = os.path.join(kwargs.get("cwd", ""), binary)
         cache = self._getTestCache(cacheFile)
         if cache:  # schedule tests
             testDict = _collectGtests(binary, srcFile, gfilter, *args, **kwargs)
