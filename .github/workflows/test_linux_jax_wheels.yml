@@ -121,8 +121,10 @@ jobs:
 
       - name: Prepare wheelhouse and download JAX wheels (combined, optimized)
         shell: bash
+        working-directory: jax
         run: |
           set -euo pipefail
+
           mkdir -p "${WHEELHOUSE_DIR}"
 
           PY_VER="${{ inputs.python_versions }}"
@@ -175,11 +177,12 @@ jobs:
         with:
           repository: rocm/jax
           ref: ${{ inputs.jax_test_branch }}
-          path: jax_tests
+          path: jax/jax_tests
 
       - name: Run unit tests (on local image)
         working-directory: jax
         env:
+          ROCM_VERSION: ${{ inputs.rocm_version }}
           IMAGE_NAME: jax-ubu24.rocm${{ inputs.rocm_version && inputs.rocm_version != '' && '' || '' }}
         run: |
           set -euo pipefail
