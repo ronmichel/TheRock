@@ -9,6 +9,7 @@ from . import utils
 from .utils import log
 from .db import get_dynamodb_item, put_dynamodb_item
 
+
 class Orchestrator(object):
     """Orchestrator class to run sharded tests as per the GPUs available"""
 
@@ -32,15 +33,16 @@ class Orchestrator(object):
             cache = cache.get("cache", {}).get("M", {})
         else:
             cache = {}
-        return {test: int(duration["N"]) if duration["N"] else int(duration) for test, duration in cache.items()}
+        return {
+            test: int(duration["N"]) if duration["N"] else int(duration)
+            for test, duration in cache.items()
+        }
 
     def _updateTestCache(self, test_suite, cache):
         """Updates the test durations into the cache"""
         item = {
             "test_suite": {"S": test_suite},
-            "cache": {
-                "M": {test: int(duration) for test, duration in cache.items()}
-            },
+            "cache": {"M": {test: int(duration) for test, duration in cache.items()}},
         }
         put_dynamodb_item(test_suite, item)
 
