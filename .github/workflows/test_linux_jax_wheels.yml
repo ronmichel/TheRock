@@ -37,10 +37,6 @@ on:
         required: false
         type: string
         default: "rocm-jaxlib-v0.7.1"
-      test_runs_on:
-        description: Runner label to use for testing (GPU-capable recommended)
-        required: false
-        type: string
 
   workflow_dispatch:
     inputs:
@@ -77,13 +73,8 @@ on:
         type: string
         description: JAX test repo branch to get unit tests from
         default: "rocm-jaxlib-v0.7.1"
-      test_runs_on:
-        type: string
-        description: Runner label to use for testing (GPU-capable recommended)
-        default: "linux-mi325-1gpu-ossci-rocm"
 
 permissions:
-  id-token: write
   contents: read
   packages: write
 
@@ -113,38 +104,33 @@ jobs:
       - name: Install AWS CLI
         run: bash ./dockerfiles/install_awscli.sh
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
-        with:
-          aws-region: us-east-2
-          role-to-assume: arn:aws:iam::692859939525:role/therock-${{ inputs.release_type }}-releases
-
       - name: Prepare wheelhouse and download JAX wheels
         shell: bash
         working-directory: jax
         run: |
           set -euo pipefail
-
           mkdir -p "${WHEELHOUSE_DIR}"
-
+          AWS_FLAGS="--no-sign-request"
           PY_VER="${{ inputs.python_versions }}"
           CP="${PY_VER//./}"
-          BASE="s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/"
+          BASE_S3_URL_WHL="s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/"
 
-          echo "Copying wheels from ${BASE} -> ${WHEELHOUSE_DIR}"
+          echo "Copying wheels from ${BASE_S3_URL_WHL} -> ${WHEELHOUSE_DIR}"
           echo "Using Python ${PY_VER}, CP=${CP}"
 
           # Plugin wheel
-          aws s3 cp "${BASE}" "${WHEELHOUSE_DIR}/" \
+          aws s3 cp "${BASE_S3_URL_WHL}" "${WHEELHOUSE_DIR}/" \
             --recursive \
             --exclude "*" \
-            --include "jax_rocm7_plugin-*-cp${CP}-cp${CP}-manylinux_*_x86_64.whl"
+            --include "jax_rocm7_plugin-*-cp${CP}-cp${CP}-manylinux_*_x86_64.whl" \
+            ${AWS_FLAGS}
 
           # PJRT wheel
-          aws s3 cp "${BASE}" "${WHEELHOUSE_DIR}/" \
+          aws s3 cp "${BASE_S3_URL_WHL}" "${WHEELHOUSE_DIR}/" \
             --recursive \
             --exclude "*" \
-            --include "jax_rocm7_pjrt-*-py3-none-manylinux_*_x86_64.whl"
+            --include "jax_rocm7_pjrt-*-py3-none-manylinux_*_x86_64.whl" \
+            ${AWS_FLAGS}
           echo "Contents of wheelhouse:"
           pwd
           ls -lah "${WHEELHOUSE_DIR}"
@@ -173,7 +159,7 @@ jobs:
           docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | sort
 
       - name: Checkout JAX tests repo (for extended tests)
-        uses: actions/checkout@v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           repository: rocm/jax
           ref: ${{ inputs.jax_test_branch }}
@@ -195,25 +181,6 @@ jobs:
             --shm-size 16G \
             "${IMAGE_NAME}" \
             bash -c 'cd /rocm-jax && JAX_PLATFORM_NAME=cpu JAX_PLATFORMS=cpu pytest jax_tests/tests/core_test.py'
-
-      - name: Log in to GHCR
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Push docker image to Container Registry
-        env:
-          ROCM_VERSION: ${{ inputs.rocm_version }}
-        run: |
-          set -euo pipefail
-          # Compute semantic version and matching local image name
-          ROCM_SEMVER="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
-          LOCAL_IMAGE="jax-ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
-          ubu24_img="ghcr.io/rocm/jax-ubu24.therock.$(echo "${ROCM_SEMVER}" | tr -d '.'):${GITHUB_SHA}"
-
-          echo "Ubuntu 24 image name: ${ubu24_img}"
-          docker images
-          docker tag "${LOCAL_IMAGE}" "${ubu24_img}"
-          docker push "${ubu24_img}"
+            # TODO
+            # Analyze single_gpu_test and add GPU based tests
+            
