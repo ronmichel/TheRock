@@ -187,7 +187,7 @@ jobs:
           set -euo pipefail
           # Compute image name to match ci_build tag: ubu24.rocm<maj><min><patch>
           ROCM_SEMVER="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
-          IMAGE_NAME="ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
+          IMAGE_NAME="jax-ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
           echo "Running CPU-only tests in image: ${IMAGE_NAME}"
           # Run tests without GPU device flags and force CPU mode
           docker run --rm -i \
