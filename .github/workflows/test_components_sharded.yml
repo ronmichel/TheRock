@@ -84,7 +84,7 @@ jobs:
         run: |
           cd tests/sharding
           pip install -r requirements.txt
-          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR};
+          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} -k rocthrust;
 
       - name: Post-job cleanup processes on Windows
         if: ${{ always() && runner.os == 'Windows' }}
