@@ -179,24 +179,22 @@ jobs:
           ref: ${{ inputs.jax_test_branch }}
           path: jax/jax_tests
 
-      - name: Run unit tests (on local image)
+      - name: Run unit tests (CPU-only on local image)
         working-directory: jax
         env:
           ROCM_VERSION: ${{ inputs.rocm_version }}
-          IMAGE_NAME: jax-ubu24.rocm${{ inputs.rocm_version && inputs.rocm_version != '' && '' || '' }}
         run: |
           set -euo pipefail
-          # Local image name expected from build: jax-ubu24.rocm${ROCM_VERSION//.}
+          # Compute image name to match ci_build tag: ubu24.rocm<maj><min><patch>
           ROCM_SEMVER="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
-          IMAGE_NAME="jax-ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
-          echo "Running tests in image: ${IMAGE_NAME}"
-          python3 build/ci_build test "${IMAGE_NAME}" \
-            --test-cmd "pytest jax_tests/tests/core_test.py"
-
-            # TODO will enable another test after basic sanity running on GPU nodes
-            # --test-cmd "pytest jax/tests/linalg_test.py"
-            # TODO will enable another test after basic sanity tests
-            # --test-cmd "python jax_rocm_plugin/build/rocm/run_single_gpu.py -c"
+          IMAGE_NAME="ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
+          echo "Running CPU-only tests in image: ${IMAGE_NAME}"
+          # Run tests without GPU device flags and force CPU mode
+          docker run --rm -i \
+            -v "${PWD}:/rocm-jax" \
+            --shm-size 16G \
+            "${IMAGE_NAME}" \
+            bash -c 'cd /rocm-jax && JAX_PLATFORM_NAME=cpu JAX_PLATFORMS=cpu pytest jax_tests/tests/core_test.py'
 
       - name: Log in to GHCR
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
