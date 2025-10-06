@@ -43,10 +43,6 @@ jobs:
       OUTPUT_ARTIFACTS_DIR: ${{ github.workspace }}/build
       THEROCK_BIN_DIR: ${{ github.workspace }}/build/bin
     steps:
-      - name: "List AMD GPU Families"
-        run: |
-          ls
-
       - name: Configure AWS Credentials - Tests
         uses: aws-actions/configure-aws-credentials@a03048d87541d1d9fcf2ecf528a4a65ba9bd7838 # v5.0.0
         with:
@@ -83,25 +79,11 @@ jobs:
         if: ${{ runner.os == 'Windows' }}
         run: echo "HIP_CLANG_PATH=${OUTPUT_ARTIFACTS_DIR}\lib\llvm\bin" >> $GITHUB_ENV
 
-      - name: Run ROCm Sanity Tests
-        timeout-minutes: 5
-        env:
-          AMD_LOG_LEVEL: 4
-        run: |
-          pip install -r tests/sharding/requirements.txt
-          pytest tests/ --log-cli-level=info --timeout=60
-
-
-      - name: Test Path
-        run: |
-          echo "Testing path: ${OUTPUT_ARTIFACTS_DIR}"
-          ls ${OUTPUT_ARTIFACTS_DIR}
-          echo "TP - ${THEROCK_BIN_DIR}"
-          ls /home/runner/_work/TheRock/TheRock/build/bin
       - name: Sharded Tests
         timeout-minutes: 600
         run: |
           cd tests/sharding
+          pip install -r requirements.txt
           pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR};
 
       - name: Post-job cleanup processes on Windows
