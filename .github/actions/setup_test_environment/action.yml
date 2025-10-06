@@ -16,14 +16,6 @@ inputs:
   IS_PR_FROM_FORK:
     type: boolean
     default: false
-  AWS_ACCESS_KEY_ID:
-    type: string
-    required: false
-    description: "AWS Access Key ID for DynamoDB access"
-  AWS_SECRET_ACCESS_KEY:
-    type: string
-    required: false
-    description: "AWS Secret Access Key for DynamoDB access"
 
 runs:
   using: "composite"

@@ -1,30 +1,57 @@
 #!/usr/bin/env python
 """install_rocm_from_artifacts.py
 
-This script helps CI workflows, developers and testing suites easily install TheRock to their environment using artifacts.
-It installs TheRock to an output directory from one of these sources:
-- GitHub CI workflow run
-- Release tag
-- An existing installation of TheRock
+This script helps CI workflows, developers and testing suites easily install
+TheRock to their environment using artifacts. It installs TheRock to an output
+directory from one of these sources:
+
+  - GitHub CI workflow run
+  - Release tag
+  - An existing installation of TheRock
 
 Usage:
-python build_tools/install_rocm_from_artifacts.py [--output-dir OUTPUT_DIR] [--amdgpu-family AMDGPU_FAMILY] (--run-id RUN_ID | --release RELEASE | --input-dir INPUT_DIR)
-                                        [--blas | --no-blas] [--fft | --no-fft] [--miopen | --no-miopen] [--prim | --no-prim]
-                                        [--rand | --no-rand] [--rccl | --no-rccl] [--tests | --no-tests] [--base-only]
+python build_tools/install_rocm_from_artifacts.py
+    [--output-dir OUTPUT_DIR]
+    [--amdgpu-family AMDGPU_FAMILY]
+    (--run-id RUN_ID | --release RELEASE | --input-dir INPUT_DIR)
+    [--blas | --no-blas] [--fft | --no-fft] [--miopen | --no-miopen] [--prim | --no-prim]
+    [--rand | --no-rand] [--rccl | --no-rccl] [--tests | --no-tests] [--base-only]
 
 Examples:
-- Downloads and unpacks the gfx94X S3 artifacts from GitHub CI workflow run 14474448215 (from https://github.com/ROCm/TheRock/actions/runs/14474448215) to the default output directory `therock-build`:
-    - `python build_tools/install_rocm_from_artifacts.py --run-id 14474448215 --amdgpu-family gfx94X-dcgpu --tests`
-- Downloads and unpacks the version `6.4.0rc20250416` gfx110X artifacts from release tag `nightly-tarball` to the specified output directory `build`:
-    - `python build_tools/install_rocm_from_artifacts.py --release 6.4.0rc20250416 --amdgpu-family gfx110X-dgpu --output-dir build`
-- Downloads and unpacks the version `6.4.0.dev0+8f6cdfc0d95845f4ca5a46de59d58894972a29a9` gfx120X artifacts from release tag `dev-tarball` to the default output directory `therock-build`:
-    - `python build_tools/install_rocm_from_artifacts.py --release 6.4.0.dev0+8f6cdfc0d95845f4ca5a46de59d58894972a29a9 --amdgpu-family gfx120X-all`
+- Downloads and unpacks the gfx94X S3 artifacts from GitHub CI workflow run 14474448215
+  (from https://github.com/ROCm/TheRock/actions/runs/14474448215) to the
+  default output directory `therock-build`:
+    ```
+    python build_tools/install_rocm_from_artifacts.py \
+        --run-id 14474448215 \
+        --amdgpu-family gfx94X-dcgpu \
+        --tests
+    ```
+- Downloads and unpacks the version `6.4.0rc20250416` gfx110X artifacts from
+  release tag `nightly-tarball` to the specified output directory `build`:
+    ```
+    python build_tools/install_rocm_from_artifacts.py \
+        --release 6.4.0rc20250416 \
+        --amdgpu-family gfx110X-dgpu \
+        --output-dir build
+    ```
+- Downloads and unpacks the version `6.4.0.dev0+8f6cdfc0d95845f4ca5a46de59d58894972a29a9`
+  gfx120X artifacts from release tag `dev-tarball` to the default output directory `therock-build`:
+    ```
+    python build_tools/install_rocm_from_artifacts.py \
+        --release 6.4.0.dev0+8f6cdfc0d95845f4ca5a46de59d58894972a29a9 \
+        --amdgpu-family gfx120X-all
+    ```
 
-You can select your AMD GPU family from this file https://github.com/ROCm/TheRock/blob/59c324a759e8ccdfe5a56e0ebe72a13ffbc04c1f/cmake/therock_amdgpu_targets.cmake#L44-L81
+You can select your AMD GPU family from therock_amdgpu_targets.cmake.
 
-By default for CI workflow retrieval, all artifacts (excluding test artifacts) will be downloaded. For specific artifacts, pass in the flag such as `--rand` (RAND artifacts) For test artifacts, pass in the flag `--tests` (test artifacts). For base artifacts only, pass in the flag `--base-only`
+By default for CI workflow retrieval, all artifacts (excluding test artifacts)
+will be downloaded. For specific artifacts, pass in the flag such as `--rand`
+(RAND artifacts) For test artifacts, pass in the flag `--tests` (test artifacts).
+For base artifacts only, pass in the flag `--base-only`
 
-Note: the script will overwrite the output directory argument. If no argument is passed, it will overwrite the default "therock-build" directory.
+Note: the script will overwrite the output directory argument. If no argument
+is passed, it will overwrite the default "therock-build" directory.
 """
 
 import argparse
@@ -32,8 +59,6 @@ import boto3
 from botocore import UNSIGNED
 from botocore.config import Config
 from fetch_artifacts import main as fetch_artifacts_main
-
-import os
 from pathlib import Path
 import platform
 import re
@@ -55,28 +80,7 @@ def log(*args, **kwargs):
     sys.stdout.flush()
 
 
-# Initialize DynamoDB client with error handling
-try:
-    dynamodb_client = boto3.client(
-        "dynamodb", region_name=os.environ.get("AWS_DEFAULT_REGION", "us-east-2")
-    )
-    # Test if we can actually use DynamoDB
-    dynamodb_client.describe_table(TableName="test-cachedata")
-    DYNAMODB_AVAILABLE = True
-    log("DynamoDB client initialized successfully")
-except Exception as e:
-    log(f"DynamoDB not available: {e}")
-
-    # Print all environment variables
-    for key, value in os.environ.items():
-        print(f"{key} = {value}")
-    dynamodb_client = None
-    DYNAMODB_AVAILABLE = False
-
-dynamodb_table_name = "TestsCache"
-
-
-def _untar_files(output_dir, destination):
+def _untar_files(output_dir: Path, destination: Path):
     """
     Retrieves all tar files in the output_dir, then extracts all files to the output_dir
     """
@@ -86,100 +90,19 @@ def _untar_files(output_dir, destination):
     destination.unlink()
 
 
-def get_dynamodb_item(test_suite, test_name):
-    """
-    Retrieves an item from the TestsCache DynamoDB table using test_suite and test_name as keys
-    Returns the item if found, None if not found
-    """
-    try:
-        response = dynamodb_client.get_item(
-            TableName=dynamodb_table_name,
-            Key={"test_suite": {"S": test_suite}, "test_name": {"S": test_name}},
-        )
-        if "Item" in response:
-            log(
-                f"Retrieved cache data for test_suite: {test_suite}, test_name: {test_name}"
-            )
-            return response["Item"]
-        else:
-            log(
-                f"No cache data found for test_suite: {test_suite}, test_name: {test_name}"
-            )
-            return None
-    except Exception as e:
-        log(f"Error retrieving cache data from DynamoDB: {str(e)}")
-        return None
-
-
-def put_dynamodb_item(test_suite, test_name, item_data):
-    """
-    Stores an item in the TestsCache DynamoDB table with test_suite and test_name as keys
-    item_data should be a dictionary with DynamoDB attribute format
-    Returns True if successful, False otherwise
-    """
-    try:
-        # Ensure required keys are present
-        item = {"test_suite": {"S": test_suite}, "test_name": {"S": test_name}}
-
-        # Add additional data from item_data
-        if item_data:
-            item.update(item_data)
-
-        dynamodb_client.put_item(TableName=dynamodb_table_name, Item=item)
-        log(
-            f"Successfully stored cache data for test_suite: {test_suite}, test_name: {test_name}"
-        )
-        return True
-    except Exception as e:
-        log(f"Error storing cache data to DynamoDB: {str(e)}")
-        return False
-
-
-def get_all_dynamodb_items():
-    """
-    Retrieves all items from the TestsCache DynamoDB table
-    Returns a list of all items if successful, empty list if none found or on error
-    """
-    try:
-        all_items = []
-        response = dynamodb_client.scan(TableName=dynamodb_table_name)
-
-        # Add items from first page
-        if "Items" in response:
-            all_items.extend(response["Items"])
-
-        # Handle pagination if there are more items
-        while "LastEvaluatedKey" in response:
-            response = dynamodb_client.scan(
-                TableName=dynamodb_table_name,
-                ExclusiveStartKey=response["LastEvaluatedKey"],
-            )
-            if "Items" in response:
-                all_items.extend(response["Items"])
-
-        log(
-            f"Retrieved {len(all_items)} items from DynamoDB table {dynamodb_table_name}"
-        )
-        return all_items
-    except Exception as e:
-        log(f"Error retrieving all items from DynamoDB: {str(e)}")
-        return []
-
-
-def _create_output_directory(args):
+def _create_output_directory(output_dir: Path):
     """
     If the output directory already exists, delete it and its contents.
     Then, create the output directory.
     """
-    output_dir_path = args.output_dir
-    log(f"Creating directory {output_dir_path}")
-    if os.path.isdir(output_dir_path):
+    log(f"Creating output directory '{output_dir.resolve()}'")
+    if output_dir.is_dir():
         log(
-            f"Directory {output_dir_path} already exists, removing existing directory and files"
+            f"Directory '{output_dir}' already exists, removing existing directory and files"
         )
-        shutil.rmtree(output_dir_path)
-    os.mkdir(output_dir_path)
-    log(f"Created directory {output_dir_path}")
+        shutil.rmtree(output_dir)
+    output_dir.mkdir(parents=True)
+    log(f"Created output directory '{output_dir.resolve()}'")
 
 
 def _retrieve_s3_release_assets(
@@ -327,13 +250,8 @@ def retrieve_artifacts_by_input_dir(args):
 
 
 def run(args):
-    log("### All Data FROM DynamoDB ###")
-    all_items = get_all_dynamodb_items()
-    for item in all_items:
-        log(f"Retrieved item from DynamoDB: {item}")
-
     log("### Installing TheRock using artifacts ###")
-    _create_output_directory(args)
+    _create_output_directory(args.output_dir)
     if args.run_id:
         retrieve_artifacts_by_run_id(args)
     elif args.release:
@@ -355,6 +273,7 @@ def main(argv):
     parser.add_argument(
         "--amdgpu-family",
         type=str,
+        required=True,
         default="gfx94X-dcgpu",
         help="AMD GPU family to install (please refer to this: https://github.com/ROCm/TheRock/blob/59c324a759e8ccdfe5a56e0ebe72a13ffbc04c1f/cmake/therock_amdgpu_targets.cmake#L44-L81 for family choices)",
     )
@@ -430,6 +349,12 @@ def main(argv):
     )
 
     args = parser.parse_args(argv)
+
+    if not args.amdgpu_family:
+        raise argparse.ArgumentTypeError(
+            "AMD GPU family argument is required and cannot be empty"
+        )
+
     run(args)
 
 
