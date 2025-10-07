@@ -49,11 +49,9 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         # See: https://github.com/ROCm/TheRock/issues/83
         -DDYNAMIC_ARCH=ON
         -DDYNAMIC_OLDER=ON
-        -DTARGET=CORE2
+        -DTARGET=GENERIC
         -DCMAKE_CROSSCOMPILING=ON
-        -DC_LAPACK=ON
         -DBUILD_TESTING=OFF
-        -DCMAKE_POSITION_INDEPENDENT_CODE=ON
       EXTRA_DEPENDS
         "${_download_stamp}"
     )
