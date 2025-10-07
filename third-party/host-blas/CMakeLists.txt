@@ -48,8 +48,9 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         # TODO: DYNAMIC_ARCH=ON produces illegal elf files
         # See: https://github.com/ROCm/TheRock/issues/83
         -DDYNAMIC_ARCH=ON
-        -DDYNAMIC_OLDER=1
-        -DTARGET=GENERIC
+        -DDYNAMIC_OLDER=ON
+        -DTARGET=CORE2
+        -DCMAKE_CROSSCOMPILING=ON
         -DC_LAPACK=ON
         -DBUILD_TESTING=OFF
         -DCMAKE_POSITION_INDEPENDENT_CODE=ON
