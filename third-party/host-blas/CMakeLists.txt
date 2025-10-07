@@ -47,10 +47,12 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         -DBUILD_SHARED_LIBS=ON
         # TODO: DYNAMIC_ARCH=ON produces illegal elf files
         # See: https://github.com/ROCm/TheRock/issues/83
+        # Pick HASWELL as target to support recent Intel and AMD X86_64 CPU architectures
         -DDYNAMIC_ARCH=OFF
-        -DARCH=x86_64
-        -DTARGET=x86_64
-        -DCORE=x86_64
+        -DARCH=HASWELL
+        -DTARGET=HASWELL
+        -DCORE=HASWELL
+        -DCMAKE_CROSSCOMPILING=ON
         -DC_LAPACK=ON
         -DBUILD_TESTING=OFF
       EXTRA_DEPENDS
