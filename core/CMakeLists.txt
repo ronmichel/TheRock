@@ -48,6 +48,19 @@ if(THEROCK_ENABLE_CORE_RUNTIME)
     PATH ROCR-Runtime/dist/lib
     LIB_NAMES libhsa-runtime64.so
   )
+  
+  therock_cmake_subproject_declare(rocrtst
+    USE_DIST_AMDGPU_TARGETS
+    EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/rocr-runtime/rocrtst/suites/test_common"
+    BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/rocrtst"
+    BACKGROUND_BUILD
+    BUILD_DEPS
+      amd-llvm
+    RUNTIME_DEPS
+      ROCR-Runtime
+  )
+  therock_cmake_subproject_glob_c_sources(rocrtst SUBDIRS .)
+  therock_cmake_subproject_activate(rocrtst)
 
   ##############################################################################
   # rocminfo
@@ -78,6 +91,7 @@ if(THEROCK_ENABLE_CORE_RUNTIME)
     SUBPROJECT_DEPS
       ROCR-Runtime
       rocminfo
+      rocrtst
   )
 
 endif(THEROCK_ENABLE_CORE_RUNTIME)
