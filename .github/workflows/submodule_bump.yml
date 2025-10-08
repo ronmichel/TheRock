@@ -38,7 +38,7 @@ jobs:
       - name: Run bump_submodules.py
         run: |
           python3 ./build_tools/bump_submodules.py \
-            --push_branch \
+            --push-branch \
             --branch-name ${{ env.GIT_BRANCH_NAME }} \
             --components comm-libs \
             --no-pin-ck
