@@ -1,5 +1,4 @@
-name: Test JAX  Wheels and Build Docker
-
+name: Test JAX Wheels
 on:
   workflow_call:
     inputs:
@@ -80,7 +79,7 @@ permissions:
 
 jobs:
   build_test_push:
-    name: Build and Test JAX | ${{ inputs.amdgpu_family }}
+    name: Test JAX | ${{ inputs.amdgpu_family }}
     runs-on: ${{ github.repository_owner == 'ROCm' && 'azure-linux-scale-rocm' || 'ubuntu-24.04' }}
     env:
       S3_BUCKET_PY: therock-${{ inputs.release_type }}-python
@@ -183,4 +182,3 @@ jobs:
             bash -c 'cd /rocm-jax && JAX_PLATFORM_NAME=cpu JAX_PLATFORMS=cpu pytest jax_tests/tests/core_test.py'
             # TODO
             # Analyze single_gpu_test and add GPU based tests
-
