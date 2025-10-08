@@ -1,47 +1,48 @@
 [submodule "half"]
 	path = base/half
 	url = https://github.com/ROCm/half.git
-	branch = rocm
+	branch = release/therock-7.9
 [submodule "HIPIFY"]
 	path = compiler/hipify
 	url = https://github.com/ROCm/HIPIFY.git
-	branch = amd-mainline
+	branch = release/therock-7.9
 [submodule "llvm-project"]
 	path = compiler/amd-llvm
 	url = https://github.com/ROCm/llvm-project.git
-	branch = amd-mainline
+	branch = release/therock-7.9
 [submodule "rccl"]
 	path = comm-libs/rccl
 	url = https://github.com/ROCm/rccl.git
-	branch = develop
+	branch = release/therock-7.9
 [submodule "rocm-cmake"]
 	path = base/rocm-cmake
 	url = https://github.com/ROCm/rocm-cmake.git
-	branch = mainline
+	branch = release/therock-7.9
 [submodule "rccl-tests"]
 	path = comm-libs/rccl-tests
 	url = https://github.com/ROCm/rccl-tests.git
-	branch = develop
+	branch = release/therock-7.9
 [submodule "composable_kernel"]
 	path = ml-libs/composable_kernel
 	url = https://github.com/ROCm/composable_kernel.git
-	branch = develop
+	branch = release/therock-7.9
 [submodule "rocprof-trace-decoder"]
 	path = profiler/rocprof-trace-decoder/binaries
 	url = https://github.com/ROCm/rocprof-trace-decoder.git
+	branch = release/therock-7.9
 [submodule "rocm-libraries"]
 	path = rocm-libraries
 	url = https://github.com/ROCm/rocm-libraries
-	branch = develop
+	branch = release/therock-7.9
 [submodule "rocm-systems"]
 	path = rocm-systems
 	url = https://github.com/ROCm/rocm-systems.git
-	branch = develop
+	branch = release/therock-7.9
 [submodule "spirv-llvm-translator"]
 	path = compiler/spirv-llvm-translator
 	url = https://github.com/ROCm/SPIRV-LLVM-Translator.git
-	branch = amd-mainline
+	branch = release/therock-7.9
 [submodule "amdsmi"]
 	path = base/amdsmi
 	url = https://github.com/ROCm/amdsmi.git
-	branch = amd-staging
+	branch = release/therock-7.9

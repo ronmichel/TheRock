@@ -3,7 +3,7 @@ name: pre-commit
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [release/therock-7.9]
 
 permissions:
   contents: read
