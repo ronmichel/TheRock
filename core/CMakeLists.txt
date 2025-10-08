@@ -54,8 +54,11 @@ if(THEROCK_ENABLE_CORE_RUNTIME)
     EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/rocr-runtime/rocrtst/suites/test_common"
     BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/rocrtst"
     BACKGROUND_BUILD
+    COMPILER_TOOLCHAIN
+      "${_system_toolchain}"
     BUILD_DEPS
       amd-llvm
+      amdsmi
     RUNTIME_DEPS
       ROCR-Runtime
   )
