@@ -40,7 +40,7 @@ jobs:
           python3 ./build_tools/bump_submodules.py \
             --push-branch \
             --branch-name ${{ env.GIT_BRANCH_NAME }} \
-            --components comm-libs \
+            --components rocm-systems \
             --no-pin-ck
 
       - name: Generate GitHub App token
