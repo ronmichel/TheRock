@@ -180,10 +180,6 @@ if(THEROCK_ENABLE_HIPDNN)
       amd-hip
     BUILD_DEPS
       therock-googletest
-      therock-flatbuffers
-      therock-nlohmann-json
-      therock-fmt
-      therock-spdlog
     RUNTIME_DEPS
       hip-clr
       therock-fmt
