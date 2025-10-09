@@ -51,7 +51,7 @@ def create_index_file(args: argparse.Namespace):
     report_dir = args.report_path
     indexer_args = argparse.Namespace()
     indexer_args.filter = ["*.html*"]
-    indexer_args.output_file = "index.html"
+    indexer_args.output_file = "index_rccl_test_report.html"
     indexer_args.verbose = False
     indexer_args.recursive = False
     process_dir(report_dir, indexer_args)
