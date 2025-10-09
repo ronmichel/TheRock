@@ -7,11 +7,23 @@ on:
       - synchronize
       - reopened
   workflow_dispatch:
-    inputs:
+   inputs:
       branch-name:
         default: "bump-submodule"
         type: string
         description: "Branch name to use for the PR"
+      components:
+        default: ""
+        type: string
+        description: "Comma-separated list of components to bump"
+      no-pin-ck:
+        default: "true"
+        type: boolean
+        description: "Include --no-pin-ck flag (optional)"
+      extra-flags:
+        default: ""
+        type: string
+        description: "Any other flags to pass to bump_submodules.py"
         
 permissions:
   contents: write
@@ -37,12 +49,28 @@ jobs:
 
       - name: Run bump_submodules.py
         run: |
-          python3 ./build_tools/bump_submodules.py \
-            --push-branch \
-            --branch-name ${{ env.GIT_BRANCH_NAME }} \
-            --components rocm-systems \
-            --no-pin-ck
-
+          CMD="python3 ./build_tools/bump_submodules.py --push-branch --branch-name ${{ env.GIT_BRANCH_NAME }}"
+          if [ -n "${{ inputs.components }}" ]; then
+            CMD="$CMD --components ${{ inputs.components }}"
+          fi
+          if [ "${{ inputs.no-pin-ck }}" == "true" ]; then
+            CMD="$CMD --no-pin-ck"
+          fi
+          if [ -n "${{ inputs.extra-flags }}" ]; then
+            CMD="$CMD ${{ inputs.extra-flags }}"
+          fi
+          echo "Running command: $CMD"
+          eval $CMD
+          
+      - name: Prepare PR body with diff info
+        run: |
+          echo "Automated submodule bump" > pr_body.txt
+          echo "This PR was automatically created by a GitHub App to update submodules." >> pr_body.txt
+          echo "" >> pr_body.txt
+          echo "Submodule changes:" >> pr_body.txt
+          git diff origin/main...${{ env.GIT_BRANCH_NAME }} -- submodules || git diff origin/main...${{ env.GIT_BRANCH_NAME }} >> pr_body.txt
+          echo "" >> pr_body.txt
+          
       - name: Generate GitHub App token
         uses: actions/create-github-app-token@v2
         id: generate-token
@@ -54,10 +82,6 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: |
-          {
-            echo "Automated submodule bump"
-            echo "This PR was automatically created by a GitHub App to update submodules."
-          } >> pr_body.txt
           gh pr create \
             --base main \
             --head ${{ env.GIT_BRANCH_NAME }} \
