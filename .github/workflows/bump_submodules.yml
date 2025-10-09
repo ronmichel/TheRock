@@ -26,9 +26,6 @@ permissions:
   contents: write
   pull-requests: write
 
-env:
-  GIT_BRANCH_NAME: ${{ inputs.branch-name || 'bump-submodule' }}
-
 jobs:
   bump-submodules:
     runs-on: ubuntu-latest
@@ -43,10 +40,21 @@ jobs:
         run: |
           git config --global user.name "therockbot"
           git config --global user.email "therockbot@amd.com"
+      
+      - name: Set branch name
+        id: set-branch
+        run: |
+          DATE=$(date +%Y%m%d)
+          if [ -z "${{ inputs.branch-name }}" ]; then
+            BRANCH="bump-submodule-$DATE"
+          else
+            BRANCH="${{ inputs.branch-name }}"
+          fi
+          echo "branch-name=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: Run bump_submodules.py
         run: |
-          CMD="python3 ./build_tools/bump_submodules.py --push-branch --branch-name ${{ env.GIT_BRANCH_NAME }}"
+          CMD="python3 ./build_tools/bump_submodules.py --push-branch --branch-name ${{ steps.set-branch.outputs.branch-name }}"
           if [ -n "${{ inputs.components }}" ]; then
             CMD="$CMD --components ${{ inputs.components }}"
           fi
