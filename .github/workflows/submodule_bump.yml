@@ -56,9 +56,7 @@ jobs:
           if [ "true" == "true" ]; then
             CMD="$CMD --no-pin-ck"
           fi
-          if [ -n "${{ inputs.extra-flags }}" ]; then
-            CMD="$CMD ${{ inputs.extra-flags }}"
-          fi
+            CMD="$CMD --components comm-libs"
           echo "Running command: $CMD"
           eval $CMD
           
