@@ -50,6 +50,8 @@ if(THEROCK_ENABLE_ROCPROFV3)
     EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/rocprofiler-sdk"
     BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/rocprofiler-sdk"
     BACKGROUND_BUILD
+    BUILD_DEPS
+      rccl
     CMAKE_ARGS
       -DHIP_PLATFORM=amd
       -DBUILD_TESTS=${THEROCK_BUILD_TESTING}
@@ -57,7 +59,6 @@ if(THEROCK_ENABLE_ROCPROFV3)
       therock_explicit_finders.cmake
     RUNTIME_DEPS
       aqlprofile
-      rccl
       hip-clr
       rocprofiler-register
       ${_rocprofiler_sdk_optional_deps}
