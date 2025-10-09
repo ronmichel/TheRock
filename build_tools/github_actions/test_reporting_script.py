@@ -49,7 +49,6 @@ def retrieve_bucket_info() -> tuple[str, str]:
 def create_index_file(args: argparse.Namespace):
     logging.info("Creating index file")
     report_dir = args.report_path
-
     indexer_args = argparse.Namespace()
     indexer_args.filter = ["*.html*"]
     indexer_args.output_file = "index.html"
@@ -58,8 +57,8 @@ def create_index_file(args: argparse.Namespace):
     process_dir(report_dir, indexer_args)
 
 
-# Enhancement to upload all HTML test reports in a directory
-def upload_test_report(report_dir: Path, bucket_uri: str):
+# Enhancement to upload all HTML test reports in a destination directory
+def upload_test_report(report_dir: Path, bucket_uri: str, log_destination: str):
     """
     Upload all .html files from report_dir to bucket_uri (keeps filenames).
     """
@@ -69,14 +68,14 @@ def upload_test_report(report_dir: Path, bucket_uri: str):
             report_dir,
         )
         return
-
+    dest_uri = f"{bucket_uri}/{log_destination}"
     # Use a single AWS CLI call to copy only *.html files recursively
     cmd = [
         "aws",
         "s3",
         "cp",
         str(report_dir),
-        bucket_uri,
+        dest_uri,
         "--recursive",
         "--exclude",
         "*",
@@ -108,8 +107,9 @@ def run(args: argparse.Namespace):
         args.report_path,
         bucket_uri,
     )
-    upload_test_report(args.report_path, bucket_uri)
+
     create_index_file(args)
+    upload_test_report(args.report_path, bucket_uri, args.log_destination)
 
 
 def main(argv):
@@ -126,6 +126,13 @@ def main(argv):
         "--report-path",
         type=Path,
         help="Directory containing .html files to upload (optional)",
+    )
+
+    parser.add_argument(
+        "--log-destination",
+        type=str,
+        default="/logs/gfx950-dcgpu/multinode-ci-logs",
+        help="Subdirectory in S3 to upload reports",
     )
 
     args = parser.parse_args(argv)
