@@ -53,7 +53,7 @@ jobs:
           if [ -n "${{ inputs.components }}" ]; then
             CMD="$CMD --components ${{ inputs.components }}"
           fi
-          if [ "${{ inputs.no-pin-ck }}" == "true" ]; then
+          if [ "true" == "true" ]; then
             CMD="$CMD --no-pin-ck"
           fi
           if [ -n "${{ inputs.extra-flags }}" ]; then
