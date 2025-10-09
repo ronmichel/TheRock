@@ -57,6 +57,7 @@ if(THEROCK_ENABLE_ROCPROFV3)
       therock_explicit_finders.cmake
     RUNTIME_DEPS
       aqlprofile
+      rccl
       hip-clr
       rocprofiler-register
       ${_rocprofiler_sdk_optional_deps}
