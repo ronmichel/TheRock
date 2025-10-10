@@ -176,8 +176,8 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
     BACKGROUND_BUILD
     CMAKE_ARGS
       "-DHIP_PLATFORM=amd"
-      "-DCMAKE_CXX_COMPILER=${THEROCK_BINARY_DIR}/hipcc/build/bin/hipcc"
-      "-DCMAKE_C_COMPILER=${THEROCK_BINARY_DIR}/hipcc/build/bin/hipcc"
+      "-DCMAKE_CXX_COMPILER=${THEROCK_BINARY_DIR}/compiler/hipcc/dist/bin/hipcc"
+      "-DCMAKE_C_COMPILER=${THEROCK_BINARY_DIR}/compiler/hipcc/dist/bin/hipcc"
     COMPILER_TOOLCHAIN
       amd-hip
     BUILD_DEPS
