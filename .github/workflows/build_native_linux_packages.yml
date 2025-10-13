@@ -85,8 +85,8 @@ jobs:
         run: |
           pip install pyelftools boto3 jinja2
           cat /etc/os-release
-          sudo yum install -y rpm-build
-          #sudo apt install -y llvm debhelper-compat build-essential
+          #sudo yum install -y rpm-build
+          sudo apt install -y llvm debhelper-compat build-essential
 
       - name: Fetch Artifacts
         # TODO: Currently fetch artifacts is part of build package itself. Need to seperate it out
