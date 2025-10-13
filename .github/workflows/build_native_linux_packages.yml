@@ -86,6 +86,7 @@ jobs:
           pip install pyelftools boto3 jinja2
           cat /etc/os-release
           #sudo yum install -y rpm-build
+          sudo apt update
           sudo apt install -y llvm debhelper-compat build-essential
 
       - name: Fetch Artifacts
