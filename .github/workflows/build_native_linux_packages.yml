@@ -102,12 +102,11 @@ jobs:
           echo "Building ${{ inputs.package_type }} packages for ${{ inputs.amdgpu_family }} ${{ inputs.artifact_run_id }}"
           python ./build_tools/packaging/linux/build_package.py \
             --dest-dir ${{ env.PACKAGE_DIST_DIR }} \
-            --rocm-version  ${{ inputs.rocm_version }} \
-            --target ${{ inputs.amdgpu_family }} \
+            --rocm-version  7.9.0 \
+            --target  gfx94X-dcgpu\
             --artifacts-dir ${{ env.ARTIFACTS_DIR }} \
-            --pkg-type ${{ inputs.package_type }} \
-            --pkg-names rocm-core hsa-rocr \
-            --version-suffix ${{ inputs.package_suffix }}
+            --pkg-type rpm \
+            --pkg-names rocm-core hsa-rocr 
 
       - name: Install repo tools
         run: |
