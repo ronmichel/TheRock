@@ -83,7 +83,7 @@ jobs:
       - name: Install Python requirements
         run: |
           pip install pyelftools boto3 jinja2
-          sudo apt install -y llvm debhelper-compat build-essential
+          #sudo apt install -y llvm debhelper-compat build-essential
 
       - name: Fetch Artifacts
         # TODO: Currently fetch artifacts is part of build package itself. Need to seperate it out
@@ -115,7 +115,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y dpkg-dev
           else
-            sudo apt-get install -y createrepo-c
+            sudo yum install -y createrepo_c
           fi
 
       - name: Install AWS CLI
