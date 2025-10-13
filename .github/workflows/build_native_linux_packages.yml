@@ -108,12 +108,13 @@ jobs:
             --rocm-version  7.9.0 \
             --target  gfx94X-dcgpu \
             --artifacts-dir ${{ env.ARTIFACTS_DIR }} \
-            --pkg-type rpm \
+            --pkg-type deb \
             --pkg-names rocm-core hsa-rocr 
 
       - name: Install repo tools
         run: |
-          sudo yum install -y createrepo_c
+          #sudo yum install -y createrepo_c
+          sudo apt-get install -y dpkg-dev
           #if [[ "${{ inputs.package_type }}" == "deb" ]]; then
           #  sudo apt-get update
           #  sudo apt-get install -y dpkg-dev
