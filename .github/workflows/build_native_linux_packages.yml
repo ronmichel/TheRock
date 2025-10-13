@@ -52,6 +52,11 @@ on:
       package_suffix:
         description: The suffix to be added to package name(build_no or master or rc or combiantion).
         type: string
+  
+  pull_request:
+    branches:
+      - main
+
 
 permissions:
   id-token: write
