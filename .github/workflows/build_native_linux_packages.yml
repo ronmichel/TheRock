@@ -84,6 +84,7 @@ jobs:
       - name: Install Python requirements
         run: |
           pip install pyelftools boto3 jinja2
+          yum install -y rpm-build
           #sudo apt install -y llvm debhelper-compat build-essential
 
       - name: Fetch Artifacts
@@ -93,7 +94,7 @@ jobs:
           python ./build_tools/fetch_artifacts.py \
             --run-id=${{ env.ARTIFACT_RUN_ID }} \
             --run-github-repo="ROCm/TheRock" \
-            --target=${{ inputs.amdgpu_family }} \
+            --target=gfx94X-dcgpu \
             --output-dir=${{ env.ARTIFACTS_DIR }}
 
       - name: Build Packages
@@ -103,7 +104,7 @@ jobs:
           python ./build_tools/packaging/linux/build_package.py \
             --dest-dir ${{ env.PACKAGE_DIST_DIR }} \
             --rocm-version  7.9.0 \
-            --target  gfx94X-dcgpu\
+            --target  gfx94X-dcgpu \
             --artifacts-dir ${{ env.ARTIFACTS_DIR }} \
             --pkg-type rpm \
             --pkg-names rocm-core hsa-rocr 
