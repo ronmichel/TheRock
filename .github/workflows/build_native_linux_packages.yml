@@ -84,7 +84,8 @@ jobs:
       - name: Install Python requirements
         run: |
           pip install pyelftools boto3 jinja2
-          yum install -y rpm-build
+          cat /etc/os-release
+          sudo yum install -y rpm-build
           #sudo apt install -y llvm debhelper-compat build-essential
 
       - name: Fetch Artifacts
@@ -111,12 +112,13 @@ jobs:
 
       - name: Install repo tools
         run: |
-          if [[ "${{ inputs.package_type }}" == "deb" ]]; then
-            sudo apt-get update
-            sudo apt-get install -y dpkg-dev
-          else
-            sudo yum install -y createrepo_c
-          fi
+          sudo yum install -y createrepo_c
+          #if [[ "${{ inputs.package_type }}" == "deb" ]]; then
+          #  sudo apt-get update
+          #  sudo apt-get install -y dpkg-dev
+          #else
+          #  sudo yum install -y createrepo_c
+          #fi
 
       - name: Install AWS CLI
         run: bash ./dockerfiles/install_awscli.sh
