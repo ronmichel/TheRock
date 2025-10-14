@@ -214,60 +214,60 @@ jobs:
           restore-keys: |
             windows-package-matrix-v1-${{ matrix.target_bundle.amdgpu_family }}-
 
-      - name: Fetch sources
-        timeout-minutes: 30
-        run: |
-          git config fetch.parallel 10
-          git config --global core.symlinks true
-          git config --global core.longpaths true
-          python ./build_tools/fetch_sources.py --jobs 12
+      # - name: Fetch sources
+      #   timeout-minutes: 30
+      #   run: |
+      #     git config fetch.parallel 10
+      #     git config --global core.symlinks true
+      #     git config --global core.longpaths true
+      #     python ./build_tools/fetch_sources.py --jobs 12
 
-      - name: Configure Projects
-        env:
-          amdgpu_families: ${{ matrix.target_bundle.amdgpu_family }}
-          package_version: "ADHOCBUILD"
-          extra_cmake_options: ${{ inputs.extra_cmake_options }}
-        run: |
-          # clear cache before build and after download
-          ccache -z
+      # - name: Configure Projects
+      #   env:
+      #     amdgpu_families: ${{ matrix.target_bundle.amdgpu_family }}
+      #     package_version: "ADHOCBUILD"
+      #     extra_cmake_options: ${{ inputs.extra_cmake_options }}
+      #   run: |
+      #     # clear cache before build and after download
+      #     ccache -z
 
-          python3 build_tools/github_actions/build_configure.py
+      #     python3 build_tools/github_actions/build_configure.py
 
-      - name: Build therock-dist
-        run: cmake --build "${{ env.BUILD_DIR }}" --target therock-dist
+      # - name: Build therock-dist
+      #   run: cmake --build "${{ env.BUILD_DIR }}" --target therock-dist
 
-      - name: Build therock-archives
-        run: cmake --build "${{ env.BUILD_DIR }}" --target therock-archives
+      # - name: Build therock-archives
+      #   run: cmake --build "${{ env.BUILD_DIR }}" --target therock-archives
 
-      - name: Compress dist folder
-        run: |
-          cd ${{ env.BUILD_DIR }}/dist/rocm
-          echo "Compressing ${{ env.DIST_ARCHIVE }}"
-          tar cfz "${{ env.DIST_ARCHIVE }}" --force-local .
+      # - name: Compress dist folder
+      #   run: |
+      #     cd ${{ env.BUILD_DIR }}/dist/rocm
+      #     echo "Compressing ${{ env.DIST_ARCHIVE }}"
+      #     tar cfz "${{ env.DIST_ARCHIVE }}" --force-local .
 
-      - name: Build Python Packages
-        run: |
-          python ./build_tools/build_python_packages.py \
-            --artifact-dir=${{ env.BUILD_DIR }}/artifacts \
-            --dest-dir=${{ env.BUILD_DIR }}/packages \
-            --version=${{ needs.setup_metadata.outputs.version }}
+      # - name: Build Python Packages
+      #   run: |
+      #     python ./build_tools/build_python_packages.py \
+      #       --artifact-dir=${{ env.BUILD_DIR }}/artifacts \
+      #       --dest-dir=${{ env.BUILD_DIR }}/packages \
+      #       --version=${{ needs.setup_metadata.outputs.version }}
 
-      - name: Build report
-        if: ${{ !cancelled() }}
-        shell: bash
-        run: |
-          if [ -d "${{ env.BUILD_DIR }}" ]; then
-            echo "Build dir:"
-            echo "------------"
-            ls -lh "${{ env.BUILD_DIR }}"
-            echo "CCache Stats:"
-            echo "-------------"
-            ccache -s
-          else
-            echo "[ERROR] Build directory ${{ env.BUILD_DIR }} does not exist. Skipping report!"
-            echo "        This should only happen if the CI is cancelled before the build step."
-            exit 1  # Stop the CI as build did not happen
-          fi
+      # - name: Build report
+      #   if: ${{ !cancelled() }}
+      #   shell: bash
+      #   run: |
+      #     if [ -d "${{ env.BUILD_DIR }}" ]; then
+      #       echo "Build dir:"
+      #       echo "------------"
+      #       ls -lh "${{ env.BUILD_DIR }}"
+      #       echo "CCache Stats:"
+      #       echo "-------------"
+      #       ccache -s
+      #     else
+      #       echo "[ERROR] Build directory ${{ env.BUILD_DIR }} does not exist. Skipping report!"
+      #       echo "        This should only happen if the CI is cancelled before the build step."
+      #       exit 1  # Stop the CI as build did not happen
+      #     fi
 
       - name: Configure AWS Credentials
         if: ${{ github.repository_owner == 'ROCm' }}
@@ -276,14 +276,14 @@ jobs:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-${{ env.RELEASE_TYPE }}-releases
 
-      - name: Upload Releases to staging S3
-        if: ${{ github.repository_owner == 'ROCm' }}
-        run: |
-          aws s3 cp ${{ env.BUILD_DIR }}/packages/dist/ s3://${{ env.S3_BUCKET_PY }}/${{ env.S3_STAGING_SUBDIR }}/${{ matrix.target_bundle.amdgpu_family }}/ \
-          --recursive --no-follow-symlinks \
-          --exclude "*" \
-          --include "*.whl" \
-          --include "*.tar.gz"
+      # - name: Upload Releases to staging S3
+      #   if: ${{ github.repository_owner == 'ROCm' }}
+      #   run: |
+      #     aws s3 cp ${{ env.BUILD_DIR }}/packages/dist/ s3://${{ env.S3_BUCKET_PY }}/${{ env.S3_STAGING_SUBDIR }}/${{ matrix.target_bundle.amdgpu_family }}/ \
+      #     --recursive --no-follow-symlinks \
+      #     --exclude "*" \
+      #     --include "*.whl" \
+      #     --include "*.tar.gz"
 
       - name: (Re-)Generate Python package release index for staging
         if: ${{ github.repository_owner == 'ROCm' }}
@@ -294,16 +294,16 @@ jobs:
           pip install boto3 packaging
           python ./build_tools/third_party/s3_management/manage.py ${{ env.CUSTOM_PREFIX }}
 
-      ## TODO: Restrict uploading to the non-staging S3 directory until sanity checks and all validation tests have successfully passed.
-      - name: Upload Releases to S3
-        if: ${{ github.repository_owner == 'ROCm' }}
-        run: |
-          aws s3 cp ${{ env.DIST_ARCHIVE }} s3://${{ env.S3_BUCKET_TAR }}/${{ env.S3_SUBDIR_TAR }}
-          aws s3 cp ${{ env.BUILD_DIR }}/packages/dist/ s3://${{ env.S3_BUCKET_PY }}/${{ env.S3_SUBDIR }}/${{ matrix.target_bundle.amdgpu_family }}/ \
-          --recursive --no-follow-symlinks \
-          --exclude "*" \
-          --include "*.whl" \
-          --include "*.tar.gz"
+      # ## TODO: Restrict uploading to the non-staging S3 directory until sanity checks and all validation tests have successfully passed.
+      # - name: Upload Releases to S3
+      #   if: ${{ github.repository_owner == 'ROCm' }}
+      #   run: |
+      #     aws s3 cp ${{ env.DIST_ARCHIVE }} s3://${{ env.S3_BUCKET_TAR }}/${{ env.S3_SUBDIR_TAR }}
+      #     aws s3 cp ${{ env.BUILD_DIR }}/packages/dist/ s3://${{ env.S3_BUCKET_PY }}/${{ env.S3_SUBDIR }}/${{ matrix.target_bundle.amdgpu_family }}/ \
+      #     --recursive --no-follow-symlinks \
+      #     --exclude "*" \
+      #     --include "*.whl" \
+      #     --include "*.tar.gz"
 
       # TODO(marbre): guard against race conditions where multiple workflows update the index at the same time?
       #    Moving the index computation server-side could help
