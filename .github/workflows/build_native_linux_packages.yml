@@ -72,7 +72,7 @@ jobs:
     env:
       AWS_SHARED_CREDENTIALS_FILE: /home/awsconfig/credentials.ini
       BUILD_IMAGE: ghcr.io/rocm/therock_build_manylinux_x86_64@sha256:3ac188c17f88f08ce522297b616d8308361b8e9a9b31bcc3c3bbb9429b1efa6c
-      ARTIFACT_RUN_ID: 17840675558
+      ARTIFACT_RUN_ID: 16418185899
       OUTPUT_DIR: ${{ github.workspace }}/output
       ARTIFACTS_DIR: ${{ github.workspace }}/output/artifacts
       PACKAGE_DIST_DIR: ${{ github.workspace }}/output/packages
@@ -108,8 +108,7 @@ jobs:
             --rocm-version  7.9.0 \
             --target  gfx94X-dcgpu \
             --artifacts-dir ${{ env.ARTIFACTS_DIR }} \
-            --pkg-type deb \
-            --pkg-names rocm-core hsa-rocr 
+            --pkg-type deb
 
       - name: Install repo tools
         run: |
