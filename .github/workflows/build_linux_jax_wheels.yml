@@ -23,6 +23,14 @@ on:
       tar_url:
         description: URL to TheRock tarball to build against
         type: string
+      cloudfront_url:
+        description: CloudFront URL pointing to Python index
+        required: true
+        type: string
+      cloudfront_staging_url:
+        description: CloudFront base URL pointing to staging Python index
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       amdgpu_family:
@@ -53,6 +61,14 @@ on:
       tar_url:
         description: URL to TheRock tarball to build against
         type: string
+      cloudfront_url:
+        description: CloudFront base URL pointing to Python index
+        type: string
+        default: "https://d25kgig7rdsyks.cloudfront.net/v2"
+      cloudfront_staging_url:
+        description: CloudFront base URL pointing to staging Python index
+        type: string
+        default: "https://d25kgig7rdsyks.cloudfront.net/v2-staging"
 
 permissions:
   id-token: write
@@ -127,8 +143,8 @@ jobs:
           pip3 install boto3 packaging
           python3 ./build_tools/third_party/s3_management/manage.py ${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}
 
-  build_test_push_jax_docker:
-    name: Build, Test, and Push JAX Docker | ${{ inputs.amdgpu_family }}
+  test_jax_wheels:
+    name: Test JAX wheels | ${{ inputs.amdgpu_family }}
     needs: [build_jax_wheels]
     if: ${{ github.repository_owner == 'ROCm' }}
     permissions:
@@ -140,6 +156,7 @@ jobs:
       amdgpu_family: ${{ inputs.amdgpu_family }}
       release_type: ${{ inputs.release_type }}
       s3_subdir: ${{ inputs.s3_subdir }}
+      package_index_url: ${{ inputs.cloudfront_staging_url }}
       rocm_version: ${{ inputs.rocm_version }}
       tar_url: ${{ inputs.tar_url }}
       python_versions: ${{ inputs.python_versions }}

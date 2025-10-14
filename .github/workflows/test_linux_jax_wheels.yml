@@ -36,6 +36,9 @@ on:
         required: false
         type: string
         default: "rocm-jaxlib-v0.7.1"
+      package_index_url:
+        required: true
+        type: string
 
   workflow_dispatch:
     inputs:
@@ -72,6 +75,11 @@ on:
         type: string
         description: JAX test repo branch to get unit tests from
         default: "rocm-jaxlib-v0.7.1"
+      package_index_url:
+        description: Base Python package index URL to test, typically nightly/dev URL with a "v2" or "v2-staging" subdir (without a GPU family subdir)
+        required: true
+        type: string
+        default: "https://rocm.nightlies.amd.com/v2"
 
 permissions:
   contents: read
@@ -100,9 +108,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install AWS CLI
-        run: bash ./dockerfiles/install_awscli.sh
-
       - name: Prepare wheelhouse and download JAX wheels
         shell: bash
         working-directory: jax
@@ -112,24 +117,17 @@ jobs:
           AWS_FLAGS="--no-sign-request"
           PY_VER="${{ inputs.python_versions }}"
           CP="${PY_VER//./}"
-          BASE_S3_URL_WHL="s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/"
+          BASE_CF_URL_WHL="${{ inputs.package_index_url }}/${{ inputs.amdgpu_family }}/"
 
-          echo "Copying wheels from ${BASE_S3_URL_WHL} -> ${WHEELHOUSE_DIR}"
+          echo "Copying wheels from ${BASE_CF_URL_WHL} -> ${WHEELHOUSE_DIR}"
           echo "Using Python ${PY_VER}, CP=${CP}"
 
-          # Plugin wheel
-          aws s3 cp "${BASE_S3_URL_WHL}" "${WHEELHOUSE_DIR}/" \
-            --recursive \
-            --exclude "*" \
-            --include "jax_rocm7_plugin-*-cp${CP}-cp${CP}-manylinux_*_x86_64.whl" \
-            ${AWS_FLAGS}
+          # Plugin and PJRT wheel
+          wget -nv -r -np -nd \
+            --accept "jax_rocm7_plugin-*-cp${CP}-cp${CP}-manylinux_*_x86_64.whl,jax_rocm7_pjrt-*-py3-none-manylinux_*_x86_64.whl" \
+            -P "${WHEELHOUSE_DIR}" \
+            "${BASE_CF_URL_WHL}"
 
-          # PJRT wheel
-          aws s3 cp "${BASE_S3_URL_WHL}" "${WHEELHOUSE_DIR}/" \
-            --recursive \
-            --exclude "*" \
-            --include "jax_rocm7_pjrt-*-py3-none-manylinux_*_x86_64.whl" \
-            ${AWS_FLAGS}
           echo "Contents of wheelhouse:"
           pwd
           ls -lah "${WHEELHOUSE_DIR}"
