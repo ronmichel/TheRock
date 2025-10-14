@@ -22,32 +22,28 @@ def find_package_dir():
     print(f"Using package directory: {base_dir}")
     return base_dir
 
-def create_deb_repo(package_dir, origin_name, s3_base_url):
+def create_deb_repo(package_dir, origin_name):
     print("Creating APT repository...")
     dists_dir = os.path.join(package_dir, "dists", "stable", "main", "binary-amd64")
     release_dir = os.path.join(package_dir, "dists", "stable")
     pool_dir = os.path.join(package_dir, "pool", "main")
+
     os.makedirs(dists_dir, exist_ok=True)
     os.makedirs(pool_dir, exist_ok=True)
+
     for file in os.listdir(package_dir):
         if file.endswith(".deb"):
             shutil.move(os.path.join(package_dir, file), os.path.join(pool_dir, file))
+
     print("Generating Packages file...")
     rel_pool_path = os.path.relpath(pool_dir, dists_dir)
-    raw_packages_path = os.path.join(dists_dir, "Packages.raw")
-    cmd = f"dpkg-scanpackages {rel_pool_path} /dev/null > Packages.raw"
+    cmd = f"dpkg-scanpackages {rel_pool_path} /dev/null > Packages"
     run_command(cmd, cwd=dists_dir)
-    fixed_packages_path = os.path.join(dists_dir, "Packages")
-    with open(raw_packages_path, "r") as infile, open(fixed_packages_path, "w") as outfile:
-        for line in infile:
-            if line.startswith("Filename: "):
-                filename = os.path.basename(line.strip().split()[-1])
-                outfile.write(f"Filename: {s3_base_url}/pool/main/{filename}\n")
-            else:
-                outfile.write(line)
+
     run_command("gzip -9c Packages > Packages.gz", cwd=dists_dir)
+
     print("Creating Release file...")
-    release_content = f"""\
+    release_content = f"""\   
 Origin: {origin_name}
 Label: {origin_name}
 Suite: stable
@@ -63,6 +59,7 @@ Description: ROCm GFX94X APT Repository (for Ubuntu 22.04/24.04)
     with open(release_path, "w") as f:
         f.write(release_content)
     print(f"Wrote Release file to {release_path}")
+
 
 def create_rpm_repo(package_dir):
     print("Creating YUM/DNF repository...")
@@ -99,8 +96,7 @@ def main():
     s3_prefix = f"{args.amdgpu_family}_{args.artifact_id}/{args.pkg_type}"
 
     if args.pkg_type == "deb":
-        s3_base_url = f"https://{args.s3_bucket}.s3.amazonaws.com/{s3_prefix}"
-        create_deb_repo(package_dir, args.s3_bucket, s3_base_url)
+        create_deb_repo(package_dir, args.s3_bucket)
     else:
         create_rpm_repo(package_dir)
 
