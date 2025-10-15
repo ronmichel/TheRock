@@ -30,20 +30,17 @@ def create_deb_repo(package_dir, origin_name):
 
     os.makedirs(dists_dir, exist_ok=True)
     os.makedirs(pool_dir, exist_ok=True)
-
     for file in os.listdir(package_dir):
         if file.endswith(".deb"):
             shutil.move(os.path.join(package_dir, file), os.path.join(pool_dir, file))
 
-    print("Generating Packages file...")
-    rel_pool_path = os.path.relpath(pool_dir, dists_dir)
-    cmd = f"dpkg-scanpackages pool /dev/null > Packages"
-    run_command(cmd, cwd=dists_dir)
-
+    print("Generating Packages file at repository root so 'Filename' paths are 'pool/...'.")
+    cmd = "dpkg-scanpackages -m pool/main /dev/null > dists/stable/main/binary-amd64/Packages"
+    run_command(cmd, cwd=package_dir)
     run_command("gzip -9c Packages > Packages.gz", cwd=dists_dir)
 
     print("Creating Release file...")
-    release_content = f"""\   
+    release_content = f"""\
 Origin: {origin_name}
 Label: {origin_name}
 Suite: stable
@@ -52,13 +49,14 @@ Version: 1.0
 Date: {datetime.datetime.utcnow().strftime('%a, %d %b %Y %H:%M:%S UTC')}
 Architectures: amd64
 Components: main
-Description: ROCm GFX94X APT Repository (for Ubuntu 22.04/24.04)
+Description: ROCm Repository
 """
     os.makedirs(release_dir, exist_ok=True)
     release_path = os.path.join(release_dir, "Release")
     with open(release_path, "w") as f:
         f.write(release_content)
     print(f"Wrote Release file to {release_path}")
+
 
 
 def create_rpm_repo(package_dir):
