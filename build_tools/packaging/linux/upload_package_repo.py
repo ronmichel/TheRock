@@ -37,7 +37,7 @@ def create_deb_repo(package_dir, origin_name):
 
     print("Generating Packages file...")
     rel_pool_path = os.path.relpath(pool_dir, dists_dir)
-    cmd = f"dpkg-scanpackages {rel_pool_path} /dev/null > Packages"
+    cmd = f"dpkg-scanpackages pool /dev/null > Packages"
     run_command(cmd, cwd=dists_dir)
 
     run_command("gzip -9c Packages > Packages.gz", cwd=dists_dir)
