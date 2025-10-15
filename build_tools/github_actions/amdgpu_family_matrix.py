@@ -26,7 +26,7 @@ amdgpu_family_info_matrix_presubmit = {
             "bypass_tests_for_releases": True,
         },
     },
-    "gfx115x": {
+    "gfx1151": {
         "linux": {
             "test-runs-on": "linux-strix-halo-gpu-rocm",
             "family": "gfx1151",
@@ -101,6 +101,18 @@ amdgpu_family_info_matrix_nightly = {
         "windows": {
             "test-runs-on": "",
             "family": "gfx103X-dgpu",
+            "expect_failure": True,
+        },
+    },
+    "gfx1150": {
+        "linux": {
+            "test-runs-on": "",
+            "family": "gfx1150",
+            "expect_failure": True,
+        },
+        "windows": {
+            "test-runs-on": "",
+            "family": "gfx1150",
             "expect_failure": True,
         },
     },
