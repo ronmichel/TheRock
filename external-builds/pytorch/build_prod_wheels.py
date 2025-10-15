@@ -605,25 +605,25 @@ def do_build_pytorch(
     pytorch_build_version_parsed = parse(pytorch_build_version)
     print(f"  Default PYTORCH_BUILD_VERSION: {pytorch_build_version}")
 
-    ## Disable FBGEMM_GENAI and flash_attention only for Linux on 2.10 and higher Pytorch version
+    ## Disable FBGEMM_GENAI and flash_attention only for Linux on 2.9 and higher Pytorch version
     ## https://github.com/ROCm/TheRock/issues/1619
     if not is_windows:
         # Enabling/Disabling FBGEMM_GENAI based on Pytorch version in Linux
-        if pytorch_build_version_parsed.release < (2, 10):
+        if pytorch_build_version_parsed.release < (2, 9):
             env["USE_FBGEMM_GENAI"] = "ON"
             print(
-                f"FBGEMM_GENAI enabled (PyTorch < 2.10, Linux): {env['USE_FBGEMM_GENAI'] == 'ON'}"
+                f"FBGEMM_GENAI enabled (PyTorch < 2.9, Linux): {env['USE_FBGEMM_GENAI'] == 'ON'}"
             )
         else:
             env["USE_FBGEMM_GENAI"] = (
                 "ON" if args.enable_pytorch_fbgemm_genai_linux else "OFF"
             )
             print(
-                f"FBGEMM_GENAI enabled (PyTorch >= 2.10, Linux): {env['USE_FBGEMM_GENAI'] == 'ON'}"
+                f"FBGEMM_GENAI enabled (PyTorch >= 2.9, Linux): {env['USE_FBGEMM_GENAI'] == 'ON'}"
             )
 
         # Enabling/Disabling Flash attention based on Pytorch version in Linux
-        if pytorch_build_version_parsed.release < (2, 10):
+        if pytorch_build_version_parsed.release < (2, 9):
             env.update(
                 {
                     "USE_FLASH_ATTENTION": "1",
@@ -631,7 +631,7 @@ def do_build_pytorch(
                 }
             )
             print(
-                f"Flash Attention enabled (PyTorch < 2.10, Linux): {env['USE_FLASH_ATTENTION'] == '1'}"
+                f"Flash Attention enabled (PyTorch < 2.9, Linux): {env['USE_FLASH_ATTENTION'] == '1'}"
             )
         else:
             use_flash_attention = (
@@ -644,7 +644,7 @@ def do_build_pytorch(
                 }
             )
             print(
-                f"Flash Attention enabled (PyTorch >= 2.10, Linux): {env['USE_FLASH_ATTENTION'] == '1'}"
+                f"Flash Attention enabled (PyTorch >= 2.9, Linux): {env['USE_FLASH_ATTENTION'] == '1'}"
             )
 
     env["USE_ROCM"] = "ON"
