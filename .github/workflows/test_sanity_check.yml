@@ -42,7 +42,7 @@ jobs:
         --group-add video
         --device /dev/kfd
         --device /dev/dri
-        --group-add 110 # This group add ID is specific to OSSCI GPU permissions. Not required for other machines
+        --group-add ${{ vars.OSSCI_GPU_GROUP_ID  }}
         --env-file /etc/podinfo/gha-gpu-isolation-settings
         --user 0:0 # Running as root, by recommendation of GitHub: https://docs.github.com/en/actions/reference/workflows-and-actions/dockerfile-support#user
     defaults:
