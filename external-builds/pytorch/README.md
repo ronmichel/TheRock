@@ -35,7 +35,7 @@ This incorporates advice from:
 | torch                          | ✅ Supported                                                                                                                  | ✅ Supported    |
 | torchaudio                     | ✅ Supported                                                                                                                  | ✅ Supported    |
 | torchvision                    | ✅ Supported                                                                                                                  | ✅ Supported    |
-| Flash attention via [ao]triton | ✅ Supported for torch < 2.10<br>❌ Disabled for torch ≥ 2.10 (see [Issue#1408](https://github.com/ROCm/TheRock/issues/1408)) | ✅ Supported    |
+| Flash attention via [ao]triton | ✅ Supported for torch < 2.9<br>❌ Disabled for torch ≥ 2.9 (see [Issue#1408](https://github.com/ROCm/TheRock/issues/1408)) | ✅ Supported    |
 
 ### Supported PyTorch versions
 
