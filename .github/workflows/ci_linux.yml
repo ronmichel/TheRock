@@ -49,15 +49,15 @@ jobs:
     # If the dependent job failed/cancelled, this job will not be run
     # The use_prebuilt_artifacts "or" statement ensures that tests will run if
     # previous build step is run or skipped.concurrency.
-    # if: >-
-    #   ${{
-    #     !failure() &&
-    #     !cancelled() &&
-    #     (
-    #       inputs.use_prebuilt_artifacts == 'false' ||
-    #       inputs.use_prebuilt_artifacts == 'true'
-    #     )
-    #   }}
+    if: >-
+      ${{
+        !failure() &&
+        !cancelled() &&
+        (
+          inputs.use_prebuilt_artifacts == 'false' ||
+          inputs.use_prebuilt_artifacts == 'true'
+        )
+      }}
     uses: ./.github/workflows/test_artifacts_sharded.yml
     secrets: inherit
     with:
