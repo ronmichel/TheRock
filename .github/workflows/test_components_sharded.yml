@@ -89,7 +89,6 @@ jobs:
           # Run tests in parallel across multiple single-GPU nodes
           # Each test shard will get its own GPU
           pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} \
-            -k rocthrust \
             --dist=loadscope \
             --numprocesses=auto \
             --maxprocesses=1
