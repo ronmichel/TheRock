@@ -84,7 +84,13 @@ jobs:
         run: |
           cd tests/sharding
           pip install -r requirements.txt
-          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} -k rocthrust;
+          # Run tests in parallel across multiple single-GPU nodes
+          # Each test shard will get its own GPU
+          pytest -v -s --tb=short tests.py --rock=${OUTPUT_ARTIFACTS_DIR} \
+            -k rocthrust \
+            --dist=loadscope \
+            --numprocesses=auto \
+            --maxprocesses=1
 
       - name: Post-job cleanup processes on Windows
         if: ${{ always() && runner.os == 'Windows' }}
