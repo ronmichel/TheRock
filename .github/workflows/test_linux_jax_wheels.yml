@@ -121,7 +121,8 @@ jobs:
 
           echo "Copying wheels from ${BASE_CF_URL_WHL} -> ${WHEELHOUSE_DIR}"
           echo "Using Python ${PY_VER}, CP=${CP}"
-
+          apt update && apt install wget -y
+          
           # Plugin and PJRT wheel
           wget -nv -r -np -nd \
             --accept "jax_rocm7_plugin-*-cp${CP}-cp${CP}-manylinux_*_x86_64.whl,jax_rocm7_pjrt-*-py3-none-manylinux_*_x86_64.whl" \
