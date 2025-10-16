@@ -26,7 +26,7 @@ amdgpu_family_info_matrix_presubmit = {
             "bypass_tests_for_releases": True,
         },
     },
-    "gfx115X": {
+    "gfx115x": {
         "linux": {
             "test-runs-on": "linux-strix-halo-gpu-rocm",
             "family": "gfx115X-igpu",
