@@ -57,7 +57,6 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
         -DBUILD_SHARED_LIBS=ON
         # https://github.com/OpenMathLib/OpenBLAS?tab=readme-ov-file#x86x86-64
         # Picking HASWELL as a baseline that supports modern AMD and Intel CPUs
-        -DCMAKE_CROSSCOMPILING=ON
         -DTARGET=HASWELL
         -DDYNAMIC_ARCH=${_enable_dynamicArch}
         -DINTERFACE64=ON
