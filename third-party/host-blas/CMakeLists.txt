@@ -114,7 +114,7 @@ set_target_properties(openblas64_shared PROPERTIES
   # Private SONAME/DLL name.
   OUTPUT_NAME rocm-openblas
   # Install location in the library is hard-coded to include in the install root.
-  INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/openblas>
+  INTERFACE_INCLUDE_DIRECTORIES $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/openblas64>
 )
 
 # Some of the test targets do not build with an altered library name on
