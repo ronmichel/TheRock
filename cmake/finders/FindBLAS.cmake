@@ -9,7 +9,6 @@ if("OpenBLAS64" IN_LIST THEROCK_PROVIDED_PACKAGES)
   find_package(OpenBLAS64 CONFIG REQUIRED)
   set(BLAS_LIBRARIES OpenBLAS64::OpenBLAS64)
   add_library(BLAS::BLAS ALIAS OpenBLAS64::OpenBLAS64)
-  add_library(OpenBLAS::OpenBLAS ALIAS OpenBLAS64::OpenBLAS64)
   # See: https://cmake.org/cmake/help/latest/module/FindBLAS.html
   set(BLAS_LINKER_FLAGS)
   set(BLAS95_LIBRARIES)
