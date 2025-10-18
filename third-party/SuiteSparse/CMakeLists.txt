@@ -28,6 +28,7 @@ therock_cmake_subproject_declare(therock-SuiteSparse
     -DSUITESPARSE_USE_CUDA=OFF
     -DSUITESPARSE_USE_OPENMP=OFF
     -DSUITESPARSE_USE_FORTRAN=OFF
+    -DSUITESPARSE_USE_64BIT_BLAS=ON
   RUNTIME_DEPS
     therock-host-blas
 )
