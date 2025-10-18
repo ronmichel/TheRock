@@ -1,0 +1,156 @@
+From 881ac74b131e5f20f516c197e25beae1c84f5231 Mon Sep 17 00:00:00 2001
+From: Mika Laitio <mika.laitio@amd.com>
+Date: Mon, 20 Oct 2025 14:45:26 -0700
+Subject: [PATCH] Revert "Update rocm-core package to include rdhc script
+ (#1375)"
+
+This reverts commit d3487970176ae89598103be193c66ba207fc9fdd.
+---
+ projects/rocm-core/CMakeLists.txt | 49 ----------------------------
+ projects/rocm-core/rdhc/rdhc.py   | 54 ++-----------------------------
+ 2 files changed, 3 insertions(+), 100 deletions(-)
+
+diff --git a/projects/rocm-core/CMakeLists.txt b/projects/rocm-core/CMakeLists.txt
+index 0941c5bdfd..562754cd32 100644
+--- a/projects/rocm-core/CMakeLists.txt
++++ b/projects/rocm-core/CMakeLists.txt
+@@ -149,30 +149,6 @@ if(BUILD_SHARED_LIBS)
+             DESTINATION ${CMAKE_INSTALL_LIBDIR}
+             COMPONENT CORE_RUNTIME )
+ 
+-  # Install rdhc files
+-  install ( FILES
+-            ${CMAKE_CURRENT_SOURCE_DIR}/rdhc/README.md
+-            ${CMAKE_CURRENT_SOURCE_DIR}/rdhc/requirements.txt
+-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rdhc
+-            COMPONENT CORE_RUNTIME)
+-
+-  install ( PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/rdhc/rdhc.py
+-            DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/${CORE_TARGET}
+-            COMPONENT CORE_RUNTIME )
+-
+-  # Create symlink for rdhc in bin directory
+-  add_custom_target ( rdhc_symlink_lib ALL
+-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+-                     COMMAND ${CMAKE_COMMAND} -E create_symlink
+-                     ../${CMAKE_INSTALL_LIBEXECDIR}/${CORE_TARGET}/rdhc.py
+-                     rdhc-link )
+-
+-  install ( FILES ${CMAKE_CURRENT_BINARY_DIR}/rdhc-link
+-            DESTINATION ${CMAKE_INSTALL_BINDIR}
+-            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+-            RENAME rdhc
+-            COMPONENT CORE_RUNTIME )
+-
+ else()
+   install ( FILES ${BUILD_DIR}/version
+             DESTINATION .info
+@@ -192,31 +168,6 @@ else()
+   install ( FILES ${BUILD_DIR}/rocmmod
+             DESTINATION ${CMAKE_INSTALL_LIBDIR}
+             COMPONENT ${STATIC_COMP_TYPE} )
+-
+-  # Install rdhc files
+-  install ( FILES
+-            ${CMAKE_CURRENT_SOURCE_DIR}/rdhc/README.md
+-            ${CMAKE_CURRENT_SOURCE_DIR}/rdhc/requirements.txt
+-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/rdhc
+-            COMPONENT ${STATIC_COMP_TYPE})
+-
+-  install ( PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/rdhc/rdhc.py
+-            DESTINATION ${CMAKE_INSTALL_LIBEXECDIR}/${CORE_TARGET}
+-            COMPONENT ${STATIC_COMP_TYPE} )
+-
+-  # Create symlink for rdhc in bin directory
+-  add_custom_target ( rdhc_symlink_static ALL
+-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+-                     COMMAND ${CMAKE_COMMAND} -E create_symlink
+-                     ../${CMAKE_INSTALL_LIBEXECDIR}/${CORE_TARGET}/rdhc.py
+-                     rdhc-link-static )
+-
+-  install ( FILES ${CMAKE_CURRENT_BINARY_DIR}/rdhc-link-static
+-            DESTINATION ${CMAKE_INSTALL_BINDIR}
+-            PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE
+-            RENAME rdhc
+-            COMPONENT ${STATIC_COMP_TYPE} )
+-
+ endif()
+ 
+ ## Cmake module config file configurations
+diff --git a/projects/rocm-core/rdhc/rdhc.py b/projects/rocm-core/rdhc/rdhc.py
+index 39163e15c3..78eba0e39c 100755
+--- a/projects/rocm-core/rdhc/rdhc.py
++++ b/projects/rocm-core/rdhc/rdhc.py
+@@ -7,57 +7,10 @@ import json
+ import argparse
+ import glob
+ import re
+-import sys
++import yaml
+ import textwrap
+ from enum import Enum
+-
+-# Check for required packages before importing them
+-def check_required_packages():
+-    """Check if required Python packages are installed"""
+-    missing_packages = []
+-    required_packages = {
+-        'prettytable': 'prettytable',
+-        'yaml': 'PyYAML'
+-    }
+-
+-    for import_name, package_name in required_packages.items():
+-        try:
+-            __import__(import_name)
+-        except ImportError:
+-            missing_packages.append(package_name)
+-
+-    if missing_packages:
+-        print("\n" + "="*70)
+-        print("WARNING: Missing Required Python Packages")
+-        print("="*70)
+-        print(f"\nThe following packages are required but not installed:")
+-        for pkg in missing_packages:
+-            print(f"  - {pkg}")
+-
+-        print("\nTo install the missing packages, run:")
+-        print(f"  pip3 install {' '.join(missing_packages)}")
+-        print("\nOr install all requirements:")
+-        print("  pip3 install -r <ROCM_INSTALL_PATH>/share/rdhc/requirements.txt")
+-        print("  Or\n  pip3 install -r requirements.txt")
+-        print("\n" + "="*70 + "\n")
+-
+-        print("Exiting...")
+-        sys.exit(1)
+-    else:
+-        return True
+-
+-# Check packages before importing
+-packages_available = check_required_packages()
+-
+-# Now import the packages
+-try:
+-    from prettytable import PrettyTable
+-    import yaml
+-except ImportError:
+-    print("WARNING: Unable to import the required Python Packages !!!!")
+-    print("Exiting...")
+-    sys.exit(1)
+-
++from prettytable import PrettyTable
+ 
+ # Define test status enum
+ class TestStatus(Enum):
+@@ -1795,8 +1748,7 @@ def main():
+     parser = argparse.ArgumentParser(description="ROCm Deployment Health Check Tool",
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     usage="sudo -E ./rdhc.py [options]",
+-                                    epilog="Refer the README @<ROCM_INSTALL_PATH>/share/rdhc/README.md \n"+
+-                                        "Usage examples:\n"+
++                                    epilog="Usage examples:\n"+
+                                         "# Run quick test (default tests only)\n" +
+                                         "sudo -E ./rdhc.py\n" +
+                                         "\n"+
+-- 
+2.43.0
+
