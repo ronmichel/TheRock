@@ -131,6 +131,7 @@ def initialize_process(
     """
     if preload_shortnames:
         preload_libraries(*preload_shortnames, rtld_global=rtld_global)
+        print(f"PRELOAD!: {preload_shortnames}")
 
     # Process environment variable overrides.
     if env_override:
@@ -140,6 +141,7 @@ def initialize_process(
             addl_preload_split = [s for s in addl_preload_split if s]
             if addl_preload_split:
                 try:
+                    print(f"ADDL PRELOAD!!!: {addl_preload_split}")
                     preload_libraries(*addl_preload_split, rtld_global=rtld_global)
                 except Exception as e:
                     raise RuntimeError(
