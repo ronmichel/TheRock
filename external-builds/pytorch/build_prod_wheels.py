@@ -229,6 +229,7 @@ def get_rocm_path(path_name: str) -> Path:
 def get_rocm_init_contents(args: argparse.Namespace):
     """Gets the contents of the _rocm_init.py file to add to the build."""
     sdk_version = get_rocm_sdk_version()
+    print(f"FIND PRELOADING HERE!!!")
     library_preloads = (
         WINDOWS_LIBRARY_PRELOADS if is_windows else LINUX_LIBRARY_PRELOADS
     )
