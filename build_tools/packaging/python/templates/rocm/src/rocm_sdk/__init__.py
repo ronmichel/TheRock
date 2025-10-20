@@ -30,6 +30,8 @@ def find_libraries(*shortnames: str) -> list[Path]:
     missing_extras: set[str] = set()
     is_windows = platform.system() == "Windows"
     for shortname in shortnames:
+        print(f"short name preload: {shortname}")
+        print(f"{_dist_info.ALL_LIBRARIES}")
         try:
             lib_entry = _dist_info.ALL_LIBRARIES[shortname]
         except KeyError:
