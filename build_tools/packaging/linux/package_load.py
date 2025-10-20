@@ -12,7 +12,7 @@ logger = logging.getLogger("package_load")
 
 
 class LoadPackages:
-    def __init__(self, package_json_path: str,amdgpu_family: str = None):
+    def __init__(self, package_json_path: str, amdgpu_family: str = None):
         self.package_json_path = package_json_path
         self.amdgpu_family = amdgpu_family
         self.packages = self._load_packages()
@@ -30,7 +30,7 @@ class LoadPackages:
             raise ValueError("Expected a list of package objects in JSON.")
         return data
 
-    def arch_suffix_flag(self,package_name):
+    def arch_suffix_flag(self, package_name):
         """
         Given a list of package dicts, returns a list of package names.
         Rules:
@@ -43,7 +43,7 @@ class LoadPackages:
             return package_name
         gfx_arch_flag = str(pkg.get("Gfxarch", "False")).lower() == "true"
 
-        return gfx_arch_flag 
+        return gfx_arch_flag
 
     def _load_packages_arch(self):
         """
@@ -56,7 +56,7 @@ class LoadPackages:
             name = pkg.get("Package")
             gfx_arch_flag = str(pkg.get("Gfxarch", "False")).lower() == "true"
 
-            #if gfx_arch_flag and self.amdgpu_family:
+            # if gfx_arch_flag and self.amdgpu_family:
             if gfx_arch_flag and self.amdgpu_family and "devel" not in name:
                 name = f"{name}-{self.amdgpu_family}"
 
@@ -108,10 +108,14 @@ class LoadPackages:
 
         packages = [pkg for pkg in self.packages if pkg["Package"] in pacakge_names]
 
-        sorted_pacakges = self._dfs_sort(self._build_dependency_graph(packages, use_rpm))
+        sorted_pacakges = self._dfs_sort(
+            self._build_dependency_graph(packages, use_rpm)
+        )
 
         if self.os_family == "debian":
-            sorted_pacakges = [re.sub('-devel$', '-dev', word) for word in sorted_pacakges]
+            sorted_pacakges = [
+                re.sub("-devel$", "-dev", word) for word in sorted_pacakges
+            ]
 
         return sorted_pacakges
 
@@ -136,17 +140,21 @@ class LoadPackages:
 
         if "ubuntu" in os_id or "debian" in os_like:
             return "debian"
-        elif any(x in os_id for x in ["rhel", "centos"]) or "fedora" in os_like or "redhat" in os_like:
+        elif (
+            any(x in os_id for x in ["rhel", "centos"])
+            or "fedora" in os_like
+            or "redhat" in os_like
+        ):
             return "redhat"
         elif "suse" in os_id or "sles" in os_id:
             return "suse"
         else:
             return "unknown"
 
-    def is_versioned_package(self, filename, base, version_flag,arch_flag):
+    def is_versioned_package(self, filename, base, version_flag, arch_flag):
         base_esc = re.escape(base)
 
-            # Lookup package to check gfx_arch_flag
+        # Lookup package to check gfx_arch_flag
         pkg = self.pkg_map.get(base, {})
         gfx_arch_flag = str(pkg.get("Gfxarch", "False")).lower() == "true"
 
@@ -172,7 +180,6 @@ class LoadPackages:
 
         return re.search(pattern, filename) is not None
 
-
     def find_packages_for_base(self, dest_dir, base, version_flag):
         all_files = [f for f in os.listdir(dest_dir) if f.endswith((".deb", ".rpm"))]
         matched = []
@@ -181,15 +188,22 @@ class LoadPackages:
             if f.startswith(base):
                 arch_flag = self.arch_suffix_flag(base)
                 if version_flag:
-                    if self.is_versioned_package(f, base,version_flag,arch_flag):
+                    if self.is_versioned_package(f, base, version_flag, arch_flag):
                         matched.append(os.path.join(dest_dir, f))
                 else:
-                    if self.is_versioned_package(f, base,False,arch_flag):
+                    if self.is_versioned_package(f, base, False, arch_flag):
                         matched.append(os.path.join(dest_dir, f))
-                    if self.is_versioned_package(f, base,True,arch_flag):
+                    if self.is_versioned_package(f, base, True, arch_flag):
                         matched.append(os.path.join(dest_dir, f))
         # Sort: versioned first
-        matched.sort(key=lambda x: (not self.is_versioned_package(os.path.basename(x), base,True,arch_flag), x))
+        matched.sort(
+            key=lambda x: (
+                not self.is_versioned_package(
+                    os.path.basename(x), base, True, arch_flag
+                ),
+                x,
+            )
+        )
         return matched
 
     # ---------------------------------------------------------------------
@@ -203,7 +217,6 @@ class LoadPackages:
             logger.error(f"Artifacts directory not found: {dest_dir}")
             return
 
-
         final_install_list = []
         for base in sorted_packages:
             pkgs = self.find_packages_for_base(dest_dir, base, version_flag)
@@ -214,32 +227,50 @@ class LoadPackages:
 
         logger.info(f"Final install list count: {len(final_install_list)}")
 
-        #logger.info(f"sorted_packages: {(final_install_list)}")
+        # logger.info(f"sorted_packages: {(final_install_list)}")
         if not final_install_list:
             logger.warning("No packages to install based on filters.")
             return
 
-        #logger.info(f"sorted_packages: {(final_install_list)}")
+        # logger.info(f"sorted_packages: {(final_install_list)}")
 
         for pkg_path in final_install_list:
             pkg_name = os.path.basename(pkg_path)
             logger.info(f"Installing: {pkg_name}")
             try:
                 if os_family == "debian":
-                    result = subprocess.run(["sudo", "dpkg", "-i", pkg_path], capture_output=True, text=True)
+                    result = subprocess.run(
+                        ["sudo", "dpkg", "-i", pkg_path], capture_output=True, text=True
+                    )
                 elif os_family == "redhat":
-                    result = subprocess.run(["sudo", "rpm", "-ivh", "--replacepkgs", pkg_path], capture_output=True, text=True)
+                    result = subprocess.run(
+                        ["sudo", "rpm", "-ivh", "--replacepkgs", pkg_path],
+                        capture_output=True,
+                        text=True,
+                    )
                 elif os_family == "suse":
-                    result = subprocess.run(["sudo", "zypper", "--non-interactive", "install", "--replacepkgs", pkg_path], capture_output=True, text=True)
+                    result = subprocess.run(
+                        [
+                            "sudo",
+                            "zypper",
+                            "--non-interactive",
+                            "install",
+                            "--replacepkgs",
+                            pkg_path,
+                        ],
+                        capture_output=True,
+                        text=True,
+                    )
                 else:
                     logger.error(f"Unsupported OS for {pkg_path}")
                     continue
 
                 if result.returncode != 0:
-                    logger.error(f"Failed to install {pkg_name}: {result.stderr.strip()}")
+                    logger.error(
+                        f"Failed to install {pkg_name}: {result.stderr.strip()}"
+                    )
                 else:
-                    logger.info(f"✅ Installed {pkg_name}")
+                    logger.info(f"Installed {pkg_name}")
 
             except Exception as e:
                 logger.exception(f"Exception installing {pkg_name}: {e}")
-
