@@ -202,11 +202,12 @@ LibraryEntry("hipsolver", "libraries", "libhipsolver.so*", "hipsolver*.dll")
 LibraryEntry("rccl", "libraries", "librccl.so*", "")
 LibraryEntry("miopen", "libraries", "libMIOpen.so*", "MIOpen*.dll")
 
+LibraryEntry("rocm-openblas", "core", "librocm-openblas.so.*", "rocm-openblas*.dll")
+
 # Others we may want:
 # hiprtc-builtins
 # rocblas
 # rocfft
-# rocm-openblas
 # rocrand
 # rocsolver
 # rocsparse
