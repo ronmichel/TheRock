@@ -148,7 +148,7 @@ jobs:
   vllm:
     name: Trigger VLLM Docker Workflow
     needs: build
-    uses: ./.github/workflows/build-vllm-docker.yml
+    uses: ./.github/workflows/build_vllm_docker.yml
     with:
       pytorch_base_image: ${{ needs.build.outputs.pytorch_tag }}
       rocm_version: ${{ inputs.rocm_version }}
