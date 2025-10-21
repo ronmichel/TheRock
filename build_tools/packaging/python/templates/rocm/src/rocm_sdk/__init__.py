@@ -58,7 +58,8 @@ def find_libraries(*shortnames: str) -> list[Path]:
         else:
             relpath = py_root / lib_entry.posix_relpath
             entry_pattern = lib_entry.so_pattern
-        matching_paths = sorted(relpath.glob(entry_pattern))
+        # Recursive search for the library
+        matching_paths = sorted(relpath.rglob(entry_pattern))
         if len(matching_paths) == 0:
             raise FileNotFoundError(
                 f"Could not find rocm library '{shortname}' at path '{relpath},' no match for pattern '{entry_pattern}'"
