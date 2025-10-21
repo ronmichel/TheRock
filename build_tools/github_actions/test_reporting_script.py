@@ -68,7 +68,7 @@ def upload_test_report(report_dir: Path, bucket_uri: str, log_destination: str):
             report_dir,
         )
         return
-    dest_uri = f"{bucket_uri}/{log_destination}"
+    dest_uri = f"{bucket_uri.rstrip('/')}/{log_destination.lstrip('/')}"
     # Use a single AWS CLI call to copy only *.html files recursively
     cmd = [
         "aws",
