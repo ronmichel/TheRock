@@ -314,4 +314,5 @@ jobs:
       amdgpu_family: ${{ inputs.amdgpu_family }}
       repository: ${{ inputs.repository || github.repository }}
       ref: ${{ inputs.ref || '' }}
-
+      vllm_ref: ${{ inputs.ref || github.ref }}
+    secrets: inherit

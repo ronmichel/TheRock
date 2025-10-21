@@ -36,13 +36,17 @@ on:
         required: false
         type: string
         default: ""
+      vllm_ref:
+        description: "Commit SHA, branch, or tag to checkout in ROCm/vllm"
+        required: true
+        type: string
     outputs:
       pytorch_tag:
         description: "The full PyTorch image tag that was built/pushed"
         value: ${{ jobs.build.outputs.pytorch_tag }}
       vllm_tag:
         description: "Alias of the same full tag for VLLM usage"
-        value: ${{ jobs.build.outputs.vllm_tag }}
+        value: ${{ jobs.vllm.outputs.vllm_tag }}
 
   workflow_dispatch:
     inputs:
@@ -74,6 +78,10 @@ on:
       ref:
         type: string
         default: ""
+      vllm_ref:
+        type: string
+        required: true
+        description: "Commit SHA, branch, or tag to checkout for vLLM"
 
 permissions:
   contents: read
@@ -83,7 +91,7 @@ jobs:
     name: Build PyTorch Docker Image
     runs-on: ubuntu-24.04
     outputs:
-      pytorch_tag: ${{ steps.dockertag.outputs.pytoch_tag }}
+      pytorch_tag: ${{ steps.dockertag.outputs.pytorch_tag }}
     env:
       REGISTRY: docker.io
       TORCH_VERSION: ${{ inputs.torch_version }}
