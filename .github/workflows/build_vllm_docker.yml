@@ -26,11 +26,14 @@ on:
         required: false
         type: string
         default: rocm/pytorch-private
-      rocm_suffix:
-        description: Suffix in tag such as 'rocm7.0_aiter'
+      rocm_version:
+        description: ROCm version used to compose rocm_suffix
         required: false
         type: string
-        default: rocm7.0_aiter
+      amdgpu_family:
+        description: AMDGPU family used to compose rocm_suffix
+        required: false
+        type: string
     outputs:
       vllm_tag:
         description: The final vLLM image tag that was built/pushed
@@ -57,10 +60,14 @@ on:
         type: string
         required: false
         default: rocm/pytorch-private
-      rocm_suffix:
+      rocm_version:
         type: string
         required: false
-        default: rocm7.0_aiter
+        description: ROCm version used to compose rocm_suffix
+      amdgpu_family:
+        type: string
+        required: false
+        description: AMDGPU family used to compose rocm_suffix
 
 permissions:
   contents: read
@@ -104,7 +111,8 @@ jobs:
             --vllm-repo "${{ inputs.vllm_repo }}" \
             --vllm-ref "${{ inputs.vllm_ref }}" \
             --final-image-name "${{ inputs.final_image_name }}" \
-            --rocm-suffix "${{ inputs.rocm_suffix }}" \
+            --rocm-version "${{ inputs.rocm_version }}" \
+            --amdgpu-family "${{ inputs.amdgpu_family }}" \
             --push "${{ inputs.push }}" \
             --write-outputs
 

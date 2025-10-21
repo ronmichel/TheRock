@@ -24,16 +24,30 @@ def main():
     parser.add_argument("--vllm-repo", default="https://github.com/ROCm/vllm.git", help="vLLM git repository")
     parser.add_argument("--vllm-ref", required=True, help="Commit/branch/tag to checkout")
     parser.add_argument("--final-image-name", default="rocm/pytorch-private", help="Final image repo/name")
-    parser.add_argument("--rocm-suffix", default="rocm7.0_aiter", help="Suffix for tags, e.g., rocm7.0_aiter")
+    # Backward compatibility: allow explicit rocm_suffix, but prefer computed one if rocm_version+amdgpu_family are provided
+    parser.add_argument("--rocm-suffix", default="", help="Explicit suffix, e.g., rocm7.0_aiter (overrides computed suffix)")
+    parser.add_argument("--rocm-version", default="", help="ROCm version used to compose rocm_suffix, e.g., rocm7.0")
+    parser.add_argument("--amdgpu-family", default="", help="AMDGPU family used to compose rocm_suffix, e.g., aiter")
     parser.add_argument("--push", default="true", choices=["true", "false"], help="Whether to push final image")
     parser.add_argument("--workdir", default="", help="Optional working directory (defaults to temp dir)")
     parser.add_argument("--write-outputs", action="store_true", help="Write outputs to GITHUB_OUTPUT")
     args = parser.parse_args()
 
-    base_image = args.base_image
+    # Normalize/resolve inputs
+    base_image = args.pytorch_base_image
     final_image_name = args.final_image_name
-    rocm_suffix = args.rocm_suffix
     do_push = args.push.lower() == "true"
+
+    # Compute rocm_suffix: explicit > computed > default
+    rocm_suffix = args.rocm_suffix.strip()
+    if not rocm_suffix:
+        rv = args.rocm_version.strip()
+        af = args.amdgpu_family.strip()
+        if rv and af:
+            rocm_suffix = f"{rv}_{af}"
+        else:
+            # Default if neither explicit nor computable is provided
+            rocm_suffix = "rocm7.0_aiter"
 
     extracted_id = extract_id_from_base_image(base_image)
     current_date = datetime.now().strftime("%m%d")
@@ -91,7 +105,7 @@ def main():
         run(["docker", "push", final_image_tag])
 
     # Emit outputs for GitHub Actions
-    if args.write-outputs:
+    if args.write_outputs:
         gh_out = os.environ.get("GITHUB_OUTPUT")
         if not gh_out:
             print("WARNING: GITHUB_OUTPUT is not set; cannot export step outputs.", file=sys.stderr)
