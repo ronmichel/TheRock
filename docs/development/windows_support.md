@@ -64,12 +64,12 @@ mainline, in open source, using MSVC, etc.).
 | math-libs (BLAS)    | [rocSOLVER](https://github.com/ROCm/rocSOLVER)                                                                           | ✅        |                                               |
 | math-libs (BLAS)    | [hipSOLVER](https://github.com/ROCm/hipSOLVER)                                                                           | ✅        |                                               |
 | math-libs (BLAS)    | [hipBLAS](https://github.com/ROCm/hipBLAS)                                                                               | ✅        |                                               |
+| math-libs           | [rocWMMA](https://github.com/ROCm/rocm-libraries/tree/develop/projects/rocwmma)                                          | ✅        |                                               |
 |                     |                                                                                                                          |           |                                               |
 | ml-libs             | [Composable Kernel](https://github.com/ROCm/composable_kernel)                                                           | ❌        | Unsupported                                   |
 | ml-libs             | [MIOpen](https://github.com/ROCm/MIOpen)                                                                                 | ✅        |                                               |
 | ml-libs             | [hipDNN](https://github.com/ROCm/rocm-libraries/tree/develop/projects/hipdnn)                                            | ❌        | Unsupported                                   |
 | ml-libs             | [MIOpen Legacy Plugin](https://github.com/ROCm/rocm-libraries/tree/develop/projects/hipdnn/plugins/miopen_legacy_plugin) | ❌        | Unsupported (requires hipDNN)                 |
-
 ## Building TheRock from source
 
 These instructions mostly mirror the instructions in the root
