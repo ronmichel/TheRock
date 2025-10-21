@@ -1,32 +1,17 @@
+import json
+from pathlib import Path
+
 # Copyright Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: MIT
 
-
-import json
-import sys
-from pathlib import Path
-
-
 SCRIPT_DIR = Path(__file__).resolve().parent
-currentFuncName = lambda n=0: sys._getframe(n + 1).f_code.co_name
-
-
-def print_function_name():
-    """Print the name of the calling function.
-
-    Parameters: None
-
-    Returns: None
-    """
-    print("In function:", currentFuncName(1))
 
 
 def read_package_json_file():
-    """Reads package.json file and return the parsed data.
-
+    """Reads a JSON file and returns the parsed data
     Parameters: None
 
-    Returns: Parsed JSON data containing package details
+    Returns: List of package details read from Json
     """
     file_path = SCRIPT_DIR / "package.json"
     with file_path.open("r", encoding="utf-8") as file:
@@ -84,8 +69,7 @@ def is_key_defined(pkg_info, key):
 
 
 def get_package_info(pkgname):
-    """Retrieves package details from a JSON file for the given package name
-
+    """Function to retrieve package details stored in a JSON file for the provided package name
     Parameters:
     pkgname : Package Name
 
@@ -103,13 +87,12 @@ def get_package_info(pkgname):
 
 
 def check_for_gfxarch(pkgname):
-    """Check whether the package is associated with a graphics architecture
-
-    Parameters:
-    pkgname : Package Name
+    """The function will determine whether the gfxarch should be appended to the package name
+    gfxarch is not required for Devel package
+    Parameters: Package Name
 
     Returns:
-    bool : True if Gfxarch is set else False.
+    bool : true if Gfxarch is set else false.
            False if devel package
     """
 
@@ -123,13 +106,11 @@ def check_for_gfxarch(pkgname):
 
 
 def get_package_list():
-    """Read package.json and return package names.
-
-    Packages marked as 'Disablepackaging' will be excluded from the list
-
+    """Read package.json and get the list of package names
+    Exclude the package marked as Disablepackaging
     Parameters: None
 
-    Returns: Package list
+    Returns: Package list from json
     """
 
     data = read_package_json_file()
@@ -141,19 +122,15 @@ def get_package_list():
 
 
 def version_to_str(version_str):
-    """Convert a ROCm version string to a numeric representation.
-
-    This function transforms a ROCm version from its dotted format
-    (e.g., "7.1.0") into a numeric string (e.g., "70100")
-    Ex : 7.10.0 -> 71000
+    """Function will change rocm version to string
+    Ex : 7.1.0 -> 70100
+         7.10.0 -> 71000
          10.1.0 - > 100100
          7.1 -> 70100
          7.1.1.1 -> 70101
+    Parameters: ROCm version separated by dots
 
-    Parameters:
-    version_str: ROCm version separated by dots
-
-    Returns: Numeric string
+    Returns: Version string
     """
 
     parts = version_str.split(".")

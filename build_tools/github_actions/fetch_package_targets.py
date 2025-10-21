@@ -10,15 +10,11 @@ Outputs written to GITHUB_OUTPUT:
         [
             {
                 "amdgpu_family": "gfx94X-dcgpu",
-                "test_machine": "linux-mi300-1gpu-ossci-rocm",
-                "expect_failure": false,
-                "expect_pytorch_failure": false
+                "test_machine": "linux-mi300-1gpu-ossci-rocm"
             },
             {
                 "amdgpu_family": "gfx110X-dgpu",
-                "test_machine": "",
-                "expect_failure": false,
-                "expect_pytorch_failure": true
+                "test_machine": ""
             }
         ]
 
@@ -51,7 +47,10 @@ jobs:
 
 import os
 import json
-from amdgpu_family_matrix import amdgpu_family_info_matrix_all
+from amdgpu_family_matrix import (
+    amdgpu_family_info_matrix_presubmit,
+    amdgpu_family_info_matrix_postsubmit,
+)
 import string
 
 from github_actions_utils import *
@@ -61,8 +60,10 @@ def determine_package_targets(args):
     amdgpu_families = args.get("AMDGPU_FAMILIES")
     package_platform = args.get("THEROCK_PACKAGE_PLATFORM")
 
-    matrix = amdgpu_family_info_matrix_all
-    family_matrix = amdgpu_family_info_matrix_all
+    matrix = amdgpu_family_info_matrix_presubmit | amdgpu_family_info_matrix_postsubmit
+    family_matrix = (
+        amdgpu_family_info_matrix_presubmit | amdgpu_family_info_matrix_postsubmit
+    )
     package_targets = []
     # If the workflow does specify AMD GPU family, package those. Otherwise, then package all families
     if amdgpu_families:
@@ -89,17 +90,8 @@ def determine_package_targets(args):
 
         family = platform_for_key.get("family")
         test_machine = platform_for_key.get("test-runs-on")
-        expect_failure = platform_for_key.get("expect_failure", False)
-        expect_pytorch_failure = platform_for_key.get("expect_pytorch_failure", False)
 
-        package_targets.append(
-            {
-                "amdgpu_family": family,
-                "test_machine": test_machine,
-                "expect_failure": expect_failure,
-                "expect_pytorch_failure": expect_pytorch_failure,
-            }
-        )
+        package_targets.append({"amdgpu_family": family, "test_machine": test_machine})
 
     return package_targets
 

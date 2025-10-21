@@ -1,8 +1,3 @@
-# Use LLVM tools for stripping / objcopy
-%global __strip   /usr/bin/llvm-strip
-%global __objcopy /usr/bin/llvm-objcopy
-
-
 %global _debugsource_template %{nil}
 %global debug_package %{nil}          # disables -debuginfo
 %define __brp_mangle_shebangs %{nil}
@@ -11,7 +6,7 @@ Name: {{ pkg_name }}
 Version: {{ version }}
 Release: {{ release }}
 BuildArch: {{ build_arch }}
-Summary: {{ description_short }}
+Summary: {{ description }}
 Group: {{ group }}
 License: {{ pkg_license }}
 Vendor: {{ vendor }}
@@ -24,7 +19,7 @@ Recommends: {{ rpmrecommends }}
 {% endif %}
 
 %description
-{{ description_long }}
+{{ description }}
 
 %prep
 %setup -T -D -c -n {{ pkg_name }}

@@ -26,7 +26,7 @@ amdgpu_family_info_matrix_presubmit = {
             "bypass_tests_for_releases": True,
         },
     },
-    "gfx1151": {
+    "gfx115x": {
         "linux": {
             "test-runs-on": "linux-strix-halo-gpu-rocm",
             "family": "gfx1151",
@@ -77,7 +77,6 @@ amdgpu_family_info_matrix_nightly = {
             "test-runs-on": "",
             "family": "gfx90X-dcgpu",
             "expect_failure": False,
-            "expect_pytorch_failure": True,
         },
     },
     "gfx101x": {
@@ -85,40 +84,24 @@ amdgpu_family_info_matrix_nightly = {
             "test-runs-on": "",
             "family": "gfx101X-dgpu",
             "expect_failure": True,
-            "expect_pytorch_failure": True,
         },
         "windows": {
             "test-runs-on": "",
             "family": "gfx101X-dgpu",
             "expect_failure": False,
-            "expect_pytorch_failure": True,
         },
     },
     "gfx103x": {
         "linux": {
             "test-runs-on": "linux-rx6950-gpu-rocm",
             "family": "gfx103X-dgpu",
-            "expect_failure": False,
+            "expect_failure": True,
             "sanity_check_only_for_family": True,
-            "expect_pytorch_failure": True,
         },
         "windows": {
             "test-runs-on": "",
             "family": "gfx103X-dgpu",
-            "expect_failure": False,
-            "expect_pytorch_failure": True,
-        },
-    },
-    "gfx1150": {
-        "linux": {
-            "test-runs-on": "",
-            "family": "gfx1150",
-            "expect_failure": False,
-        },
-        "windows": {
-            "test-runs-on": "",
-            "family": "gfx1150",
-            "expect_failure": False,
+            "expect_failure": True,
         },
     },
 }
