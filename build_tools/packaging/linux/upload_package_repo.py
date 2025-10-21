@@ -290,6 +290,7 @@ Description: ROCm Repository
     print(f"Wrote Release file to {release_path}")
 
     # Generate index.html recursively
+    generate_index_html(package_dir)
     generate_indexes_recursive(package_dir)
     print(f"Generated index.html files recursively under {package_dir}")
 
@@ -315,6 +316,7 @@ def create_rpm_repo(package_dir):
     print(f"Generated repodata/ in {arch_dir}")
 
     # Generate index.html recursively
+    generate_index_html(package_dir)
     generate_indexes_recursive(package_dir)
     print(f"Generated index.html files recursively under {package_dir}")
 
@@ -339,9 +341,11 @@ def upload_to_s3(source_dir, bucket, prefix):
             rel_path = os.path.relpath(local_path, source_dir)
             s3_key = os.path.join(prefix, rel_path).replace("\\", "/")
             print(f"Uploading: {local_path} → s3://{bucket}/{s3_key}")
-            s3.upload_file(local_path, bucket, s3_key)
-
-
+            extra_args = {}
+            if filename.endswith(".html"):
+                extra_args['ContentType'] = 'text/html'
+            s3.upload_file(local_path, bucket, s3_key, ExtraArgs=extra_args if extra_args else None)
+        
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
