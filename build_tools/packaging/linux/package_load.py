@@ -12,9 +12,11 @@ logger = logging.getLogger("package_load")
 
 
 class LoadPackages:
-    def __init__(self, package_json_path: str, amdgpu_family: str = None):
+    def __init__(self, package_json_path: str, amdgpu_family: str = None, rocm_version: str = None):
         self.package_json_path = package_json_path
         self.amdgpu_family = amdgpu_family
+        self.gfx_suffix = self.amdgpu_family.split("-")[0]  # e.g., gfx94x-dcgpu 
+        self.rocm_version = rocm_version
         self.packages = self._load_packages()
         self.packages_arch = self._load_packages_arch()
         self.os_family = self.detect_os_family()
@@ -151,38 +153,51 @@ class LoadPackages:
         else:
             return "unknown"
 
-    def is_versioned_package(self, filename, base, version_flag, arch_flag):
-        base_esc = re.escape(base)
+    import os, re
 
-        # Lookup package to check gfx_arch_flag
-        pkg = self.pkg_map.get(base, {})
-        gfx_arch_flag = str(pkg.get("Gfxarch", "False")).lower() == "true"
+    def derive_package_name(self, base, version_flag):
+        """
+        Derive full package name using base and flags.
+        Example:
+          base=hipfft, version_flag=True  -> hipfft7.0.0-gfx94x
+          base=hipfft, version_flag=False -> hipfft-gfx94x
+        """
+        gfx_arch_flag = self.arch_suffix_flag(base)
 
-        # Only add amdgpu_suffix if conditions are met
-        amdgpu_suffix = ""
-        if gfx_arch_flag and self.amdgpu_family and "devel" not in base.lower():
-            amdgpu_suffix = re.escape(self.amdgpu_family)
 
-        if version_flag:
-            if amdgpu_suffix:
-                # Example: hipsolver7.0.0-gfx94x_7.0.0.70000
-                pattern = rf"^{base_esc}\d+\.\d+\.\d+-{amdgpu_suffix}_\d+\.\d+\.\d+"
+        # Case 1: GFX architecture enabled
+        if gfx_arch_flag and self.gfx_suffix and "devel" not in base.lower() and "dev" not in base.lower():
+            if version_flag:
+                return f"{base}{self.rocm_version}-{self.gfx_suffix}"
             else:
-                # Versioned package without GPU suffix
-                pattern = rf"^{base_esc}\d+\.\d+\.\d+_\d+\.\d+\.\d+"
+                return f"{base}-{self.gfx_suffix}"
+
+        # Case 2: No GFX architecture, but versioning enabled
+        elif version_flag:
+            return f"{base}{self.rocm_version}"
+
+        # Case 3: Plain base name (no version, no gfx)
+        return base
+
+
+    def find_packages_for_base(self, dest_dir, base, version_flag,use_repo):
+        """
+        Look up packages in local directory or return derived name for repo installation.
+        """
+
+        derived_name = self.derive_package_name(base, version_flag)
+        if use_repo:
+            return derived_name
         else:
-            if amdgpu_suffix:
-                # Non-versioned package with GPU suffix
-                pattern = rf"^{base_esc}-{amdgpu_suffix}_?\d+\.\d+\.\d+"
+            # If local directory has .deb/.rpm files → return matches
+            all_files = [f for f in os.listdir(dest_dir) if f.endswith((".deb", ".rpm"))]
+            matched = [os.path.join(dest_dir, f) for f in all_files if f.startswith(derived_name)]
+            if matched:
+                return matched
             else:
-                # Non-versioned package without GPU suffix
-                pattern = rf"^{base_esc}_?\d+\.\d+\.\d+"
+                logger.error(f"No matching package found for: {base}")
 
-        return re.search(pattern, filename) is not None
-
-    def find_packages_for_base(self, dest_dir, base, version_flag):
-        all_files = [f for f in os.listdir(dest_dir) if f.endswith((".deb", ".rpm"))]
-        matched = []
+    '''
 
         for f in all_files:
             if f.startswith(base):
@@ -205,72 +220,159 @@ class LoadPackages:
             )
         )
         return matched
+    '''
+    def _run_install_command(self, pkg_name, use_repo, pkg_path=None):
+        """
+        Build and run OS-specific install command for a package.
+        
+        :param pkg_name: Name of the package (base name)
+        :param pkg_path: Full path for local install (required for local)
+        :param source_type: 'local' or 'repo'
+        """
+        os_family = self.detect_os_family()
+        cmd = None
+
+        # Determine command based on source type and OS
+        if not use_repo:
+            if not pkg_path:
+                logger.error(f"Local pkg_path must be provided for {pkg_name}")
+                return
+
+            if os_family == "debian":
+                cmd = ["sudo", "dpkg", "-i", pkg_path]
+            elif os_family == "redhat":
+                cmd = ["sudo", "rpm", "-ivh", "--replacepkgs", pkg_path]
+            elif os_family == "suse":
+                cmd = ["sudo", "zypper", "--non-interactive", "install", "--replacepkgs", pkg_path]
+            else:
+                logger.error(f"Unsupported OS for local install: {pkg_name}")
+                return
+
+        else:
+            if os_family == "debian":
+                cmd = ["sudo", "apt-get", "install", "-y", pkg_name]
+            elif os_family == "redhat":
+                cmd = ["sudo", "yum", "install", "-y", pkg_name]
+            elif os_family == "suse":
+                cmd = ["sudo", "zypper", "--non-interactive", "install", pkg_name]
+            else:
+                logger.error(f"Unsupported OS for repo install: {pkg_name}")
+                return
+
+        # Execute command
+        try:
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            if result.returncode != 0:
+                logger.error(f"Failed to install {pkg_name}:\n{result.stdout}")
+            else:
+                logger.info(f"Installed {pkg_name}")
+        except Exception as e:
+            logger.exception(f"Exception installing {pkg_name}: {e}")
 
     # ---------------------------------------------------------------------
     # Install Logic
     # ---------------------------------------------------------------------
-    def install_packages(self, dest_dir, sorted_packages, version_flag):
+    def install_packages(self, dest_dir, sorted_packages, version_flag, use_repo=False):
         os_family = self.detect_os_family()
         logger.info(f"Detected OS family: {os_family}")
 
-        if not os.path.isdir(dest_dir):
-            logger.error(f"Artifacts directory not found: {dest_dir}")
-            return
+        if not use_repo:
+            if not os.path.isdir(dest_dir):
+                logger.error(f"Artifacts directory not found: {dest_dir}")
+                return
 
-        final_install_list = []
-        for base in sorted_packages:
-            pkgs = self.find_packages_for_base(dest_dir, base, version_flag)
-            if pkgs:
-                final_install_list.extend(pkgs)
+            final_install_list = []
+            for base in sorted_packages:
+                if version_flag:
+                    pkgs = self.find_packages_for_base(dest_dir, base, version_flag,use_repo)
+                    logger.info(f"pkgs: {(pkgs)}")
+                    final_install_list.extend(pkgs)
+                else:
+                    pkgs = self.find_packages_for_base(dest_dir, base, True, use_repo)
+                    final_install_list.extend(pkgs)
+                    pkgs = self.find_packages_for_base(dest_dir, base, False, use_repo)
+                    final_install_list.extend(pkgs)
+
+            logger.info(f"Final install list count: {len(final_install_list)}")
+            logger.info(f"Final install list : {(final_install_list)}")
+
+            # logger.info(f"sorted_packages: {(final_install_list)}")
+            if not final_install_list:
+                logger.warning("No packages to install based on filters.")
+                return
+
+            # logger.info(f"sorted_packages: {(final_install_list)}")
+
+            for pkg_path in final_install_list:
+                try:
+                    self._run_install_command(pkg_path,use_repo, dest_dir)
+                except Exception as e:
+                    logger.exception(f"Exception installing {pkg_name} from repo: {e}")
+        else:
+            # Post-upload: install via system repo
+            final_install_list = []
+            for base in sorted_packages:
+                if version_flag:
+                    pkgs = self.find_packages_for_base(dest_dir, base, version_flag,use_repo)
+                    #pkgs = self.derive_package_name(base, version_flag)
+                    final_install_list.append(pkgs)
+                    logger.info(f"pkgs: {pkgs}")
+                else:
+                    pkgs = self.find_packages_for_base(dest_dir, base, True, use_repo)
+                    #pkgs = self.derive_package_name(base, True)
+                    final_install_list.append(pkgs)
+                    pkgs = self.find_packages_for_base(dest_dir, base, False, use_repo)
+                    #pkgs = self.derive_package_name(base, False)
+                    final_install_list.append(pkgs)
+            logger.info(f"final_install_list: {final_install_list}")
+            for pkg_name in final_install_list:
+                try:
+                    logger.info(f"Installing from repo: {pkg_name}")
+                    self._run_install_command(pkg_name, use_repo, None)
+                except Exception as e:
+                    logger.exception(f"Exception installing {pkg_name} from repo: {e}")
+
+    # ---------------------------------------------------------------------
+    # Repo Population
+    # ---------------------------------------------------------------------
+    def populate_repo_file(self, dest_dir: str):
+        """
+        Populate a repo file for post-upload installation.
+        - Debian: creates /etc/apt/sources.list.d/rocm.list
+        - RPM-based: placeholder (to be implemented)
+        """
+        os_family = self.detect_os_family()
+        logger.info(f"Populating repo file for OS: {os_family}")
+
+        try:
+            base_url = f"https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{dest_dir}"
+
+            if os_family == "debian":
+                repo_file_path = "/etc/apt/sources.list.d/rocm.list"
+                repo_entry = f"deb [trusted=yes] {base_url}/deb stable main\n"
+
+                logger.info(f"Writing Debian repo entry to {repo_file_path}")
+                with open(repo_file_path, "w") as f:
+                    f.write(repo_entry)
+
+                logger.info("Running apt-get update...")
+                subprocess.run(["sudo", "apt-get", "update"], check=False)
+
+            elif os_family == "redhat":
+                logger.info("Detected RPM-based system. Placeholder for repo setup.")
+                repo_file_path = "/etc/yum.repos.d/rocm.repo"
+                repo_entry = (
+                     f"[rocm]\nname=ROCm Repo\nbaseurl={base_url}/rpm\n"
+                     "enabled=1\ngpgcheck=0\n"
+                )
+                with open(repo_file_path, "w") as f:
+                     f.write(repo_entry)
+                subprocess.run(["sudo", "yum", "clean", "all"], check=False)
+                subprocess.run(["sudo", "yum", "makecache"], check=False)
             else:
-                logger.error(f"No matching package found for: {base}")
+                logger.warning(f"Unsupported OS family for repo population: {os_family}")
 
-        logger.info(f"Final install list count: {len(final_install_list)}")
+        except Exception as e:
+            logger.error(f"Error populating repo file: {e}")
+            raise
 
-        # logger.info(f"sorted_packages: {(final_install_list)}")
-        if not final_install_list:
-            logger.warning("No packages to install based on filters.")
-            return
-
-        # logger.info(f"sorted_packages: {(final_install_list)}")
-
-        for pkg_path in final_install_list:
-            pkg_name = os.path.basename(pkg_path)
-            logger.info(f"Installing: {pkg_name}")
-            try:
-                if os_family == "debian":
-                    result = subprocess.run(
-                        ["sudo", "dpkg", "-i", pkg_path], capture_output=True, text=True
-                    )
-                elif os_family == "redhat":
-                    result = subprocess.run(
-                        ["sudo", "rpm", "-ivh", "--replacepkgs", pkg_path],
-                        capture_output=True,
-                        text=True,
-                    )
-                elif os_family == "suse":
-                    result = subprocess.run(
-                        [
-                            "sudo",
-                            "zypper",
-                            "--non-interactive",
-                            "install",
-                            "--replacepkgs",
-                            pkg_path,
-                        ],
-                        capture_output=True,
-                        text=True,
-                    )
-                else:
-                    logger.error(f"Unsupported OS for {pkg_path}")
-                    continue
-
-                if result.returncode != 0:
-                    logger.error(
-                        f"Failed to install {pkg_name}: {result.stderr.strip()}"
-                    )
-                else:
-                    logger.info(f"Installed {pkg_name}")
-
-            except Exception as e:
-                logger.exception(f"Exception installing {pkg_name}: {e}")
