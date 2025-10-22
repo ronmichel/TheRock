@@ -145,17 +145,24 @@ jobs:
       - name: Build image via Python script
         shell: bash
         run: |
+          set -euo pipefail
+
+          # Normalize PYTHON_VERSION (e.g., 3.12.6 -> 3.12) for apt and Dockerfile logic
+          PY_MAJ_MIN="$(echo "${PYTHON_VERSION}" | awk -F. '{print $1"."$2}')"
+          echo "Using normalized Python version: ${PY_MAJ_MIN}"
+
           pwd
           ls -al
-          python3 ./build_tools/pytorch_docker_build_push.py \
+          cd TheRock
+          python build_tools/pytorch_docker_build_push.py \
             --context . \
             --dockerfile dockerfiles/pytorch_base.Dockerfile \
             --tag "${{ steps.dockertag.outputs.pytorch_tag }}" \
-            --PYTHON_VERSION "${{ env.PYTHON_VERSION }}" \
-            --TORCH_VERSION "${{ env.TORCH_VERSION }}" \
-            --ROCM_VERSION "${{ env.ROCM_VERSION }}" \
-            --PACKAGE_INDEX_URL "${{ env.PACKAGE_INDEX_URL }}" \
-            --AMDGPU_FAMILY "${{ env.AMDGPU_FAMILY }}"
+            --PYTHON_VERSION "${PY_MAJ_MIN}" \
+            --TORCH_VERSION "${TORCH_VERSION}" \
+            --ROCM_VERSION "${ROCM_VERSION}" \
+            --PACKAGE_INDEX_URL "${PACKAGE_INDEX_URL}" \
+            --AMDGPU_FAMILY "${AMDGPU_FAMILY}"
 
       - name: Summary and export tag
         shell: bash
