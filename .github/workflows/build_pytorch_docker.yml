@@ -112,12 +112,16 @@ jobs:
         shell: bash
         run: |
           safe() { echo "$1" | tr '[:upper:]' '[:lower:]' | tr '/ +' '_' ; }
-          ROCM_TAG="$(safe "${ROCM_VERSION}")"
-          TORCH_TAG="$(safe "${TORCH_VERSION}")"
-          VERSION_TAG="${ROCM_TAG}${TORCH_TAG}"
+          ROCM_TAG="rocm$(safe "${ROCM_VERSION}")"
+          TORCH_BASE_VERSION="$(safe "${TORCH_VERSION%%+*}")"
+          PY_MAJ_MIN="$(echo "${PYTHON_VERSION}" | awk -F. '{print $1"."$2}')"
+          PY_MAJ_MIN="$(safe "${PY_MAJ_MIN}")"
+          GPU_FAMILY="$(safe "${AMDGPU_FAMILY}")"
+          VERSION_TAG="${ROCM_TAG}_pytorch_${TORCH_BASE_VERSION}_py_${PY_MAJ_MIN}_${GPU_FAMILY}"
           IMAGE_NAME="rocm/pytorch-private"
-          PYTOCH_TAG="${IMAGE_NAME}:${VERSION_TAG}"
-          echo "pytoch_tag=$PYTOCH_TAG" >> "$GITHUB_OUTPUT"
+          PYTORCH_TAG="${IMAGE_NAME}:${VERSION_TAG}"
+          echo "Computed tag: ${PYTORCH_TAG}"
+          echo "pytorch_tag=${PYTORCH_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.7.1
@@ -141,11 +145,12 @@ jobs:
       - name: Build image via Python script
         shell: bash
         run: |
-          chmod +x ./scripts/pytorch_docker_build_push.py || true
-          python3  ./build_tools/pytorch_docker_build_push.py \
+          pwd
+          ls -al
+          python3 ./build_tools/pytorch_docker_build_push.py \
             --context . \
-            --dockerfile TheRock/dockerfiles/pytorch_base.Dockerfile \
-            --tag "${{ steps.dockertag.outputs.pytoch_tag }}" \
+            --dockerfile dockerfiles/pytorch_base.Dockerfile \
+            --tag "${{ steps.dockertag.outputs.pytorch_tag }}" \
             --PYTHON_VERSION "${{ env.PYTHON_VERSION }}" \
             --TORCH_VERSION "${{ env.TORCH_VERSION }}" \
             --ROCM_VERSION "${{ env.ROCM_VERSION }}" \
@@ -155,7 +160,7 @@ jobs:
       - name: Summary and export tag
         shell: bash
         run: |
-          echo "pytorch_tag=${{ steps.dockertag.outputs.pytoch_tag }}" >> "$GITHUB_ENV"
+          echo "pytorch_tag=${{ steps.dockertag.outputs.pytorch_tag }}" >> "$GITHUB_ENV"
 
   vllm:
     name: Trigger VLLM Docker Workflow
