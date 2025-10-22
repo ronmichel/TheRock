@@ -11,6 +11,7 @@ on:
         description: Commit SHA, branch, or tag to checkout in ROCm/vllm
         required: true
         type: string
+        default: 1020_rc2
       vllm_repo:
         description: Git repo to clone for vLLM
         required: false
@@ -47,6 +48,7 @@ on:
       vllm_ref:
         type: string
         required: true
+        default: 1020_rc2
         description: Commit SHA, branch, or tag to checkout
       vllm_repo:
         type: string

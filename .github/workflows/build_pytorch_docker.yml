@@ -153,8 +153,7 @@ jobs:
 
           pwd
           ls -al
-          cd TheRock
-          python build_tools/pytorch_docker_build_push.py \
+          python ./build_tools/pytorch_docker_build_push.py \
             --context . \
             --dockerfile dockerfiles/pytorch_base.Dockerfile \
             --tag "${{ steps.dockertag.outputs.pytorch_tag }}" \
