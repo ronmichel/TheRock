@@ -33,8 +33,8 @@ def main():
 
     # Build
     run(["docker", "build", "-t", args.tag, "-f", args.dockerfile] + build_args + [args.context])
-    # Push
-    run(["docker", "push", args.tag])
+    ## Push
+    #run(["docker", "push", args.tag])
 
     # Append only the IMAGE (tag) to the GitHub Actions step summary
     gha_append_step_summary(f"IMAGE: {args.tag}")
