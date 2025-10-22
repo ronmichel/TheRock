@@ -64,7 +64,7 @@ on:
       package_index_url:
         type: string
         required: true
-        default: "https://d25kgig7rdsyks.cloudfront.net/v2"
+        default: "https://d25kgig7rdsyks.cloudfront.net/v2/"
       amdgpu_family:
         type: string
         required: true
