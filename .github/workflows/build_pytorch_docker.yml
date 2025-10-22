@@ -89,7 +89,7 @@ permissions:
 jobs:
   build:
     name: Build PyTorch Docker Image
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.repository_owner == 'ROCm' && 'azure-linux-scale-rocm' || 'ubuntu-24.04' }}
     outputs:
       pytorch_tag: ${{ steps.dockertag.outputs.pytorch_tag }}
     env:
