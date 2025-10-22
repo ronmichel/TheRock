@@ -46,7 +46,7 @@ amdgpu_family_info_matrix_postsubmit = {
         "linux": {
             # Networking issue: https://github.com/ROCm/TheRock/issues/1660
             # Label is "linux-mi355-1gpu-ossci-rocm"
-            "test-runs-on": "",
+            "test-runs-on": "linux-mi355-1gpu-ossci-rocm",
             "family": "gfx950-dcgpu",
         }
     },
