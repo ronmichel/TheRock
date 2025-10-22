@@ -30,7 +30,7 @@ def run_ctest_executables(
         "--parallel",
         "8",
         "--timeout",
-        timeout,
+        str(timeout),
     ]
 
     if repeat:
