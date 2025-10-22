@@ -72,4 +72,4 @@ ARG TORCH_VERSION
 ARG PACKAGE_INDEX_URL
 ARG AMDGPU_FAMILY
 # Install torch
-RUN /opt/venv/bin/python -m pip install --no-cache-dir --index-url ${PACKAGE_INDEX_URL}${AMDGPU_FAMILY}/ "torch==${TORCH_VERSION}"
+RUN /opt/venv/bin/python -m pip install --no-cache-dir --index-url ${PACKAGE_INDEX_URL%/}/${AMDGPU_FAMILY}/ "torch==${TORCH_VERSION}"
