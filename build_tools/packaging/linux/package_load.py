@@ -197,30 +197,6 @@ class LoadPackages:
             else:
                 logger.error(f"No matching package found for: {base}")
 
-    '''
-
-        for f in all_files:
-            if f.startswith(base):
-                arch_flag = self.arch_suffix_flag(base)
-                if version_flag:
-                    if self.is_versioned_package(f, base, version_flag, arch_flag):
-                        matched.append(os.path.join(dest_dir, f))
-                else:
-                    if self.is_versioned_package(f, base, False, arch_flag):
-                        matched.append(os.path.join(dest_dir, f))
-                    if self.is_versioned_package(f, base, True, arch_flag):
-                        matched.append(os.path.join(dest_dir, f))
-        # Sort: versioned first
-        matched.sort(
-            key=lambda x: (
-                not self.is_versioned_package(
-                    os.path.basename(x), base, True, arch_flag
-                ),
-                x,
-            )
-        )
-        return matched
-    '''
     def _run_install_command(self, pkg_name, use_repo, pkg_path=None):
         """
         Build and run OS-specific install command for a package.
@@ -239,11 +215,11 @@ class LoadPackages:
                 return
 
             if os_family == "debian":
-                cmd = ["sudo", "dpkg", "-i", pkg_path]
+                cmd = ["sudo", "dpkg", "-i", pkg_name]
             elif os_family == "redhat":
-                cmd = ["sudo", "rpm", "-ivh", "--replacepkgs", pkg_path]
+                cmd = ["sudo", "rpm", "-ivh", "--replacepkgs", pkg_name]
             elif os_family == "suse":
-                cmd = ["sudo", "zypper", "--non-interactive", "install", "--replacepkgs", pkg_path]
+                cmd = ["sudo", "zypper", "--non-interactive", "install", "--replacepkgs", pkg_name]
             else:
                 logger.error(f"Unsupported OS for local install: {pkg_name}")
                 return
@@ -285,16 +261,14 @@ class LoadPackages:
             for base in sorted_packages:
                 if version_flag:
                     pkgs = self.find_packages_for_base(dest_dir, base, version_flag,use_repo)
-                    logger.info(f"pkgs: {(pkgs)}")
-                    final_install_list.extend(pkgs)
+                    final_install_list.extend(pkgs or [])
                 else:
                     pkgs = self.find_packages_for_base(dest_dir, base, True, use_repo)
-                    final_install_list.extend(pkgs)
+                    final_install_list.extend(pkgs or [])
                     pkgs = self.find_packages_for_base(dest_dir, base, False, use_repo)
-                    final_install_list.extend(pkgs)
+                    final_install_list.extend(pkgs or [])
 
             logger.info(f"Final install list count: {len(final_install_list)}")
-            logger.info(f"Final install list : {(final_install_list)}")
 
             # logger.info(f"sorted_packages: {(final_install_list)}")
             if not final_install_list:
@@ -303,9 +277,10 @@ class LoadPackages:
 
             # logger.info(f"sorted_packages: {(final_install_list)}")
 
-            for pkg_path in final_install_list:
+            for pkg_name in final_install_list:
                 try:
-                    self._run_install_command(pkg_path,use_repo, dest_dir)
+                    logger.info(f"Installing from local dir: {pkg_name}")
+                    self._run_install_command(pkg_name, use_repo, dest_dir)
                 except Exception as e:
                     logger.exception(f"Exception installing {pkg_name} from repo: {e}")
         else:
@@ -314,17 +289,12 @@ class LoadPackages:
             for base in sorted_packages:
                 if version_flag:
                     pkgs = self.find_packages_for_base(dest_dir, base, version_flag,use_repo)
-                    #pkgs = self.derive_package_name(base, version_flag)
-                    final_install_list.append(pkgs)
-                    logger.info(f"pkgs: {pkgs}")
+                    final_install_list.extend(pkgs or [])
                 else:
                     pkgs = self.find_packages_for_base(dest_dir, base, True, use_repo)
-                    #pkgs = self.derive_package_name(base, True)
-                    final_install_list.append(pkgs)
+                    final_install_list.extend(pkgs or [])
                     pkgs = self.find_packages_for_base(dest_dir, base, False, use_repo)
-                    #pkgs = self.derive_package_name(base, False)
-                    final_install_list.append(pkgs)
-            logger.info(f"final_install_list: {final_install_list}")
+                    final_install_list.extend(pkgs or [])
             for pkg_name in final_install_list:
                 try:
                     logger.info(f"Installing from repo: {pkg_name}")
