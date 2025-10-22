@@ -74,6 +74,16 @@ setup(
                 "rocminfo=rocm_sdk_core._cli:rocm_info",
                 "rocm-smi=rocm_sdk_core._cli:rocm_smi",
             ]
+            + (
+                [
+                    # These profiler tools are only available on Linux if built.
+                    "rocprofv3=rocm_sdk_core._cli:rocprofv3",
+                    "rocprofv3-attach=rocm_sdk_core._cli:rocprofv3_attach",
+                    "rocprofv3-avail=rocm_sdk_core._cli:rocprofv3_avail",
+                ]
+                if (Path("platform") / platform_package_name / "bin" / "rocprofv3").exists()
+                else []
+            )
             if platform.system() != "Windows"
             else [
                 "hipInfo=rocm_sdk_core._cli:hipInfo",
