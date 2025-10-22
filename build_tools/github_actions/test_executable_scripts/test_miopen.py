@@ -102,15 +102,6 @@ negative_filter.append("*/GPU_KernelTuningNetTest*")
 negative_filter.append("*/GPU_MIOpenDriver*")
 negative_filter.append("*GPU_TestMhaFind20*")
 
-# Failing because of  fatal error: 'rocrand/rocrand_xorwow.h' file not found
-negative_filter.append("*/GPU_Bwd_Mha_*")
-negative_filter.append("*/GPU_Fwd_Mha_*")
-negative_filter.append("*/GPU_Softmax*")
-negative_filter.append("*/GPU_Dropout*")
-negative_filter.append("*/GPU_MhaBackward_*")
-negative_filter.append("*/GPU_MhaForward_*")
-
-
 # For sake of time saving on pre-commit step
 ####################################################
 negative_filter.append("Full/GPU_Reduce_FP64")  # 4 min 19 sec
