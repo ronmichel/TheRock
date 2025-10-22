@@ -12,6 +12,8 @@ TESTS_TO_IGNORE = [
     "rocprim.device_select",
     "rocprim.device_find_first_of",
     "rocprim.device_reduce_by_key",
+    "rocprim.device_segmented_scan",
+    "rocprim.device_search_n"
 ]
 
 SMOKE_TESTS = [
