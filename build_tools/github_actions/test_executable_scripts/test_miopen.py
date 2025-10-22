@@ -91,6 +91,12 @@ positive_filter.append("*/GPU_FinInterfaceTest*")
 positive_filter.append("*/GPU_VecAddTest_*")
 
 positive_filter.append("*DBSync*")
+positive_filter.append("*/GPU_Bwd_Mha_*")
+positive_filter.append("*/GPU_Fwd_Mha_*")
+positive_filter.append("*/GPU_Softmax*")
+positive_filter.append("*/GPU_Dropout*")
+positive_filter.append("*/GPU_MhaBackward_*")
+positive_filter.append("*/GPU_MhaForward_*")
 
 #############################################
 
