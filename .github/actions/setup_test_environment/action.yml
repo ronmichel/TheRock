@@ -24,7 +24,8 @@ runs:
       shell: bash
       run: |
         echo "Overriding gai.conf..."
-        sudo cp gai.conf /etc/gai.conf
+        COPY_COMMAND = $(sudo cp gai.conf /etc/gai.conf)
+        echo "$COPY_COMMAND" >> "$GITHUB_OUTPUT"
         sleep 120s
 
     - name: "Setting up Python"
