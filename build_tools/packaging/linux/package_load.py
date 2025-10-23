@@ -327,7 +327,12 @@ class LoadPackages:
                     f.write(repo_entry)
 
                 logger.info("Running apt-get update...")
-                subprocess.run(["sudo", "apt-get", "update"], check=False)
+                subprocess.run(
+                    ["sudo", "tee", repo_file_path],
+                    input=repo_entry,
+                    text=True,
+                    check=True)
+                #subprocess.run(["sudo", "apt-get", "update"], check=False)
 
             elif os_family == "redhat":
                 logger.info("Detected RPM-based system. Placeholder for repo setup.")
