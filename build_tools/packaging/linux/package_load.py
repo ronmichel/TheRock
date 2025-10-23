@@ -12,13 +12,13 @@ logger = logging.getLogger("package_load")
 
 
 class LoadPackages:
-    def __init__(self, package_json_path: str, amdgpu_family: str = None, rocm_version: str = None):
+    def __init__(self, package_json_path: str, version: bool, amdgpu_family: str = None, rocm_version: str = None):
         self.package_json_path = package_json_path
         self.amdgpu_family = amdgpu_family
         self.gfx_suffix = self.amdgpu_family.split("-")[0].lower()  # e.g., gfx94x-dcgpu 
         self.rocm_version = rocm_version
+        self.version = version
         self.packages = self._load_packages()
-        self.packages_arch = self._load_packages_arch()
         self.os_family = self.detect_os_family()
         self.pkg_map = {pkg["Package"]: pkg for pkg in self.packages}
 
@@ -46,25 +46,6 @@ class LoadPackages:
         gfx_arch_flag = str(pkg.get("Gfxarch", "False")).lower() == "true"
 
         return gfx_arch_flag
-
-    def _load_packages_arch(self):
-        """
-        Returns a list of package names.
-        If 'Gfxarch' is True and amdgpu_family is provided, append '-<amdgpu_family>'.
-        """
-        packages_arch = []
-
-        for pkg in self.packages:
-            name = pkg.get("Package")
-            gfx_arch_flag = str(pkg.get("Gfxarch", "False")).lower() == "true"
-
-            # if gfx_arch_flag and self.amdgpu_family:
-            if gfx_arch_flag and self.amdgpu_family and "devel" not in name:
-                name = f"{name}-{self.amdgpu_family}"
-
-            packages_arch.append(name)
-
-        return packages_arch
 
     def list_composite_packages(self):
         """Return (non_composite, composite) package lists."""
@@ -144,7 +125,6 @@ class LoadPackages:
             return "debian"
         elif (
             any(x in os_id for x in ["rhel", "centos"])
-            or "fedora" in os_like
             or "redhat" in os_like
         ):
             return "redhat"
@@ -152,8 +132,6 @@ class LoadPackages:
             return "suse"
         else:
             return "unknown"
-
-    import os, re
 
     def derive_package_name(self, base, version_flag):
         """
@@ -244,6 +222,58 @@ class LoadPackages:
                 logger.info(f"Installed {pkg_name}")
         except Exception as e:
             logger.exception(f"Exception installing {pkg_name}: {e}")
+
+    def _run_uninstall_command(self, pkg_name):
+        """
+        Build and run OS-specific install command for a package.
+
+        :param pkg_name: Name of the package (base name)
+        :param pkg_path: Full path for local install (required for local)
+        :param source_type: 'local' or 'repo'
+        """
+        os_family = self.detect_os_family()
+        cmd = None
+
+
+        if os_family == "debian":
+            cmd = ["sudo", "apt-get", "autoremove", "-y", pkg_name]
+        elif os_family == "redhat":
+            cmd = ["sudo", "yum", "remove", "-y", pkg_name]
+        elif os_family == "suse":
+            cmd = ["sudo", "zypper", "remove", pkg_name]
+        else:
+            logger.error(f"Unsupported OS for repo uninstall: {pkg_name}")
+            return
+
+        # Execute command
+        try:
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            if result.returncode != 0:
+                logger.error(f"Failed to uninstall {pkg_name}:\n{result.stdout}")
+            else:
+                logger.info(f"Uninstalled {pkg_name}")
+        except Exception as e:
+            logger.exception(f"Exception uninstalling {pkg_name}: {e}")
+
+
+    def uninstall_packages(self,pkg_list,composite_flag):
+        """Uninstall the given list of packages based on OS."""
+
+        if not pkg_list:
+            logger.info("No packages provided for uninstallation.")
+            return
+
+        logger.info(f"Preparing to uninstall {len(pkg_list)} package(s): {pkg_list}")
+        if composite_flag:
+            for pkg in reversed(pkg_list):
+                pkg = pkg.strip()
+                if pkg:
+                    derived_name = self.derive_package_name(pkg, True)
+                    self._run_uninstall_command(derived_name)
+        else:
+            derived_name = self.derive_package_name("rocm-core", True)
+            self._run_uninstall_command(derived_name)
+
 
     # ---------------------------------------------------------------------
     # Install Logic

@@ -48,7 +48,7 @@ def main():
     amdgpu_family = args.amdgpu_family
     rocm_version = args.rocm_version
 
-    pm = LoadPackages(args.package_json, amdgpu_family,rocm_version)
+    pm = LoadPackages(args.package_json, version_flag, amdgpu_family,rocm_version)
     non_comp, comp = pm.list_composite_packages()
 
 

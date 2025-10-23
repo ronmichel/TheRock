@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-from packaging.linux.package_load import logger
+from packaging.linux.package_load import LoadPackages, logger
 import subprocess
 import os
 import platform
@@ -48,53 +48,36 @@ def detect_pkg_type():
     sys.exit(1)
 
 
-def uninstall_by_run_id(run_id):
-    """Find and uninstall packages matching the given run_id."""
+def uninstall_by_run_id(pkg_list,run_id):
+    """Uninstall the given list of packages."""
     pkg_type = detect_pkg_type()
     logger.info(f"Detected package type: {pkg_type.upper()}")
 
-    # Debian-based systems
-    if pkg_type == "deb":
-        cmd_list = f"dpkg -l | grep {run_id} | awk '{{print $2}}'"
-        stdout, stderr, rc = run_cmd(cmd_list)
-        if rc != 0 or not stdout:
-            logger.info("No matching packages found for uninstall.")
-            return
+    if not pkg_list:
+        logger.info("No packages provided for uninstallation.")
+        return
 
-        pkgs = [p.strip() for p in stdout.splitlines() if p.strip()]
-        logger.info(f"Found {len(pkgs)} package(s) to uninstall: {pkgs}")
+    logger.info(f"Preparing to uninstall {len(pkg_list)} package(s): {pkg_list}")
 
-        for pkg in pkgs:
-            logger.info(f"Removing {pkg} ...")
+    for pkg in reversed(pkg_list):
+        pkg = pkg.strip()
+        if not pkg:
+            continue
+
+        if pkg_type == "deb":
             uninstall_cmd = f"sudo dpkg -r {pkg}"
-            _, err, rc = run_cmd(uninstall_cmd)
-            if rc == 0:
-                logger.info(f"Successfully removed {pkg}")
-            else:
-                logger.error(f"Failed to remove {pkg}: {err}")
-
-    # RPM-based systems
-    elif pkg_type == "rpm":
-        cmd_list = f"rpm -qa | grep {run_id}"
-        stdout, stderr, rc = run_cmd(cmd_list)
-        if rc != 0 or not stdout:
-            logger.info("No matching packages found for uninstall.")
-            return
-
-        pkgs = [p.strip() for p in stdout.splitlines() if p.strip()]
-        logger.info(f"Found {len(pkgs)} package(s) to uninstall: {pkgs}")
-
-        for pkg in pkgs:
-            logger.info(f"Removing {pkg} ...")
+        elif pkg_type == "rpm":
             uninstall_cmd = f"sudo rpm -e {pkg}"
-            _, err, rc = run_cmd(uninstall_cmd)
-            if rc == 0:
-                logger.info(f"Successfully removed {pkg}")
-            else:
-                logger.error(f"Failed to remove {pkg}: {err}")
-    else:
-        logger.error("Unsupported package manager type detected.")
-        sys.exit(1)
+        else:
+            logger.error("Unsupported package manager type detected.")
+            sys.exit(1)
+
+        logger.info(f"Removing {pkg} ...")
+        _, err, rc = run_cmd(uninstall_cmd)
+        if rc == 0:
+            logger.info(f"Successfully removed {pkg}")
+        else:
+            logger.error(f"Failed to remove {pkg}: {err}")
 
 
 def main():
@@ -105,14 +88,57 @@ def main():
         required=True,
         help="run_id to match installed package names (e.g., 16418185899).",
     )
+    parser.add_argument("--package_json", required=True, help="Path to package.json.")
+    parser.add_argument(
+        "--version",
+        choices=["true", "false"],
+        default="false",
+        help="If true, install only versioned packages.",
+    )
+    parser.add_argument(
+        "--composite",
+        choices=["true", "false"],
+        default="false",
+        help="Install composite packages only.",
+    )
+    parser.add_argument(
+        "--amdgpu_family",
+        type=str,
+        required=False,
+        help="Specify AMD GPU family (e.g., gfx94x).",
+    )
+    parser.add_argument(
+        "--rocm-version",
+        type=str,
+        required=True,
+        help="Specify ROCm version (e.g., 7.0.0).",
+    )
+
 
     args = parser.parse_args()
     run_id = args.run_id
 
+    version_flag = args.version.lower() == "true"
+    composite_flag = args.composite.lower() == "true"
+    amdgpu_family = args.amdgpu_family
+    rocm_version = args.rocm_version
+
+    pm = LoadPackages(args.package_json,version_flag, amdgpu_family,rocm_version)
+    non_comp, comp = pm.list_composite_packages()
+
+
+    # Select package list
+    if composite_flag:
+        logger.info(f"Count of Composite packages: {len(comp)}")
+        sorted_packages = pm.sort_packages_by_dependencies(comp)
+    else:
+        logger.info(f"Count of non Composite packages: {len(non_comp)}")
+        sorted_packages = pm.sort_packages_by_dependencies(non_comp)
+
     logger.info("=== Starting package uninstallation ===")
 
     try:
-        uninstall_by_run_id(run_id)
+        pm.uninstall_packages(sorted_packages,composite_flag)
         logger.info("Uninstallation process completed.")
     except Exception as e:
         logger.error(f"Uninstallation failed: {e}")
