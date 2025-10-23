@@ -10,6 +10,7 @@ on:
         description: gfx arch for creating the artifact fetch url
         required: true
         type: string
+        default: gfx94X-dcgpu
       artifact_run_id:
         description: workflow run id to download the artifacts from
         type: string
@@ -17,6 +18,7 @@ on:
         description: ROCm version to append to the package( Like 8.0.0 or 8.1.0).
         required: true
         type: string
+        default: "0.0.1"
       package_type:
         description: Specify whether debian or rpm packages are needed (deb or rpm).
         required: true
