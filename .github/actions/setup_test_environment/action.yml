@@ -20,13 +20,10 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Set ipv4 precedence 
+    - name: Add python file server to hosts 
       shell: bash
       run: |
-        echo "Overriding gai.conf..."
-        sudo cp gai.conf /etc/gai.conf
-        sudo echo "$(</etc/gai.conf)"
-        echo "Trusting python file server..."
+        echo "Hardcoding python file server address..."
         sudo bash -c 'echo "146.75.76.223 files.pythonhosted.org" >> /etc/hosts'
         sudo echo "$(</etc/hosts)"
 
