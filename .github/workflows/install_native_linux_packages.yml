@@ -108,7 +108,7 @@ jobs:
 
       - name: Uninstall non-composite packages (Python script)
         run: |
-          python3 uninstall_packages.py --run_id ${{ env.ARTIFACT_RUN_ID }}
+          python3 ./build_tools/uninstall_packages.py --run_id ${{ env.ARTIFACT_RUN_ID }}
 
       - name: Install composite versioned packages (Python script)
         run: |
