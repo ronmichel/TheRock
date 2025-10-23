@@ -101,8 +101,7 @@ jobs:
             --target  ${{ inputs.amdgpu_family }} \
             --artifacts-dir ${{ env.ARTIFACTS_DIR }} \
             --pkg-type ${{ inputs.package_type }} \
-            --version-suffix ${{ env.PACKAGE_SUFFIX }} \
-            --pkg-names rocm-core hsa-rocr rocprofiler-register
+            --version-suffix ${{ env.PACKAGE_SUFFIX }} 
 
       - name: Install AWS CLI
         run: bash ./dockerfiles/install_awscli.sh
