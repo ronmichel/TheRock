@@ -9,6 +9,7 @@ on:
       amdgpu_family:
         description: gfx arch for creating the artifact fetch url
         required: true
+        default: gfx94X-dcgpu
         type: string
       artifact_run_id:
         description: workflow run id to download the artifacts from
@@ -17,6 +18,7 @@ on:
         description: ROCm version to append to the package( Like 8.0.0 or 8.1.0).
         required: true
         type: string
+        default: "0.0.1"
       package_type:
         description: Specify whether debian or rpm packages are needed (deb or rpm).
         required: true
@@ -96,16 +98,16 @@ jobs:
 
       - name: Install non-composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/install_packages.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload post --rocm-version  ${{ inputs.rocm_version }} 
+          python3 ./build_tools/install_packages.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version true --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload post --rocm-version  ${{ inputs.rocm_version }} 
 
       - name: Install non-composite non-versioned packages (Python script)
         run: |
-          python3 ./build_tools/install_packages.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload post --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/install_packages.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version false --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload post --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Install composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/install_packages.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload post --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/install_packages.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version true --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload post --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Install composite non-versioned packages (Python script)
         run: |
-          python3 ./build_tools/install_packages.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload post --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/install_packages.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload post --rocm-version  ${{ inputs.rocm_version }}
