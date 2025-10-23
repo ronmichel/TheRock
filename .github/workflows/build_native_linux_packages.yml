@@ -120,6 +120,10 @@ jobs:
         run: |
           python3 ./build_tools/install_packages.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
 
+      -name:
+        run: |
+          python3 uninstall_packages.py --run_id ${{ env.ARTIFACT_RUN_ID }}
+
       - name: Install composite versioned packages (Python script)
         run: |
           python3 ./build_tools/install_packages.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
