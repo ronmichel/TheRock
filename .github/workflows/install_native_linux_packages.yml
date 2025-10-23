@@ -1,6 +1,9 @@
-name: Build Native Linux Packages
+name: Install Native Linux Packages
 
 on:
+  push:
+    branches:
+      - rponnuru_native_installation
   workflow_call:
     inputs:
       amdgpu_family:
