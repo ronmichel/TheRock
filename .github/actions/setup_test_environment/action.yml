@@ -23,8 +23,7 @@ runs:
     - name: Add python file server to hosts 
       shell: bash
       run: |
-        echo "Hardcoding python file server address..."
-        sudo bash -c 'echo "146.75.76.223 files.pythonhosted.org" >> /etc/hosts'
+        echo "Checking hosts file..."
         sudo echo "$(</etc/hosts)"
 
     - name: "Setting up Python"
