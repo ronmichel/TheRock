@@ -108,7 +108,7 @@ jobs:
 
       - name: Uninstall non-composite packages (Python script)
         run: |
-          python3 ./build_tools/uninstall_packages.py --run_id ${{ env.ARTIFACT_RUN_ID }}
+          python3 ./build_tools/uninstall_packages.py --run_id ${{ env.ARTIFACT_RUN_ID }} --version false --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ env.AMDGPU_FAMILY }} --rocm-version ${{ env.ROCM_VERSION }}
 
       - name: Install composite versioned packages (Python script)
         run: |
@@ -117,3 +117,8 @@ jobs:
       - name: Install composite non-versioned packages (Python script)
         run: |
           python3 ./build_tools/install_packages.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ env.AMDGPU_FAMILY }} --upload post --rocm-version  ${{ env.ROCM_VERSION }}
+
+      - name: Uninstall composite packages (Python script)
+        run: |
+          python3 ./build_tools/uninstall_packages.py --run_id ${{ env.ARTIFACT_RUN_ID }} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ env.AMDGPU_FAMILY }} --rocm-version ${{ env.ROCM_VERSION }}
+
