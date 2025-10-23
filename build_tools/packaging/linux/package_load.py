@@ -323,16 +323,16 @@ class LoadPackages:
                 repo_entry = f"deb [trusted=yes] {base_url}/deb stable main\n"
 
                 logger.info(f"Writing Debian repo entry to {repo_file_path}")
-                with open(repo_file_path, "w") as f:
-                    f.write(repo_entry)
+
+                cmd = f'echo "{repo_entry.strip()}" | sudo tee {repo_file_path} > /dev/null'
+                result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+
+                if result.returncode != 0:
+                    logger.error(f"Failed to populate repo file: {result.stderr.strip()}")
+                    raise RuntimeError(f"Error populating repo file: {result.stderr.strip()}")
 
                 logger.info("Running apt-get update...")
-                subprocess.run(
-                    ["sudo", "tee", repo_file_path],
-                    input=repo_entry,
-                    text=True,
-                    check=True)
-                #subprocess.run(["sudo", "apt-get", "update"], check=False)
+                subprocess.run(["sudo", "apt-get", "update"], check=False)
 
             elif os_family == "redhat":
                 logger.info("Detected RPM-based system. Placeholder for repo setup.")
