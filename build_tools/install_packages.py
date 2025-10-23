@@ -48,21 +48,16 @@ def main():
     amdgpu_family = args.amdgpu_family
     rocm_version = args.rocm_version
 
-    if amdgpu_family:
-        amdgpu_family = amdgpu_family.split("-")[0]
-    else:
-        amdgpu_family = None
-
     pm = LoadPackages(args.package_json, amdgpu_family,rocm_version)
     non_comp, comp = pm.list_composite_packages()
 
-    logger.info(f"Count of Composite packages: {len(comp)}")
-    logger.info(f"Count of non Composite packages: {len(non_comp)}")
 
     # Select package list
     if composite_flag:
+        logger.info(f"Count of Composite packages: {len(comp)}")
         sorted_packages = pm.sort_packages_by_dependencies(comp)
     else:
+        logger.info(f"Count of non Composite packages: {len(non_comp)}")
         sorted_packages = pm.sort_packages_by_dependencies(non_comp)
 
     logger.info(f"Version flag: {version_flag}")

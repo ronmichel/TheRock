@@ -15,7 +15,7 @@ class LoadPackages:
     def __init__(self, package_json_path: str, amdgpu_family: str = None, rocm_version: str = None):
         self.package_json_path = package_json_path
         self.amdgpu_family = amdgpu_family
-        self.gfx_suffix = self.amdgpu_family.split("-")[0]  # e.g., gfx94x-dcgpu 
+        self.gfx_suffix = self.amdgpu_family.split("-")[0].lower()  # e.g., gfx94x-dcgpu 
         self.rocm_version = rocm_version
         self.packages = self._load_packages()
         self.packages_arch = self._load_packages_arch()
@@ -195,7 +195,7 @@ class LoadPackages:
             if matched:
                 return matched
             else:
-                logger.error(f"No matching package found for: {base}")
+                logger.error(f"No matching package found for: {derived_name}")
 
     def _run_install_command(self, pkg_name, use_repo, pkg_path=None):
         """
@@ -284,17 +284,18 @@ class LoadPackages:
                 except Exception as e:
                     logger.exception(f"Exception installing {pkg_name} from repo: {e}")
         else:
+            self.populate_repo_file(dest_dir)
             # Post-upload: install via system repo
             final_install_list = []
             for base in sorted_packages:
                 if version_flag:
                     pkgs = self.find_packages_for_base(dest_dir, base, version_flag,use_repo)
-                    final_install_list.extend(pkgs or [])
+                    final_install_list.append(pkgs or [])
                 else:
                     pkgs = self.find_packages_for_base(dest_dir, base, True, use_repo)
-                    final_install_list.extend(pkgs or [])
+                    final_install_list.append(pkgs or [])
                     pkgs = self.find_packages_for_base(dest_dir, base, False, use_repo)
-                    final_install_list.extend(pkgs or [])
+                    final_install_list.append(pkgs or [])
             for pkg_name in final_install_list:
                 try:
                     logger.info(f"Installing from repo: {pkg_name}")
@@ -315,7 +316,7 @@ class LoadPackages:
         logger.info(f"Populating repo file for OS: {os_family}")
 
         try:
-            base_url = f"https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{dest_dir}"
+            base_url = f"https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{self.amdgpu_family}_{dest_dir}"
 
             if os_family == "debian":
                 repo_file_path = "/etc/apt/sources.list.d/rocm.list"
