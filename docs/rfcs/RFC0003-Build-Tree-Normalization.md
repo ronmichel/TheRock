@@ -318,6 +318,7 @@ profiler/
   [aqlprofile/] -> projects/aqlprofile
   [sdk/] -> projects/rocprofiler-sdk
   [tracer/] -> projects/roctracer
+#rocm-systems, rocm-compute?
   therock_artifact_rocprofiler-sdk.toml
   therock.cmake
   therock_subprojects.cmake
