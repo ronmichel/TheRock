@@ -382,7 +382,7 @@ compute-libs/
   [hipcub] -> projects/hipcub
   [rocthrust] -> projects/rocthrust
   [composable-kernel] -> projects/composable-kernel (plan TBD, shown for illustration)
-  [libhipxx] -> projects/libhipcxx (planned prior to 8.0.0)
+  [libhipxx] (planned prior to 8.0.0)
   therock.cmake
   therock_subprojects.cmake
   therock_artifact_prim.toml
