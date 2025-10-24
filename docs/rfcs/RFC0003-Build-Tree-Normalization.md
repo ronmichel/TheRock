@@ -303,7 +303,7 @@ base/
   therock_artifact_base.toml
 runtime/
   [rocr-runtime] -> projects/rocr-runtime
-  [rocminfo] -> projects/rocminfo #Do we need this project?
+  [rocminfo] -> projects/rocminfo #Do we need this project? Is all the functionality covered by AMD-SMI
   [clr] -> projects/clr
   [hip] -> projects/hip
   [hip-tests] -> projects/hip-tests
