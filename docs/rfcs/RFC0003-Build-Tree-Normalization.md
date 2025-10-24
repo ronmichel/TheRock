@@ -332,12 +332,13 @@ shared/
   mxdatagenerator/
   rocroller/
   tensile/
+  common/ #Utilities used by multiple projects e.g. RAII GPU buffer classes
   therock.cmake
   therock_subprojects.cmake
 
 gemmla/
   common/
-    [hipblas-common] -> project/hipblas-common
+    [blas-common] -> project/hipblas-common
     therock.cmake
     therock_subprojects.cmake
     therock_artifact_gemmla-common.toml
@@ -367,10 +368,9 @@ gemmla/
     therock_artifact_gemm-api.toml
 
 kernel-libs/
-  [rocrand] -> projects/rocrand
+  [rocrand] -> projects/rocrand # Should we merge into hiprand?
   [hiprand] -> projects/hiprand
-  [rocfft] -> projects/rocfft
-  [hipfft] -> projects/hipfft
+  [hipfft] -> projects/hipfft #Merge rocFFT into one folder 
   therock.cmake
   therock_subprojects.cmake
   therock_artifact_fft.toml
