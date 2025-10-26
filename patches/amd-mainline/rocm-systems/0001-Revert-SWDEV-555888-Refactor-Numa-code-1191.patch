@@ -1,0 +1,1147 @@
+From b823e37732b39002af88740ded5f6c8f3251c698 Mon Sep 17 00:00:00 2001
+From: Mika Laitio <mika.laitio@amd.com>
+Date: Sun, 26 Oct 2025 02:12:36 -0700
+Subject: [PATCH] Revert "SWDEV-555888 - Refactor Numa code (#1191)"
+
+This reverts commit 5f76cb916d909b7db36078169b83029735f72eda.
+---
+ .../clr/hipamd/src/hip_device_runtime.cpp     |   3 -
+ .../rocclr/cmake}/FindNUMA.cmake              |   0
+ projects/clr/rocclr/cmake/ROCclrHSA.cmake     |   7 +
+ projects/clr/rocclr/device/device.hpp         |   5 +-
+ projects/clr/rocclr/device/rocm/rocdevice.cpp |  39 ++-
+ projects/clr/rocclr/device/rocm/rocdevice.hpp |   2 +-
+ projects/clr/rocclr/os/os.hpp                 |  66 +---
+ projects/clr/rocclr/os/os_posix.cpp           | 124 ++-----
+ projects/clr/rocclr/os/os_win32.cpp           | 111 ++----
+ .../catch/perftests/memory/CMakeLists.txt     |  25 +-
+ .../memory/hipPerfBufferCopySpeed.cc          |   4 +
+ .../memory/hipPerfDevMemReadSpeed.cc          |   2 +-
+ .../perftests/memory/hipPerfHostNumaAlloc.cc  |  39 ++-
+ .../memory/hipPerfHostNumaAllocWin.cc         | 326 ------------------
+ .../catch/perftests/memory/hipPerfMemcpy.cc   |   5 +-
+ .../catch/perftests/memory/hipPerfMemset.cc   |   2 +-
+ projects/hip/include/hip/hip_runtime_api.h    |   2 -
+ .../nvidia_detail/nvidia_hip_runtime_api.h    |   3 -
+ 18 files changed, 134 insertions(+), 631 deletions(-)
+ rename projects/{hip-tests/catch/perftests/memory => clr/rocclr/cmake}/FindNUMA.cmake (100%)
+ delete mode 100644 projects/hip-tests/catch/perftests/memory/hipPerfHostNumaAllocWin.cc
+
+diff --git a/projects/clr/hipamd/src/hip_device_runtime.cpp b/projects/clr/hipamd/src/hip_device_runtime.cpp
+index adb58a63ec..c277b4d83f 100644
+--- a/projects/clr/hipamd/src/hip_device_runtime.cpp
++++ b/projects/clr/hipamd/src/hip_device_runtime.cpp
+@@ -454,9 +454,6 @@ hipError_t hipDeviceGetAttribute(int* pi, hipDeviceAttribute_t attr, int device)
+     case hipDeviceAttributeMaxAvailableVgprsPerThread:
+       *pi = static_cast<int>(g_devices[device]->devices()[0]->info().availableVGPRs_);
+       break;
+-    case hipDeviceAttributeHostNumaId:
+-      *pi = static_cast<int>(g_devices[device]->devices()[0]->getPreferredNumaNode());
+-      break;
+     default:
+       HIP_RETURN(hipErrorInvalidValue);
+   }
+diff --git a/projects/hip-tests/catch/perftests/memory/FindNUMA.cmake b/projects/clr/rocclr/cmake/FindNUMA.cmake
+similarity index 100%
+rename from projects/hip-tests/catch/perftests/memory/FindNUMA.cmake
+rename to projects/clr/rocclr/cmake/FindNUMA.cmake
+diff --git a/projects/clr/rocclr/cmake/ROCclrHSA.cmake b/projects/clr/rocclr/cmake/ROCclrHSA.cmake
+index f7e2ada661..d28ca82e47 100644
+--- a/projects/clr/rocclr/cmake/ROCclrHSA.cmake
++++ b/projects/clr/rocclr/cmake/ROCclrHSA.cmake
+@@ -67,6 +67,13 @@ endif()
+ 
+ #target_include_directories(rocclr PRIVATE ${AMD_HSA_INCLUDE_DIR}/..)
+ 
++find_package(NUMA)
++if(NUMA_FOUND)
++  target_compile_definitions(rocclr PUBLIC ROCCLR_SUPPORT_NUMA_POLICY)
++  target_include_directories(rocclr PUBLIC ${NUMA_INCLUDE_DIR})
++  target_link_libraries(rocclr PUBLIC ${NUMA_LIBRARIES})
++endif()
++
+ find_package(OpenGL REQUIRED)
+ 
+ target_sources(rocclr PRIVATE
+diff --git a/projects/clr/rocclr/device/device.hpp b/projects/clr/rocclr/device/device.hpp
+index bbfb5bb14c..8a0b958aca 100644
+--- a/projects/clr/rocclr/device/device.hpp
++++ b/projects/clr/rocclr/device/device.hpp
+@@ -2041,10 +2041,7 @@ class Device : public RuntimeObject {
+ 
+   virtual void getHwEventTime(const amd::Event& event, uint64_t* start, uint64_t* end) const {};
+ 
+-  virtual uint32_t getPreferredNumaNode() const {
+-    return static_cast<uint32_t>(-1); //!< PAL doesn't support it
+-  }
+-
++  virtual const uint32_t getPreferredNumaNode() const { return 0; }
+   virtual void ReleaseGlobalSignal(void* signal) const {}
+   virtual const bool isFineGrainSupported() const {
+     return (info().svmCapabilities_ & CL_DEVICE_SVM_ATOMICS) != 0 ? true : false;
+diff --git a/projects/clr/rocclr/device/rocm/rocdevice.cpp b/projects/clr/rocclr/device/rocm/rocdevice.cpp
+index b1577839ba..03dae4db2f 100644
+--- a/projects/clr/rocclr/device/rocm/rocdevice.cpp
++++ b/projects/clr/rocclr/device/rocm/rocdevice.cpp
+@@ -54,6 +54,10 @@
+ #include <iostream>
+ #include <iomanip>
+ #include <memory>
++#ifdef ROCCLR_SUPPORT_NUMA_POLICY
++#include <numa.h>
++#include <numaif.h>
++#endif  // ROCCLR_SUPPORT_NUMA_POLICY
+ #include <sstream>
+ #include <vector>
+ 
+@@ -2056,17 +2060,30 @@ void* Device::hostAlloc(size_t size, size_t alignment, MemorySegment mem_seg,
+ // ================================================================================================
+ void* Device::hostNumaAlloc(size_t size, size_t alignment, MemorySegment mem_seg) const {
+   void* ptr = nullptr;
+-  auto numa_node_count = cpu_agents_.size(); // count of host numa nodes
+-  numa::NumaPolicy np(numa_node_count);
+-  if (!np.GetMemPolicy()) {
+-    return hostAlloc(size, alignment, mem_seg, cpu_agent_info_);
+-  }
+-  switch (np.GetPolicy()) {
+-    case numa::NumaPolicy::Policy::kPrefered:
+-    case numa::NumaPolicy::Policy::kBind:
++#ifndef ROCCLR_SUPPORT_NUMA_POLICY
++  ptr = hostAlloc(size, alignment, mem_seg, cpu_agent_info_);
++#else
++  int mode = MPOL_DEFAULT;
++  int maxNodes = numa_num_possible_nodes();
++  bitmask* nodeMask = numa_bitmask_alloc(maxNodes);
++  auto cpuCount = cpu_agents_.size();
++
++  long res = get_mempolicy(&mode, nodeMask->maskp, nodeMask->size, NULL, 0);
++  if (res) {
++    LogPrintfError("get_mempolicy failed with error %ld", res);
++    return ptr;
++  }
++  ClPrint(amd::LOG_DETAIL_DEBUG, amd::LOG_RESOURCE,
++          "get_mempolicy() succeed with mode %d, nodeMask 0x%lx, cpuCount %zu", mode,
++          *nodeMask->maskp, cpuCount);
++
++  switch (mode) {
++    // For details, see "man get_mempolicy".
++    case MPOL_BIND:
++    case MPOL_PREFERRED:
+       // We only care about the first CPU node
+-      for (unsigned int i = 0; i < numa_node_count; i++) {
+-        if (np.IsPolicySetAt(i)) {
++      for (unsigned int i = 0; i < cpuCount; i++) {
++        if ((1u << i) & *nodeMask->maskp) {
+           ptr = hostAlloc(size, alignment, mem_seg, &cpu_agents_[i]);
+           break;
+         }
+@@ -2076,6 +2093,8 @@ void* Device::hostNumaAlloc(size_t size, size_t alignment, MemorySegment mem_seg
+       //  All other modes fall back to default mode
+       ptr = hostAlloc(size, alignment, mem_seg, cpu_agent_info_);
+   }
++  numa_free_cpumask(nodeMask);
++#endif  // ROCCLR_SUPPORT_NUMA_POLICY
+   return ptr;
+ }
+ 
+diff --git a/projects/clr/rocclr/device/rocm/rocdevice.hpp b/projects/clr/rocclr/device/rocm/rocdevice.hpp
+index e233524a96..02559d49a1 100644
+--- a/projects/clr/rocclr/device/rocm/rocdevice.hpp
++++ b/projects/clr/rocclr/device/rocm/rocdevice.hpp
+@@ -562,7 +562,7 @@ class Device : public NullDevice {
+ 
+   virtual amd::Memory* GetArenaMemObj(const void* ptr, size_t& offset, size_t size = 0);
+ 
+-  virtual uint32_t getPreferredNumaNode() const final { return preferred_numa_node_; }
++  const uint32_t getPreferredNumaNode() const { return preferred_numa_node_; }
+ 
+   const bool isFineGrainSupported() const;
+ 
+diff --git a/projects/clr/rocclr/os/os.hpp b/projects/clr/rocclr/os/os.hpp
+index 3f5ccf07e3..a65d454fdf 100644
+--- a/projects/clr/rocclr/os/os.hpp
++++ b/projects/clr/rocclr/os/os.hpp
+@@ -23,7 +23,6 @@
+ 
+ #include "top.hpp"
+ #include "utils/util.hpp"
+-#include "utils/flags.hpp"
+ 
+ #include <vector>
+ #include <string>
+@@ -233,7 +232,7 @@ class Os : AllStatic {
+   static void alignedFree(void* mem);
+ 
+   //! NUMA related settings
+-  inline static void setPreferredNumaNode(uint32_t node);
++  static void setPreferredNumaNode(uint32_t node);
+ 
+   // File/Path helper routines:
+   //
+@@ -527,69 +526,6 @@ inline uint Os::ThreadAffinityMask::getNextSet(uint cpu) const {
+ 
+ #endif
+ 
+-/* Mini numa interface instead of numa lib apis */
+-namespace numa {
+-
+-static constexpr uint32_t kBitsPerUInt64 = 8 * sizeof(uint64_t);
+-
+-/*! \brief Manage Numa policy.
+- *
+- *  \note Works in Linux only, dummy in Windows.
+- */
+-class NumaPolicy final {
+-public:
+-  enum class Policy {
+-    kDefault = 0,
+-    kPrefered = 1,
+-    kBind = 2,
+-    kInterleave = 3,
+-    kLocal = 4,
+-    kPreferedMany = 5,
+-    kWeightedInterleave = 6,
+-    kMax = 7
+-  };
+-  NumaPolicy(uint32_t numa_node_count);
+-
+-  //! Query memory policy and node bitmask from Linux kernel
+-  bool GetMemPolicy();
+-
+-  //! Check whether node_index is in bitmask for kPrefered and kBind modes
+-  bool IsPolicySetAt(uint32_t node_index) const;
+-
+-  //! Return the queried policy
+-  Policy GetPolicy() const { return policy_; }
+-private:
+-  std::vector<uint64_t> node_map_{};  //!< Node bitmask for kPrefered and kBind modes
+-  Policy policy_{Policy::kDefault};  //!< The policy
+-};
+-
+-/*! \brief Manage Numa node.
+- *
+- *  \note Works in Linux and Windows.
+- */
+-class NumaNode final {
+-public:
+-  NumaNode (uint32_t node_index): node_index_(node_index) {}
+-  ~NumaNode();
+-  //! Apply the CPU affinity mask of the node onto the current thread
+-  bool SchedSetAffinity();
+-private:
+-  uint32_t node_index_; //! Index of the Numa node
+-  void* affinity_ = nullptr;  //!< Affinity mask of logical CPUs on this node
+-  uint32_t size_ = 0;  //!< Number of valid bits
+-  //! Guery the affinity mask of logical CPUs on this node
+-  bool GetAffinity();
+-};
+-
+-}  // namespace numa
+-
+-inline void Os::setPreferredNumaNode(uint32_t node) {
+-  if (AMD_CPU_AFFINITY) {
+-    numa::NumaNode numaNode(node);
+-    numaNode.SchedSetAffinity();
+-  }
+-}
+-
+ }  // namespace amd
+ 
+ #endif /*OS_HPP_*/
+diff --git a/projects/clr/rocclr/os/os_posix.cpp b/projects/clr/rocclr/os/os_posix.cpp
+index a3766a71fd..feb22ae931 100644
+--- a/projects/clr/rocclr/os/os_posix.cpp
++++ b/projects/clr/rocclr/os/os_posix.cpp
+@@ -19,10 +19,11 @@
+  THE SOFTWARE. */
+ 
+ #if !defined(_WIN32) && !defined(__CYGWIN__)
+-#include <unistd.h>
+-#include <sys/syscall.h>
++
+ #include "os/os.hpp"
+ #include "thread/thread.hpp"
++#include "utils/util.hpp"
++#include "utils/flags.hpp"
+ 
+ #include <iostream>
+ #include <stdarg.h>
+@@ -48,6 +49,11 @@
+ #ifndef DT_GNU_HASH
+ #define DT_GNU_HASH 0x6ffffef5
+ #endif  // DT_GNU_HASH
++
++#ifdef ROCCLR_SUPPORT_NUMA_POLICY
++#include <numa.h>
++#endif  // ROCCLR_SUPPORT_NUMA_POLICY
++
+ #include <atomic>
+ #include <vector>
+ #include <string>
+@@ -321,6 +327,20 @@ void Os::currentStackInfo(address* base, size_t* size) {
+ 
+ void Os::setCurrentThreadName(const char* name) { ::prctl(PR_SET_NAME, name); }
+ 
++void Os::setPreferredNumaNode(uint32_t node) {
++#ifdef ROCCLR_SUPPORT_NUMA_POLICY
++  if (AMD_CPU_AFFINITY && (numa_available() >= 0)) {
++    bitmask* bm = numa_allocate_cpumask();
++    numa_node_to_cpus(node, bm);
++    if (numa_sched_setaffinity(0, bm) < 0) {
++      assert(0 && "failed to set affinity");
++    }
++
++    numa_free_cpumask(bm);
++  }
++#endif  // ROCCLR_SUPPORT_NUMA_POLICY
++}
++
+ void* Thread::entry(Thread* thread) {
+   sigset_t set;
+ 
+@@ -959,106 +979,6 @@ void Os::CxaDemangle(const std::string& name, std::string* result) {
+   free(demangled);
+ }
+ 
+-namespace numa {
+-
+-// ================================================================================================
+-NumaPolicy::NumaPolicy(const uint32_t numa_node_count) :
+-  node_map_((numa_node_count + kBitsPerUInt64 - 1) / kBitsPerUInt64, 0) { }
+-
+-// ================================================================================================
+-bool NumaPolicy::GetMemPolicy() {
+-  int policy = 0;
+-  if (syscall(__NR_get_mempolicy, &policy, node_map_.data(),
+-      node_map_.size() * kBitsPerUInt64, nullptr, 0) < 0) {
+-    ClPrint(amd::LOG_DEBUG, amd::LOG_RESOURCE,
+-        "syscall(__NR_get_mempolicy, size=%zu) failed to query policy",
+-        node_map_.size() * kBitsPerUInt64);
+-    return false;
+-  }
+-  if (policy < static_cast<int>(Policy::kDefault) || policy > static_cast<int>(Policy::kMax)) {
+-    ClPrint(amd::LOG_DEBUG, amd::LOG_RESOURCE,
+-            "syscall(__NR_get_mempolicy) returned wrong policy %d", policy);
+-    return false;
+-  }
+-  policy_ = static_cast<Policy>(policy);
+-  return true;
+-}
+-
+-// ================================================================================================
+-bool NumaPolicy::IsPolicySetAt(uint32_t node_index) const {
+-  const uint32_t i = node_index / kBitsPerUInt64;
+-  if (i < node_map_.size()) {
+-    return ((node_map_[i] >> (node_index % kBitsPerUInt64)) & 1) ?
+-        true: false;
+-  } else {
+-    return false;
+-  }
+-}
+-
+-// ================================================================================================
+-NumaNode::~NumaNode() {
+-  if (affinity_) {
+-    delete static_cast<std::vector<uint64_t> *>(affinity_);
+-    affinity_ = nullptr;
+-  }
+-}
+-
+-// ================================================================================================
+-bool NumaNode::GetAffinity() {
+-  const std::string path = "/sys/devices/system/node/node" + std::to_string(node_index_) +
+-      "/cpumap";
+-  std::ifstream file(path);
+-  if (!file) {
+-    std::cerr << "Failed to open " << path << "\n";
+-    ClPrint(amd::LOG_DEBUG, amd::LOG_RESOURCE, "%s cannot be opened", path);
+-    return false;
+-  }
+-  std::string line;
+-  std::getline(file, line);
+-  file.close();
+-
+-  // To remove commas and whitespace
+-  line.erase(std::remove_if(line.begin(), line.end(),
+-             [](unsigned char x) { return std::isspace(x) || x == ','; }), line.end());
+-
+-  constexpr uint32_t kHexsPerUInt64 = 2 * sizeof(uint64_t);
+-  auto affinity = new std::vector<uint64_t>((line.size() + kHexsPerUInt64 - 1) / kHexsPerUInt64);
+-  auto iter = affinity->begin();
+-  // To parse from the end (little-endian layout)
+-  for (int i = line.size(); i > 0; i -= kHexsPerUInt64) {
+-    uint32_t start = (i >= kHexsPerUInt64) ? i - kHexsPerUInt64 : 0;
+-    uint32_t len = (i >= kHexsPerUInt64) ? kHexsPerUInt64 : i;
+-
+-    const std::string chunk = line.substr(start, len);
+-    const uint64_t value = std::stoul(chunk, nullptr, 16);
+-    *(iter++) = value;
+-    if (len == kHexsPerUInt64) {
+-      size_ += kBitsPerUInt64;
+-    } else {
+-      // Last one
+-      size_ = kBitsPerUInt64 - __builtin_clzl(value);
+-    }
+-  }
+-  affinity_ = affinity;
+-  return true;
+-}
+-
+-// ================================================================================================
+-bool NumaNode::SchedSetAffinity() {
+-  if (!GetAffinity()) {
+-    return false;
+-  }
+-  if (syscall(__NR_sched_setaffinity, 0, size_,
+-              static_cast<std::vector<uint64_t>*>(affinity_)->data()) < 0) {
+-    ClPrint(amd::LOG_DEBUG, amd::LOG_RESOURCE,
+-            "syscall(__NR_sched_setaffinity, size=%u) failed", size_);
+-    return false;
+-  }
+-  return true;
+-}
+-
+-}  // namespace numa
+-
+ }  // namespace amd
+ 
+ #endif  // !defined(_WIN32) && !defined(__CYGWIN__)
+diff --git a/projects/clr/rocclr/os/os_win32.cpp b/projects/clr/rocclr/os/os_win32.cpp
+index c80c1e4d28..67d55a21c6 100644
+--- a/projects/clr/rocclr/os/os_win32.cpp
++++ b/projects/clr/rocclr/os/os_win32.cpp
+@@ -22,6 +22,7 @@
+ 
+ #include "os/os.hpp"
+ #include "thread/thread.hpp"
++#include "utils/flags.hpp"
+ #include <windows.h>
+ #include <process.h>
+ #include <tchar.h>
+@@ -39,6 +40,9 @@
+ #define WINAPI
+ #endif
+ 
++
++BOOL(WINAPI* pfnGetNumaNodeProcessorMaskEx)(USHORT, PGROUP_AFFINITY) = NULL;
++
+ namespace amd {
+ 
+ static size_t allocationGranularity_;
+@@ -50,7 +54,10 @@ PVOID divExceptionHandler = NULL;
+ #endif  // _WIN64
+ 
+ static double PerformanceFrequency;
+-static GROUP_AFFINITY nativeMask_;
++
++typedef BOOL(WINAPI* SetThreadGroupAffinity_fn)(__in HANDLE, __in CONST GROUP_AFFINITY*,
++                                                __out_opt PGROUP_AFFINITY);
++static SetThreadGroupAffinity_fn pfnSetThreadGroupAffinity = NULL;
+ 
+ #pragma section(".CRT$XCU", long, read)
+ __declspec(allocate(".CRT$XCU")) bool (*__init)(void) = Os::init;
+@@ -74,9 +81,12 @@ bool Os::init() {
+   QueryPerformanceFrequency(&frequency);
+   PerformanceFrequency = (double)frequency.QuadPart;
+ 
+-  if (!GetThreadGroupAffinity(GetCurrentThread(), &nativeMask_)) {
+-    ClPrint(amd::LOG_ERROR, amd::LOG_INIT, "Failed getting main thread affinity with error %d",
+-        GetLastError());
++  HMODULE handle = ::LoadLibrary("kernel32.dll");
++  if (handle != NULL) {
++    pfnSetThreadGroupAffinity =
++        (SetThreadGroupAffinity_fn)::GetProcAddress(handle, "SetThreadGroupAffinity");
++    pfnGetNumaNodeProcessorMaskEx = (BOOL(WINAPI*)(USHORT, PGROUP_AFFINITY))::GetProcAddress(
++        handle, "GetNumaNodeProcessorMaskEx");
+   }
+ 
+   return Thread::init();
+@@ -240,6 +250,8 @@ static void SetThreadName(DWORD threadId, const char* name) {
+ 
+ void Os::setCurrentThreadName(const char* name) { SetThreadName(GetCurrentThreadId(), name); }
+ 
++void Os::setPreferredNumaNode(uint32_t node) {};
++
+ static LONG WINAPI divExceptionFilter(struct _EXCEPTION_POINTERS* ep) {
+   DWORD code = ep->ExceptionRecord->ExceptionCode;
+ 
+@@ -313,33 +325,25 @@ const void* Os::createOsThread(Thread* thread) {
+   return reinterpret_cast<const void*>(handle);
+ }
+ 
+-// This function only works with CPU core number <= 64.
+-// SetThreadGroupAffinity does clear the thread's affinity to other processor groups.
+-// No API yet to set multi-group affinity.
+-// So only the last group will take affect in this function!
+ void Os::setThreadAffinity(const void* handle, const Os::ThreadAffinityMask& mask) {
+-  GROUP_AFFINITY group = {0};
+-  for (WORD i = 0; i < sizeof(mask.mask_) / sizeof(KAFFINITY); ++i) {
+-    group.Mask = mask.mask_[i];
+-    group.Group = i;
+-    if (group.Mask != 0) {
+-      SetThreadGroupAffinity((HANDLE)handle, &group, NULL);
++  if (pfnSetThreadGroupAffinity != NULL) {
++    GROUP_AFFINITY group = {0};
++    for (WORD i = 0; i < sizeof(mask.mask_) / sizeof(KAFFINITY); ++i) {
++      group.Mask = mask.mask_[i];
++      group.Group = i;
++      if (group.Mask != 0) {
++        pfnSetThreadGroupAffinity((HANDLE)handle, &group, NULL);
++      }
+     }
+-  }
+-}
+-
+-bool Os::setThreadAffinityToMainThread() {
+-  if (AMD_CPU_AFFINITY) {
+-    ClPrint(amd::LOG_INFO, amd::LOG_INIT, "Setting Affinity to the main thread's affinity");
+-    if (!SetThreadGroupAffinity(GetCurrentThread(), &nativeMask_, nullptr)) {
+-      ClPrint(amd::LOG_ERROR, amd::LOG_INIT, "Failed setting main thread affinity with error %d",
+-          GetLastError());
+-      return false;
++  } else {  // pfnSetThreadGroupAffinity == NULL
++    DWORD_PTR threadAffinityMask = (DWORD_PTR)mask.mask_[0];
++    if (threadAffinityMask != 0) {
++      ::SetThreadAffinityMask((HANDLE)handle, threadAffinityMask);
+     }
+   }
+-  return true;
+ }
+ 
++bool Os::setThreadAffinityToMainThread() { return true; }
+ void Os::yield() { ::SwitchToThread(); }
+ 
+ uint64_t Os::timeNanos() {
+@@ -747,63 +751,6 @@ bool Os::DumpCoreFile() { return false; }
+ // ================================================================================================
+ void Os::CxaDemangle(const std::string& name, std::string* result) { *result = name; }
+ 
+-namespace numa {
+-
+-// ================================================================================================
+-NumaPolicy::NumaPolicy(const uint32_t numa_node_count) {
+-}
+-
+-// ================================================================================================
+-bool NumaPolicy::GetMemPolicy() {
+-  // Dummy as Windows doesn't support numa policy
+-  return false;
+-}
+-
+-// ================================================================================================
+-bool NumaPolicy::IsPolicySetAt(uint32_t node_index) const {
+-  // Dummy as Windows doesn't support numa policy
+-  return false;
+-}
+-
+-// ================================================================================================
+-NumaNode::~NumaNode() {
+-  if (affinity_) {
+-    delete static_cast<GROUP_AFFINITY*>(affinity_);
+-    affinity_ = nullptr;
+-  }
+-}
+-
+-// ================================================================================================
+-bool NumaNode::GetAffinity() {
+-  GROUP_AFFINITY *affinity = new GROUP_AFFINITY();
+-  if (!GetNumaNodeProcessorMaskEx(node_index_, affinity)) {
+-    ClPrint(amd::LOG_ERROR, amd::LOG_RESOURCE,
+-        "Failed getting numa node(%u) affinity with error %d",
+-        node_index_, GetLastError());
+-    delete affinity;
+-    return false;
+-  }
+-  affinity_ = affinity;
+-  return true;
+-}
+-
+-// ================================================================================================
+-bool NumaNode::SchedSetAffinity() {
+-  if (!GetAffinity()) {
+-    return false;
+-  }
+-  if (!SetThreadGroupAffinity(GetCurrentThread(),
+-                              static_cast<GROUP_AFFINITY*>(affinity_), nullptr)) {
+-    ClPrint(amd::LOG_ERROR, amd::LOG_RESOURCE,
+-        "Failed setting numa node(%u) affinity onto thread with error %d",
+-        node_index_, GetLastError());
+-    return false;
+-  }
+-  return true;
+-}
+-
+-}  // namespace numa
+-
+ }  // namespace amd
+ 
+ #endif  // _WIN32 || __CYGWIN__
+diff --git a/projects/hip-tests/catch/perftests/memory/CMakeLists.txt b/projects/hip-tests/catch/perftests/memory/CMakeLists.txt
+index efd30b458a..66cdb74350 100644
+--- a/projects/hip-tests/catch/perftests/memory/CMakeLists.txt
++++ b/projects/hip-tests/catch/perftests/memory/CMakeLists.txt
+@@ -39,29 +39,16 @@ set(TEST_SRC
+ )
+ 
+ if(HIP_PLATFORM MATCHES "amd")
+-  if(WIN32)
+-    set(TEST_SRC ${TEST_SRC} hipPerfHostNumaAllocWin.cc)
+-    hip_add_exe_to_target(NAME perfMemoryTest
+-                      TEST_SRC ${TEST_SRC}
+-                      TEST_TARGET_NAME perf_test)
+-  else()
+-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}")
+-    find_package(NUMA)
+-    if(NUMA_FOUND)
+-      # Test code still use libnuma apis
+-      set(TEST_SRC ${TEST_SRC} hipPerfHostNumaAlloc.cc)
+-      hip_add_exe_to_target(NAME perfMemoryTest
++  set(TEST_SRC
++      ${TEST_SRC}
++      hipPerfHostNumaAlloc.cc)
++
++hip_add_exe_to_target(NAME perfMemoryTest
+                       TEST_SRC ${TEST_SRC}
+                       TEST_TARGET_NAME perf_test
+                       LINKER_LIBS numa)
+-    else()
+-      hip_add_exe_to_target(NAME perfMemoryTest
+-                      TEST_SRC ${TEST_SRC}
+-                      TEST_TARGET_NAME perf_test)
+-    endif()
+-  endif()
+ else()
+-  hip_add_exe_to_target(NAME perfMemoryTest
++hip_add_exe_to_target(NAME perfMemoryTest
+                       TEST_SRC ${TEST_SRC}
+                       TEST_TARGET_NAME perf_test)
+ endif()
+diff --git a/projects/hip-tests/catch/perftests/memory/hipPerfBufferCopySpeed.cc b/projects/hip-tests/catch/perftests/memory/hipPerfBufferCopySpeed.cc
+index 7a7751f711..105c87f14a 100644
+--- a/projects/hip-tests/catch/perftests/memory/hipPerfBufferCopySpeed.cc
++++ b/projects/hip-tests/catch/perftests/memory/hipPerfBufferCopySpeed.cc
+@@ -63,6 +63,7 @@ static bool hipPerfBufferCopySpeed_test(int p_tests) {
+   unsigned int numIter;
+   int numDevices = 0;
+   HIP_CHECK(hipGetDeviceCount(&numDevices));
++  int test = 0;
+   // 1. Run all P2P for all sizes
+   if (numDevices >= 2) {
+     for (int sizeIdx = 0; sizeIdx < NUM_SIZES; ++sizeIdx) {
+@@ -135,6 +136,7 @@ static bool hipPerfBufferCopySpeed_test(int p_tests) {
+        CONSOLE_PRINT(
+            "HIPPerfBufferCopySpeed[%3d]       (%10u bytes)        P2P    s:%-5s d:%-5s       i:%4u  (GB/s) perf     %f",
+            testIdx, bufSize_, "dev0", "dev1", numIter, (float)perf);
++      test++;
+       void* temp = malloc(bufSize_ + 4096);
+       void* chkBuf = reinterpret_cast<void*>(temp);
+       HIP_CHECK(hipMemcpy(chkBuf, dstBuffer, bufSize_, hipMemcpyDefault));
+@@ -190,6 +192,7 @@ static bool hipPerfBufferCopySpeed_test(int p_tests) {
+      CONSOLE_PRINT(
+          "HIPPerfBufferCopySpeed[%3d]       (%10u bytes)        NoCU   s:%-5s d:%-5s       i:%4u  (GB/s) perf     %f",
+          testIdx, bufSize_, "dev0", "dev0", numIter, (float)perf);
++    test++;
+     void* temp = malloc(bufSize_ + 4096);
+     void* chkBuf = reinterpret_cast<void*>(temp);
+     HIP_CHECK(hipMemcpy(chkBuf, dstBuffer, bufSize_, hipMemcpyDefault));
+@@ -334,6 +337,7 @@ static bool hipPerfBufferCopySpeed_test(int p_tests) {
+         CONSOLE_PRINT(
+             "HIPPerfBufferCopySpeed[%3d]       (%10u bytes)        %-5s  s:%-5s d:%-5s       i:%4u  (GB/s) perf     %f",
+             testIdx, bufSize_, "     ", strSrc, strDst, numIter, (float)perf);
++        test++;
+         void* temp = malloc(bufSize_ + 4096);
+         void* chkBuf = reinterpret_cast<void*>(temp);
+         HIP_CHECK(hipMemcpy(chkBuf, dstBuffer, bufSize_, hipMemcpyDefault));
+diff --git a/projects/hip-tests/catch/perftests/memory/hipPerfDevMemReadSpeed.cc b/projects/hip-tests/catch/perftests/memory/hipPerfDevMemReadSpeed.cc
+index 19663b46ad..887a75df16 100644
+--- a/projects/hip-tests/catch/perftests/memory/hipPerfDevMemReadSpeed.cc
++++ b/projects/hip-tests/catch/perftests/memory/hipPerfDevMemReadSpeed.cc
+@@ -96,7 +96,7 @@ static bool hipPerfDevMemReadSpeed_test() {
+ 
+   if (hDst[0] != (nBytes / sizeof(uint))) {
+     DEBUG_PRINT(
+-        "hipPerfDevMemReadSpeed - Data validation failed for warm up run! expected %zu got %u\n",
++        "hipPerfDevMemReadSpeed - Data validation failed for warm up run! expected %lu got %u\n",
+         nBytes / sizeof(uint), hDst[0]);
+     return false;
+   }
+diff --git a/projects/hip-tests/catch/perftests/memory/hipPerfHostNumaAlloc.cc b/projects/hip-tests/catch/perftests/memory/hipPerfHostNumaAlloc.cc
+index 1a7a1fdb2f..8bfa451fb4 100644
+--- a/projects/hip-tests/catch/perftests/memory/hipPerfHostNumaAlloc.cc
++++ b/projects/hip-tests/catch/perftests/memory/hipPerfHostNumaAlloc.cc
+@@ -24,23 +24,41 @@ THE SOFTWARE.
+  * `hipMemcpy(void* dst, const void* src, size_t count, hipMemcpyKind kind)` -
+  * Copies data between host and device.
+  */
+-#include <unistd.h>
++
+ #include <numaif.h>
+-#include <numa.h>
+ #include <hip_test_common.hh>
+ // #define ENABLE_DEBUG 1
+ // To run it correctly, we must not export HIP_VISIBLE_DEVICES.
+ // And we must explicitly link libnuma because of numa api move_pages().
+-#define NUM_PAGES 100
++#define NUM_PAGES 4
+ char* h = nullptr;
+ char* d_h = nullptr;
+ char* m = nullptr;
+ char* d_m = nullptr;
+-int page_size = 0;
++int page_size = 1024;
+ 
+ const int mode[] = {MPOL_DEFAULT, MPOL_BIND, MPOL_PREFERRED, MPOL_INTERLEAVE};
+ const char* modeStr[] = {"MPOL_DEFAULT", "MPOL_BIND", "MPOL_PREFERRED", "MPOL_INTERLEAVE"};
+ 
++std::string exeCommand(const char* cmd) {
++  std::array<char, 128> buff;
++  std::string result;
++  std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
++  if (!pipe) {
++    return result;
++  }
++  while (fgets(buff.data(), buff.size(), pipe.get()) != nullptr) {
++    result += buff.data();
++  }
++  return result;
++}
++
++int getCpuAgentCount() {
++  const char* cmd = "cat /proc/cpuinfo | grep \"physical id\" | sort | uniq | wc -l";
++  int cpuAgentCount = std::atoi(exeCommand(cmd).c_str());
++  return cpuAgentCount;
++}
++
+ bool test(int cpuId, int gpuId, int numaMode, unsigned int hostMallocflags) {
+   void* pages[NUM_PAGES];
+   int status[NUM_PAGES];
+@@ -48,14 +66,10 @@ bool test(int cpuId, int gpuId, int numaMode, unsigned int hostMallocflags) {
+ 
+   CONSOLE_PRINT("set cpu %d, gpu %d, numaMode %d, hostMallocflags %u\n", cpuId, gpuId, numaMode,
+                 hostMallocflags);
+-  if (gpuId >= 0) {
+-    HIP_CHECK(hipSetDevice(gpuId));
+-  }
+ 
+   if (cpuId >= 0) {
+     unsigned long nodeMask = 1 << cpuId;           // NOLINT
+     unsigned long maxNode = sizeof(nodeMask) * 8;  // NOLINT
+-    // Will override existing numa policy in memory
+     if (set_mempolicy(numaMode, numaMode == MPOL_DEFAULT ? NULL : &nodeMask,
+                       numaMode == MPOL_DEFAULT ? 0 : maxNode) == -1) {
+       WARN("set_mempolicy() failed with err " << errno << "\n");
+@@ -63,6 +77,10 @@ bool test(int cpuId, int gpuId, int numaMode, unsigned int hostMallocflags) {
+     }
+   }
+ 
++  if (gpuId >= 0) {
++    HIP_CHECK(hipSetDevice(gpuId));
++  }
++
+   posix_memalign(reinterpret_cast<void**>(&m), page_size, page_size * NUM_PAGES);
+   HIP_CHECK(hipHostRegister(m, page_size * NUM_PAGES, hipHostRegisterMapped));
+   HIP_CHECK(hipHostGetDevicePointer(reinterpret_cast<void**>(&d_m), m, 0));
+@@ -146,9 +164,8 @@ bool runTest(const int& cpuCount, const int& gpuCount, unsigned int hostMallocfl
+ TEST_CASE("Perf_hipPerfHostNumaAlloc_test") {
+   int gpuCount = 0;
+   HIP_CHECK(hipGetDeviceCount(&gpuCount));
+-  int cpuCount = numa_max_node() + 1; // number of numa nodes
+-  page_size = getpagesize();
+-  CONSOLE_PRINT("Cpu count %d, Gpu count %d, page_size %d\n", cpuCount, gpuCount, page_size);
++  int cpuCount = getCpuAgentCount();
++  CONSOLE_PRINT("Cpu count %d, Gpu count %d\n", cpuCount, gpuCount);
+ 
+   if (cpuCount < 0 || gpuCount < 0) {
+     SUCCEED(
+diff --git a/projects/hip-tests/catch/perftests/memory/hipPerfHostNumaAllocWin.cc b/projects/hip-tests/catch/perftests/memory/hipPerfHostNumaAllocWin.cc
+deleted file mode 100644
+index c283542391..0000000000
+--- a/projects/hip-tests/catch/perftests/memory/hipPerfHostNumaAllocWin.cc
++++ /dev/null
+@@ -1,326 +0,0 @@
+-/*
+-Copyright (c) 2025 Advanced Micro Devices, Inc. All rights reserved.
+-Permission is hereby granted, free of charge, to any person obtaining a copy
+-of this software and associated documentation files (the "Software"), to deal
+-in the Software without restriction, including without limitation the rights
+-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+-copies of the Software, and to permit persons to whom the Software is
+-furnished to do so, subject to the following conditions:
+-The above copyright notice and this permission notice shall be included in
+-all copies or substantial portions of the Software.
+-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+-THE SOFTWARE.
+-*/
+-
+-/**
+- * @addtogroup hipHostMalloc
+- * @{
+- * @ingroup hipHostMalloc
+- * `hipHostMalloc(T** ptr, size_t size, unsigned int flags)` -
+- * Allocate pinned host buffer.
+- */
+-#include <hip_test_common.hh>
+-#include <windows.h>
+-#include <processtopologyapi.h>
+-#include <iostream>
+-#include <vector>
+-#include <algorithm>
+-#include <psapi.h>
+-#include <tchar.h>
+-
+-SIZE_T allocSize = 1024 * 1024; // 1 MB
+-DWORD  pageSize = 0;
+-struct NumaNodeInfo {
+-  WORD nodeNumber;
+-  WORD groupNumber;
+-  KAFFINITY mask;
+-  ULONGLONG freeBytes;
+-};
+-
+-enum class MallocType {
+-  hostMallocType = 0,
+-  hiphostMallocType = 1,
+-};
+-
+-struct ThreadPara {
+-  ThreadPara(NumaNodeInfo* node_ = nullptr, MallocType mallocType_ = MallocType::hostMallocType,
+-                 unsigned int flags_ = 0, int deviceId_= -1) {
+-    node = node_;
+-    mallocType = mallocType_;
+-    flags = flags_;
+-    deviceId = deviceId_;
+-  }
+-  NumaNodeInfo *node;
+-  MallocType mallocType;
+-  unsigned int flags; // flags to allocate buffer
+-  int deviceId; // for MGPUs test
+-};
+-
+-bool checkNumaNodeInfo(const PVOID buffer, const SIZE_T bufferSize, const WORD nodeNumber,
+-                      bool pinned = false) {
+-  DWORD_PTR startPage = ((DWORD_PTR)buffer) / pageSize;
+-  DWORD_PTR endPage = ((DWORD_PTR)buffer + bufferSize - 1) / pageSize;
+-  DWORD_PTR numPages = (endPage - startPage) + 1;
+-  PCHAR startPtr = (PCHAR)(pageSize * startPage);
+-  PPSAPI_WORKING_SET_EX_INFORMATION wsInfo = static_cast<PPSAPI_WORKING_SET_EX_INFORMATION>(
+-                                    malloc(numPages * sizeof(PSAPI_WORKING_SET_EX_INFORMATION)));
+-
+-  if (wsInfo == NULL) {
+-    std::cerr <<"Could not allocate array of PSAPI_WORKING_SET_EX_INFORMATION structures\n";
+-    return false;
+-  }
+-
+-  for (DWORD_PTR i = 0; i < numPages; i++) {
+-    wsInfo[i].VirtualAddress = startPtr + i * pageSize;
+-  }
+-
+-  BOOL bResult = QueryWorkingSetEx(GetCurrentProcess(), wsInfo,
+-                                    (DWORD)numPages * sizeof(PSAPI_WORKING_SET_EX_INFORMATION));
+-
+-  if (!bResult) {
+-    std::cerr <<"QueryWorkingSetEx failed: " << GetLastError() << "\n";
+-    free(wsInfo);
+-    return false;
+-  }
+-  bool ret = true;
+-  for (DWORD_PTR i = 0; i < numPages; i++) {
+-    BOOL  IsValid = wsInfo[i].VirtualAttributes.Valid;
+-    DWORD Node = wsInfo[i].VirtualAttributes.Node;
+-    if (pinned) {
+-      if (!IsValid ) {
+-        std::cerr << "Page " << i << " is invalid\n";
+-        ret = false;
+-        break;
+-      } else if (nodeNumber != Node) {
+-        std::cerr << "Page " << i << " has node " << Node << " not matching expected " << nodeNumber << "\n";
+-        ret = false;
+-        break;
+-      }
+-    } else if (IsValid && nodeNumber != Node) {
+-        // maybe IsValid = false for unpinned
+-      std::cerr << "Page " << i << " has node " << Node << " not matching expected " << nodeNumber << "\n";
+-      ret = false;
+-      break;
+-    }
+-  }
+-  free(wsInfo);
+-  return ret;
+-}
+-
+-void enumerateNumaNodes(std::vector<NumaNodeInfo> &nodes) {
+-  DWORD len = 0;
+-  GetLogicalProcessorInformationEx(RelationNumaNode, nullptr, &len);
+-  std::vector<BYTE> buffer(len);
+-  if (!GetLogicalProcessorInformationEx(RelationNumaNode,
+-    reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(buffer.data()),
+-    &len)) {
+-    std::cerr << "GetLogicalProcessorInformationEx failed. Error: " << GetLastError() << "\n";
+-    return;
+-  }
+-
+-  BYTE* ptr = buffer.data();
+-  while (ptr < buffer.data() + len) {
+-    auto info = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(ptr);
+-    if (info->Relationship == RelationNumaNode) {
+-      NUMA_NODE_RELATIONSHIP *numaRelation = &info->NumaNode;
+-      NumaNodeInfo node{};
+-      node.nodeNumber = static_cast<WORD>(numaRelation->NodeNumber);
+-      if (!GetNumaAvailableMemoryNodeEx(node.nodeNumber, &node.freeBytes)) {
+-        std::cerr << "GetNumaAvailableMemoryNodeEx(" << node.nodeNumber <<
+-            ") failed with Error: " << GetLastError() << "\n";
+-        continue;
+-      }
+-      if (numaRelation->GroupCount == 0) {
+-        // Before Windows 20H2
+-        node.groupNumber = numaRelation->GroupMask.Group;
+-        node.mask = numaRelation->GroupMask.Mask;
+-        nodes.push_back(node);
+-      } else {
+-        // Since Windows 20H2.
+-        GROUP_AFFINITY *groupMasks = numaRelation->GroupMasks;
+-        for (int i = 0; i < numaRelation->GroupCount; i++) {
+-          node.groupNumber = groupMasks[i].Group;
+-          node.mask = groupMasks[i].Mask;
+-          nodes.push_back(node);
+-        }
+-      }
+-    }
+-    ptr += info->Size;
+-  }
+-}
+-
+-static DWORD WINAPI workerThread(LPVOID lpParam) {
+-  ThreadPara *threadPara = reinterpret_cast<ThreadPara*>(lpParam);
+-  NumaNodeInfo* node = threadPara->node;
+-
+-  PROCESSOR_NUMBER procNumber{};
+-  GetCurrentProcessorNumberEx(&procNumber);
+-  std::cout << "Thread is running on processor number: " << static_cast<int>(procNumber.Number)
+-      << " in group: " << procNumber.Group << std::endl;
+-
+-  USHORT runNode = -1;
+-  if (GetNumaProcessorNodeEx(&procNumber, &runNode)) {
+-    std::cout << "Thread is running on NUMA node " << runNode << "\n";
+-  }
+-  else {
+-    std::cerr << "Failed to get NUMA node. Error: " << GetLastError() << std::endl;
+-    return -1;
+-  }
+-
+-  if (static_cast<USHORT>(node->nodeNumber) != runNode) {
+-    std::cerr << "runNode " << runNode << "not matching node->nodeNumber " <<
+-        node->nodeNumber <<"\n";
+-    return -1;
+-  }
+-
+-  if (threadPara->deviceId >= 0) {
+-    HIP_CHECK(hipSetDevice(threadPara->deviceId)); // doesn't matter AMD_CPU_AFFINITY is 1 or 0
+-  }
+-  void* pMem = nullptr;
+-  switch (threadPara->mallocType) {
+-    case MallocType::hostMallocType:
+-      // Place holder
+-      pMem = VirtualAllocExNuma(GetCurrentProcess(),
+-        nullptr,
+-        allocSize,
+-        threadPara->flags,
+-        PAGE_READWRITE,
+-        node->nodeNumber);
+-      break;
+-    case MallocType::hiphostMallocType:
+-      HIP_CHECK(hipHostMalloc(&pMem, allocSize, threadPara->flags));
+-      break;
+-    default:
+-      return -1;
+-  }
+-
+-  if (!pMem) {
+-    std::cerr << "NUMA allocation failed for thread "
+-          << GetCurrentThreadId() << "on NUMA node " << node->nodeNumber <<
+-          " with Error: " << GetLastError() << "\n";
+-    return -1;
+-  }
+-
+-  memset(pMem, 0xCD, allocSize);
+-  bool ret = checkNumaNodeInfo(pMem, allocSize, node->nodeNumber,
+-                    threadPara->mallocType !=  MallocType::hostMallocType);
+-
+-  switch (threadPara->mallocType) {
+-    case MallocType::hostMallocType:
+-      VirtualFree(pMem, 0, MEM_RELEASE);
+-      break;
+-    case MallocType::hiphostMallocType:
+-      HIP_CHECK(hipHostFree(pMem));
+-      break;
+-    default:
+-      return -1;
+-  }
+-  return ret ? 0 : -1;
+-}
+-
+-static void runTestPrefered(std::vector<NumaNodeInfo> &nodes, MallocType type, unsigned int flags,
+-    const char *description) {
+-  int gpuCount = 0;
+-  HIP_CHECK(hipGetDeviceCount(&gpuCount));
+-  std::cout << std::dec;
+-  std::vector<HANDLE> threadHandles;
+-  std::vector<ThreadPara> paras;
+-  paras.reserve(gpuCount * nodes.size());
+-  int index = 0;
+-  for (int dev = 0; dev < gpuCount; dev++) {
+-    int numaNode = -1;
+-    HIP_CHECK(hipDeviceGetAttribute(&numaNode, hipDeviceAttributeHostNumaId, dev));
+-    if (numaNode == -1) {
+-      continue; // Impossible here
+-    }
+-    for (auto& node : nodes) {
+-      if (numaNode != node.nodeNumber) {
+-        continue;
+-      }
+-      if (node.freeBytes < allocSize) {
+-        std::cerr << "node.freeBytes " << node.freeBytes <<" < allocSize " << allocSize << "\n";
+-        continue;
+-      }
+-      // For best perf, we prefer creating a thread on the host numa node of the gpu device.
+-      auto& ref = paras.emplace_back(&node, type, flags, dev);
+-      HANDLE hThread = CreateThread(nullptr, 0, workerThread, &ref, CREATE_SUSPENDED, nullptr);
+-      if (!hThread) {
+-        std::cerr << "Thread creation failed. Error: " << GetLastError() << "\n";
+-        continue;
+-      }
+-      GROUP_AFFINITY ga = {};
+-      ga.Group = node.groupNumber;
+-      ga.Mask = node.mask;
+-      GROUP_AFFINITY prev = {};
+-      if (!SetThreadGroupAffinity(hThread, &ga, &prev)) {
+-        std::cerr << "SetThreadGroupAffinity failed. Error: " << GetLastError() << "\n";
+-        CloseHandle(hThread);
+-        continue;
+-      }
+-      std::cout << "dev " << dev << ", thread " << index++ << ": Group: " << ga.Group <<
+-          ", Mask: " << std::hex << ga.Mask << "; prev: Group: " << std::dec << prev.Group <<
+-          ", Mask: " << std::hex << prev.Mask << std::dec <<"\n";
+-      ResumeThread(hThread);
+-      threadHandles.push_back(hThread);
+-      // A single NUMA node can span multiple processor groups on systems with more than 64 processors,
+-      // so we will continue searching for next node of the same nodeNumber.
+-    }
+-  }
+-
+-  // Wait for all threads
+-  WaitForMultipleObjects((DWORD)threadHandles.size(), threadHandles.data(), TRUE, INFINITE);
+-  bool result = true;
+-  for (auto h : threadHandles) {
+-    DWORD exitCode = 0;
+-    if (GetExitCodeThread(h, &exitCode)) {
+-      result &= (exitCode == 0);
+-    } else {
+-      result = false;
+-    }
+-    CloseHandle(h);
+-  }
+-
+-  std::cout << description << (result ? " passed\n" : " failed\n");
+-  REQUIRE(result);
+-}
+-
+-/* Test memory allocation on preferred host numa node on each CPU */
+-TEST_CASE("Perf_hipPerfHostNumaAlloc_test_preferred_host_numa_node_on_each_GPU") {
+-  std::vector<NumaNodeInfo> nodes;
+-  enumerateNumaNodes(nodes);
+-  if (nodes.empty()) {
+-    std::cerr << "No NUMA nodes found.\n";
+-    REQUIRE(false);
+-  }
+-  SYSTEM_INFO systemInfo;
+-  GetSystemInfo(&systemInfo);
+-  pageSize = systemInfo.dwPageSize;
+-  std::cout << "logic processor count " << systemInfo.dwNumberOfProcessors
+-      << ", page size " << pageSize << "\n";
+-  int numaNode = -1;
+-  HIP_CHECK(hipDeviceGetAttribute(&numaNode, hipDeviceAttributeHostNumaId, 0));
+-  if (numaNode == -1) {
+-    HipTest::HIP_SKIP_TEST("Host NUMA isn't supported hence skipping the test...\n");
+-    return;
+-  }
+-  HIP_CHECK(hipSetDevice(0));
+-  // In windows, it is the same with / without hipHostMallocNumaUser
+-  runTestPrefered(nodes,
+-      MallocType::hiphostMallocType, hipHostMallocDefault | hipHostMallocNumaUser,
+-      "hiphostMalloc(hipHostMallocDefault | hipHostMallocNumaUser) on preferred numa node");
+-  runTestPrefered(nodes,
+-      MallocType::hiphostMallocType, hipHostAllocMapped | hipHostMallocNumaUser,
+-      "hiphostMalloc(hipHostAllocMapped | hipHostMallocNumaUser) on preferred numa node");
+-  runTestPrefered(nodes,
+-      MallocType::hostMallocType, MEM_RESERVE | MEM_COMMIT,
+-      "VirtualAllocExNuma(MEM_RESERVE | MEM_COMMIT) on preferred numa node");
+-}
+-/**
+- * End doxygen group hipHostMalloc.
+- * @}
+- */
+diff --git a/projects/hip-tests/catch/perftests/memory/hipPerfMemcpy.cc b/projects/hip-tests/catch/perftests/memory/hipPerfMemcpy.cc
+index c790fb5cdd..d5ad0786aa 100644
+--- a/projects/hip-tests/catch/perftests/memory/hipPerfMemcpy.cc
++++ b/projects/hip-tests/catch/perftests/memory/hipPerfMemcpy.cc
+@@ -82,8 +82,11 @@ void hipPerfMemcpy::TestResult(unsigned int numTests,
+     perf *= 2.0;
+   }
+ 
+-  CONSOLE_PRINT("hipPerfMemcpy[%d] %s copy BW %.2f GB/s for memory size of %zu Bytes.\n", numTests,
++  CONSOLE_PRINT("hipPerfMemcpy[%d] %s copy BW %.2f GB/s for memory size of %lu Bytes.\n", numTests,
+                 typestr, perf, totalSizes_[numTests]);
++
++  if (totalSizes_[numTests] == 4194304 && type == hipMemcpyDeviceToDeviceNoCU)
++    REQUIRE(perf < NOCU_MAX_BW);
+ }
+ 
+ bool hipPerfMemcpy::run_h2d(unsigned int numTests) {
+diff --git a/projects/hip-tests/catch/perftests/memory/hipPerfMemset.cc b/projects/hip-tests/catch/perftests/memory/hipPerfMemset.cc
+index 49808d4967..aaf434245b 100644
+--- a/projects/hip-tests/catch/perftests/memory/hipPerfMemset.cc
++++ b/projects/hip-tests/catch/perftests/memory/hipPerfMemset.cc
+@@ -335,7 +335,7 @@ void hipPerfMemset::run3D(unsigned int test, T memsetval, enum MemsetType type,
+   auto sec = diff.count();
+   auto perf = static_cast<double>((sizeElements * NUM_ITER * (1e-09)) / sec);
+ 
+-  CONSOLE_PRINT("hipPerf3DMemset%s[%d] (GB/s) for %5zu x %5zu x %zu bytes : %7.2f\n",
++  CONSOLE_PRINT("hipPerf3DMemset%s[%d] (GB/s) for %5lu x %5lu x %lu bytes : %7.2f\n",
+                 (async ? "Async" : "     "), test, bufSize_, bufSize_, depth, perf);
+   HIP_CHECK(hipFree(devPitchedPtr.ptr));
+   free(A_h);
+diff --git a/projects/hip/include/hip/hip_runtime_api.h b/projects/hip/include/hip/hip_runtime_api.h
+index 847e11a962..5771ef3fcf 100644
+--- a/projects/hip/include/hip/hip_runtime_api.h
++++ b/projects/hip/include/hip/hip_runtime_api.h
+@@ -557,8 +557,6 @@ typedef enum hipDeviceAttribute_t {
+                                             ///< hipHostRegister
+   hipDeviceAttributeMemoryPoolSupportedHandleTypes,  ///< Supported handle mask for HIP Stream
+                                                      ///< Ordered Memory Allocator
+-  hipDeviceAttributeHostNumaId,             ///< NUMA ID of the cpu node closest to the device,
+-                                            ///< or -1 when NUMA isn't supported
+ 
+   hipDeviceAttributeCudaCompatibleEnd = 9999,
+   hipDeviceAttributeAmdSpecificBegin = 10000,
+diff --git a/projects/hipother/hipnv/include/hip/nvidia_detail/nvidia_hip_runtime_api.h b/projects/hipother/hipnv/include/hip/nvidia_detail/nvidia_hip_runtime_api.h
+index 1ffdd062bf..22c8afee56 100644
+--- a/projects/hipother/hipnv/include/hip/nvidia_detail/nvidia_hip_runtime_api.h
++++ b/projects/hipother/hipnv/include/hip/nvidia_detail/nvidia_hip_runtime_api.h
+@@ -2978,9 +2978,6 @@ inline static hipError_t hipDeviceGetAttribute(int* pi, hipDeviceAttribute_t att
+     case hipDeviceAttributeMemoryPoolSupportedHandleTypes:
+       cdattr = cudaDevAttrMemoryPoolSupportedHandleTypes;
+       break;
+-    case hipDeviceAttributeHostNumaId:
+-      cdattr = cudaDevAttrHostNumaId;
+-      break;
+     default:
+       return hipCUDAErrorTohipError(cudaErrorInvalidValue);
+   }
+-- 
+2.43.0
+
