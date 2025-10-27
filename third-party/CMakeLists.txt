@@ -2,6 +2,7 @@ add_custom_target(therock-third-party)
 
 # No-dep third party libraries (alphabetical)
 add_subdirectory(boost)
+add_subdirectory(dyninst)
 add_subdirectory(eigen)
 add_subdirectory(flatbuffers)
 add_subdirectory(fmt)
@@ -13,7 +14,7 @@ add_subdirectory(yaml-cpp)
 add_subdirectory(Catch2)
 add_subdirectory(FunctionalPlus)
 add_subdirectory(fftw3)
-add_subdirectory(dyninst)
+add_subdirectory(tbb)
 
 # frugally-deep depends on eigen, FunctionalPlus and nlohmann-json
 add_subdirectory(frugally-deep)

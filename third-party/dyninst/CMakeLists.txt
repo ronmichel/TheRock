@@ -15,6 +15,7 @@ therock_cmake_subproject_declare(therock-dyninst
   BUILD_DEPS
     therock-boost
     therock-elfutils
+    therock-tbb
 )
 therock_cmake_subproject_provide_package(therock-dyninst dyninst lib/cmake)
 therock_cmake_subproject_activate(therock-dyninst)
