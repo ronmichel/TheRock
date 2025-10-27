@@ -70,5 +70,5 @@ SMOKE_TESTS = [
 ]
 
 run_ctest_executables(
-    timeout=900, repeat=True, smoke_tests=SMOKE_TESTS, test_name="rocRAND"
+    timeout_seconds="900", repeat=True, smoke_tests=SMOKE_TESTS, test_name="rocRAND"
 )

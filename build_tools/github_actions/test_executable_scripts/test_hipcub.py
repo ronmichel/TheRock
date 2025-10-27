@@ -47,7 +47,7 @@ SMOKE_TESTS = [
 ]
 
 run_ctest_executables(
-    timeout=300,
+    timeout_seconds="300",
     repeat=True,
     smoke_tests=SMOKE_TESTS,
     test_name="hipcub",

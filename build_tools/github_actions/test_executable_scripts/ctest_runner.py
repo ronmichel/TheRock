@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 def run_ctest_executables(
-    timeout=300, repeat=False, smoke_tests=[], test_name="", tests_to_ignore=[]
+    timeout_seconds="300", repeat=False, smoke_tests=[], test_name="", tests_to_ignore=[]
 ):
     cmd = [
         "ctest",
@@ -30,7 +30,7 @@ def run_ctest_executables(
         "--parallel",
         "8",
         "--timeout",
-        str(timeout),
+        timeout_seconds,
     ]
 
     if repeat:
