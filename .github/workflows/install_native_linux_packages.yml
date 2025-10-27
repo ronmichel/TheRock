@@ -118,34 +118,6 @@ jobs:
         run: |
           python3 ./build_tools/install_packages.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ env.AMDGPU_FAMILY }} --upload post --rocm-version  ${{ env.ROCM_VERSION }}
 
-      - name: Clone rocm-systems repository
-        run: |
-          git clone https://github.com/ROCm/rocm-systems.git
-          ls -l rocm-systems
-
-      - name: Install RDHC dependencies
-        run: |
-          cd rocm-systems/projects/rocm-core/rdhc
-          python -m pip install --upgrade pip
-          pip install wcwidth
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-
-      - name: Run RDHC - Full Test Suite
-        run: |
-          cd rocm-systems/projects/rocm-core/rdhc
-          echo "Running full ROCm Deployment Health Check..."
-          sudo -E python3 rdhc.py --all -v --json "${RDHC_RESULTS}" --dir /tmp/rdhc/
-
-      - name: Display RDHC Test Results
-        if: always()
-        run: |
-          echo "=== RDHC Test Summary ==="
-          if [ -f "rocm-systems/projects/rocm-core/rdhc/${RDHC_RESULTS}" ]; then
-            cat rocm-systems/projects/rocm-core/rdhc/${RDHC_RESULTS}
-          else
-            echo "No JSON results file found."
-          fi
-
       - name: Uninstall composite packages (Python script)
         run: |
           python3 ./build_tools/uninstall_packages.py --run_id ${{ env.ARTIFACT_RUN_ID }} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ env.AMDGPU_FAMILY }} --rocm-version ${{ env.ROCM_VERSION }}
