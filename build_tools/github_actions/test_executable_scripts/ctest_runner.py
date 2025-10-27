@@ -29,7 +29,7 @@ def read_ctest_test_log(file_path):
 
 def ctest_retry_failed_test(test_name, timeout_seconds, environ_vars):
     failed_file_logs = (
-        THEROCK_BIN_DIR / test_name / "Testing" / "Temporary" / "LastTestsFailed.log"
+        Path(THEROCK_BIN_DIR) / test_name / "Testing" / "Temporary" / "LastTestsFailed.log"
     )
 
     failed_tests = read_ctest_test_log(failed_file_logs)
