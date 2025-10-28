@@ -63,6 +63,8 @@ def build_configure():
             "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache",
             "-DTHEROCK_VERBOSE=ON",
             "-DBUILD_TESTING=ON",
+            "-DTHEROCK_ENABLE_ALL=OFF",
+            "-DTHEROCK_ENABLE_RAND=ON",
         ]
     )
 
