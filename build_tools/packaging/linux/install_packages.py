@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-from packaging.linux.package_load import LoadPackages, logger
+from package_load import LoadPackages, logger
 
 
 def main():
