@@ -104,8 +104,6 @@ jobs:
             --compiler=clang \
             --python-versions="${{ inputs.python_versions }}" \
             --rocm-version="${ROCM_VERSION:0:5}" \
-            --rocm-build-job=${{ inputs.release_type }} \
-            --rocm-build-num=${BUILD_DATE} \
             --therock-path="${{ inputs.tar_url }}" \
             dist_wheels
 
@@ -123,6 +121,23 @@ jobs:
       - name: Upload wheels to S3
         if: ${{ github.repository_owner == 'ROCm' }}
         run: |
+          BUILD_DATE=$(date '+%Y%m%d')
+
+          # Rename wheels to include build date
+          cd ${{ env.PACKAGE_DIST_DIR }}
+          for wheel in *.whl; do
+            if [[ -f "$wheel" ]]; then
+              # Extract components of the wheel filename
+              # jax_rocm7_pjrt-0.7.1-py3-none-manylinux_2_28_x86_64.whl
+              # becomes jax_rocm7_pjrt-0.7.1-20251028-py3-none-manylinux_2_28_x86_64.whl
+              new_name=$(echo "$wheel" | sed -E "s/^([^-]+-[0-9]+\.[0-9]+\.[0-9]+)(-py)/\1-${BUILD_DATE}\2/")
+              mv "$wheel" "$new_name"
+              echo "Renamed $wheel to $new_name"
+            fi
+          done
+
+          cd ..
+
           aws s3 cp ${{ env.PACKAGE_DIST_DIR }}/ s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/ \
             --recursive --exclude "*" --include "*.whl"
 
