@@ -64,7 +64,7 @@ def build_configure():
             "-DTHEROCK_VERBOSE=ON",
             "-DBUILD_TESTING=ON",
             "-DTHEROCK_ENABLE_ALL=OFF",
-            "-DTHEROCK_ENABLE_RAND=ON",
+            "-DTHEROCK_ENABLE_SPARSE=ON",
         ]
     )
 
