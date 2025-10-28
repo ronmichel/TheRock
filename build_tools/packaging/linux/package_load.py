@@ -12,10 +12,16 @@ logger = logging.getLogger("package_load")
 
 
 class LoadPackages:
-    def __init__(self, package_json_path: str, version: bool, amdgpu_family: str = None, rocm_version: str = None):
+    def __init__(
+        self,
+        package_json_path: str,
+        version: bool,
+        amdgpu_family: str = None,
+        rocm_version: str = None,
+    ):
         self.package_json_path = package_json_path
         self.amdgpu_family = amdgpu_family
-        self.gfx_suffix = self.amdgpu_family.split("-")[0].lower()  # e.g., gfx94x-dcgpu 
+        self.gfx_suffix = self.amdgpu_family.split("-")[0].lower()  # e.g., gfx94x-dcgpu
         self.rocm_version = rocm_version
         self.version = version
         self.packages = self._load_packages()
@@ -123,10 +129,7 @@ class LoadPackages:
 
         if "ubuntu" in os_id or "debian" in os_like:
             return "debian"
-        elif (
-            any(x in os_id for x in ["rhel", "centos"])
-            or "redhat" in os_like
-        ):
+        elif any(x in os_id for x in ["rhel", "centos"]) or "redhat" in os_like:
             return "redhat"
         elif "suse" in os_id or "sles" in os_id:
             return "suse"
@@ -142,9 +145,13 @@ class LoadPackages:
         """
         gfx_arch_flag = self.arch_suffix_flag(base)
 
-
         # Case 1: GFX architecture enabled
-        if gfx_arch_flag and self.gfx_suffix and "devel" not in base.lower() and "dev" not in base.lower():
+        if (
+            gfx_arch_flag
+            and self.gfx_suffix
+            and "devel" not in base.lower()
+            and "dev" not in base.lower()
+        ):
             if version_flag:
                 return f"{base}{self.rocm_version}-{self.gfx_suffix}"
             else:
@@ -157,8 +164,7 @@ class LoadPackages:
         # Case 3: Plain base name (no version, no gfx)
         return base
 
-
-    def find_packages_for_base(self, dest_dir, base, version_flag,use_repo):
+    def find_packages_for_base(self, dest_dir, base, version_flag, use_repo):
         """
         Look up packages in local directory or return derived name for repo installation.
         """
@@ -167,9 +173,15 @@ class LoadPackages:
         if use_repo:
             return derived_name
         else:
-            # If local directory has .deb/.rpm files → return matches
-            all_files = [f for f in os.listdir(dest_dir) if f.endswith((".deb", ".rpm"))]
-            matched = [os.path.join(dest_dir, f) for f in all_files if f.startswith(derived_name)]
+            # If local directory has .deb/.rpm files return matches
+            all_files = [
+                f for f in os.listdir(dest_dir) if f.endswith((".deb", ".rpm"))
+            ]
+            matched = [
+                os.path.join(dest_dir, f)
+                for f in all_files
+                if f.startswith(derived_name)
+            ]
             if matched:
                 return matched
             else:
@@ -178,7 +190,7 @@ class LoadPackages:
     def _run_install_command(self, pkg_name, use_repo, pkg_path=None):
         """
         Build and run OS-specific install command for a package.
-        
+
         :param pkg_name: Name of the package (base name)
         :param pkg_path: Full path for local install (required for local)
         :param source_type: 'local' or 'repo'
@@ -197,7 +209,14 @@ class LoadPackages:
             elif os_family == "redhat":
                 cmd = ["sudo", "rpm", "-ivh", "--replacepkgs", pkg_name]
             elif os_family == "suse":
-                cmd = ["sudo", "zypper", "--non-interactive", "install", "--replacepkgs", pkg_name]
+                cmd = [
+                    "sudo",
+                    "zypper",
+                    "--non-interactive",
+                    "install",
+                    "--replacepkgs",
+                    pkg_name,
+                ]
             else:
                 logger.error(f"Unsupported OS for local install: {pkg_name}")
                 return
@@ -215,7 +234,9 @@ class LoadPackages:
 
         # Execute command
         try:
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            result = subprocess.run(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            )
             if result.returncode != 0:
                 logger.error(f"Failed to install {pkg_name}:\n{result.stdout}")
             else:
@@ -234,7 +255,6 @@ class LoadPackages:
         os_family = self.detect_os_family()
         cmd = None
 
-
         if os_family == "debian":
             cmd = ["sudo", "apt-get", "autoremove", "-y", pkg_name]
         elif os_family == "redhat":
@@ -247,7 +267,9 @@ class LoadPackages:
 
         # Execute command
         try:
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+            result = subprocess.run(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            )
             if result.returncode != 0:
                 logger.error(f"Failed to uninstall {pkg_name}:\n{result.stdout}")
             else:
@@ -255,8 +277,7 @@ class LoadPackages:
         except Exception as e:
             logger.exception(f"Exception uninstalling {pkg_name}: {e}")
 
-
-    def uninstall_packages(self,pkg_list,composite_flag):
+    def uninstall_packages(self, pkg_list, composite_flag):
         """Uninstall the given list of packages based on OS."""
 
         if not pkg_list:
@@ -274,7 +295,6 @@ class LoadPackages:
             derived_name = self.derive_package_name("rocm-core", True)
             self._run_uninstall_command(derived_name)
 
-
     # ---------------------------------------------------------------------
     # Install Logic
     # ---------------------------------------------------------------------
@@ -290,7 +310,9 @@ class LoadPackages:
             final_install_list = []
             for base in sorted_packages:
                 if version_flag:
-                    pkgs = self.find_packages_for_base(dest_dir, base, version_flag,use_repo)
+                    pkgs = self.find_packages_for_base(
+                        dest_dir, base, version_flag, use_repo
+                    )
                     final_install_list.extend(pkgs or [])
                 else:
                     pkgs = self.find_packages_for_base(dest_dir, base, True, use_repo)
@@ -319,7 +341,9 @@ class LoadPackages:
             final_install_list = []
             for base in sorted_packages:
                 if version_flag:
-                    pkgs = self.find_packages_for_base(dest_dir, base, version_flag,use_repo)
+                    pkgs = self.find_packages_for_base(
+                        dest_dir, base, version_flag, use_repo
+                    )
                     final_install_list.append(pkgs or [])
                 else:
                     pkgs = self.find_packages_for_base(dest_dir, base, True, use_repo)
@@ -358,8 +382,12 @@ class LoadPackages:
                 result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
 
                 if result.returncode != 0:
-                    logger.error(f"Failed to populate repo file: {result.stderr.strip()}")
-                    raise RuntimeError(f"Error populating repo file: {result.stderr.strip()}")
+                    logger.error(
+                        f"Failed to populate repo file: {result.stderr.strip()}"
+                    )
+                    raise RuntimeError(
+                        f"Error populating repo file: {result.stderr.strip()}"
+                    )
 
                 logger.info("Running apt-get update...")
                 subprocess.run(["sudo", "apt-get", "update"], check=False)
@@ -368,17 +396,18 @@ class LoadPackages:
                 logger.info("Detected RPM-based system. Placeholder for repo setup.")
                 repo_file_path = "/etc/yum.repos.d/rocm.repo"
                 repo_entry = (
-                     f"[rocm]\nname=ROCm Repo\nbaseurl={base_url}/rpm\n"
-                     "enabled=1\ngpgcheck=0\n"
+                    f"[rocm]\nname=ROCm Repo\nbaseurl={base_url}/rpm\n"
+                    "enabled=1\ngpgcheck=0\n"
                 )
                 with open(repo_file_path, "w") as f:
-                     f.write(repo_entry)
+                    f.write(repo_entry)
                 subprocess.run(["sudo", "yum", "clean", "all"], check=False)
                 subprocess.run(["sudo", "yum", "makecache"], check=False)
             else:
-                logger.warning(f"Unsupported OS family for repo population: {os_family}")
+                logger.warning(
+                    f"Unsupported OS family for repo population: {os_family}"
+                )
 
         except Exception as e:
             logger.error(f"Error populating repo file: {e}")
             raise
-

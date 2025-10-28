@@ -29,7 +29,7 @@ def main():
         help="Specify AMD GPU family (e.g., gfx94x).",
     )
     parser.add_argument(
-        "--rocm-version", 
+        "--rocm-version",
         type=str,
         required=True,
         help="Specify ROCm version (e.g., 7.0.0).",
@@ -48,9 +48,8 @@ def main():
     amdgpu_family = args.amdgpu_family
     rocm_version = args.rocm_version
 
-    pm = LoadPackages(args.package_json, version_flag, amdgpu_family,rocm_version)
+    pm = LoadPackages(args.package_json, version_flag, amdgpu_family, rocm_version)
     non_comp, comp = pm.list_composite_packages()
-
 
     # Select package list
     if composite_flag:
@@ -69,7 +68,7 @@ def main():
     if args.upload == "pre":
         logger.info("=== Starting pre-upload installation ===")
         try:
-            pm.install_packages(args.dest_dir, sorted_packages, version_flag,False)
+            pm.install_packages(args.dest_dir, sorted_packages, version_flag, False)
             logger.info("Pre-upload installation completed successfully.")
         except Exception as e:
             logger.error(f"Pre-upload installation failed: {e}")
@@ -83,17 +82,19 @@ def main():
 
         # Step 1: Populate repo file after upload
         try:
-            pm.populate_repo_file(args.amdgpu_family+"_"+args.dest_dir)
+            pm.populate_repo_file(args.amdgpu_family + "_" + args.dest_dir)
             logger.info("Repository file populated successfully.")
         except AttributeError:
-            logger.warning("populate_repo_file() not implemented in LoadPackages. Add it for repo setup.")
+            logger.warning(
+                "populate_repo_file() not implemented in LoadPackages. Add it for repo setup."
+            )
         except Exception as e:
             logger.error(f"Failed to populate repo file: {e}")
             sys.exit(1)
 
         # Step 2: Install from repo
         try:
-            pm.install_packages(args.dest_dir, sorted_packages, version_flag,True)
+            pm.install_packages(args.dest_dir, sorted_packages, version_flag, True)
             logger.info("Post-upload installation completed successfully.")
         except Exception as e:
             logger.error(f"Post-upload installation failed: {e}")
@@ -102,4 +103,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

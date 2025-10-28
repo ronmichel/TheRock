@@ -87,7 +87,7 @@ jobs:
           sudo apt update
           sudo apt install -y llvm
           sudo apt install -y rpm debhelper-compat build-essential
-          sudo apt install -y dpkg-dev createrepo-c 
+          sudo apt install -y dpkg-dev createrepo-c
 
       - name: Install AWS CLI
         run: bash ./dockerfiles/install_awscli.sh
@@ -100,7 +100,7 @@ jobs:
 
       - name: Install non-composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/install_packages.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version true --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ env.AMDGPU_FAMILY }} --upload post --rocm-version  ${{ env.ROCM_VERSION }} 
+          python3 ./build_tools/packaging/linux/install_packages.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version true --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ env.AMDGPU_FAMILY }} --upload post --rocm-version  ${{ env.ROCM_VERSION }}
 
       - name: Install non-composite non-versioned packages (Python script)
         run: |
@@ -121,4 +121,3 @@ jobs:
       - name: Uninstall composite packages (Python script)
         run: |
           python3 ./build_tools/packaging/linux/uninstall_packages.py --run_id ${{ env.ARTIFACT_RUN_ID }} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ env.AMDGPU_FAMILY }} --rocm-version ${{ env.ROCM_VERSION }}
-
