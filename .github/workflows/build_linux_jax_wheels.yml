@@ -128,11 +128,15 @@ jobs:
           for wheel in *.whl; do
             if [[ -f "$wheel" ]]; then
               # Extract components of the wheel filename
-              # jax_rocm7_pjrt-0.7.1-py3-none-manylinux_2_28_x86_64.whl
-              # becomes jax_rocm7_pjrt-0.7.1-20251028-py3-none-manylinux_2_28_x86_64.whl
-              new_name=$(echo "$wheel" | sed -E "s/^([^-]+-[0-9]+\.[0-9]+\.[0-9]+)(-py)/\1-${BUILD_DATE}\2/")
-              mv "$wheel" "$new_name"
-              echo "Renamed $wheel to $new_name"
+              # jax_rocm7_plugin-0.7.1-cp312-cp312-manylinux_2_28_x86_64.whl
+              # becomes jax_rocm7_plugin-0.7.1-20251028-cp312-cp312-manylinux_2_28_x86_64.whl
+              new_name=$(echo "$wheel" | sed -E "s/^([^-]+-[0-9]+\.[0-9]+\.[0-9]+)-/\1-${BUILD_DATE}-/")
+              if [[ "$wheel" != "$new_name" ]]; then
+                mv "$wheel" "$new_name"
+                echo "Renamed $wheel to $new_name"
+              else
+                echo "Skipping $wheel (no change needed)"
+              fi
             fi
           done
 
