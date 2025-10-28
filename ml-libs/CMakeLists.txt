@@ -182,8 +182,8 @@ if(THEROCK_ENABLE_HIPDNN)
       therock-googletest
     RUNTIME_DEPS
       hip-clr
-      therock-fmt
       therock-flatbuffers
+      therock-fmt
       therock-nlohmann-json
       therock-spdlog
   )

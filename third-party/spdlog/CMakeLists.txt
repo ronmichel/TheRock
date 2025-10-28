@@ -23,6 +23,7 @@ therock_cmake_subproject_activate(therock-spdlog)
 
 if(THEROCK_ENABLE_HIPDNN)
   therock_provide_artifact(spdlog
+    TARGET_NEUTRAL
     DESCRIPTOR artifact-spdlog.toml
     COMPONENTS
       dev

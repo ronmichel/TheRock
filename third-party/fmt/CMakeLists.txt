@@ -21,6 +21,7 @@ therock_cmake_subproject_activate(therock-fmt)
 
 if(THEROCK_ENABLE_HIPDNN)
   therock_provide_artifact(fmt
+    TARGET_NEUTRAL
     DESCRIPTOR artifact-fmt.toml
     COMPONENTS
       dev

@@ -20,6 +20,7 @@ therock_cmake_subproject_activate(therock-nlohmann-json)
 
 if(THEROCK_ENABLE_HIPDNN)
   therock_provide_artifact(nlohmann-json
+    TARGET_NEUTRAL
     DESCRIPTOR artifact-nlohmann-json.toml
     COMPONENTS
       dev
