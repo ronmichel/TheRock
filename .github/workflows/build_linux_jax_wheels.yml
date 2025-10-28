@@ -99,10 +99,13 @@ jobs:
         run: |
           ls -lah
           pushd jax
+          BUILD_DATE=$(date '+%Y%m%d')
           python3 build/ci_build \
             --compiler=clang \
             --python-versions="${{ inputs.python_versions }}" \
             --rocm-version="${ROCM_VERSION:0:5}" \
+            --rocm-build-job=${{ inputs.release_type }} \
+            --rocm-build-num=${BUILD_DATE} \
             --therock-path="${{ inputs.tar_url }}" \
             dist_wheels
 
