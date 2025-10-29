@@ -150,7 +150,6 @@ jobs:
     permissions:
       id-token: write
       contents: read
-      packages: write
     uses: ./.github/workflows/test_linux_jax_wheels.yml
     with:
       amdgpu_family: ${{ inputs.amdgpu_family }}

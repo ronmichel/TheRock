@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       s3_subdir:
-        description: S3 subdirectory (e.g., v2 or v2-staging)
+        description: S3 subdirectory
         required: true
         type: string
       rocm_version:
@@ -23,7 +23,7 @@ on:
         required: true
         type: string
       python_versions:
-        description: Python version string used to compute CP tag (e.g., 3.12 -> cp312)
+        description: Python version string used to compute CP tag
         required: true
         type: string
       jax_ref:
@@ -95,6 +95,9 @@ jobs:
     steps:
       - name: Checkout TheRock
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: ${{ inputs.repository || github.repository }}
+          ref: ${{ inputs.ref || '' }}
 
       - name: Checkout rocm-jax (plugin + build scripts)
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -112,6 +115,7 @@ jobs:
         shell: bash
         working-directory: jax
         run: |
+          #TODO convert this to a python script
           set -euo pipefail
           mkdir -p "${WHEELHOUSE_DIR}"
           AWS_FLAGS="--no-sign-request"
