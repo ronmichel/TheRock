@@ -93,6 +93,13 @@ jobs:
         with:
           python-version: ${{ inputs.python_versions }}
 
+      - name: Determine optional arguments passed to `build_prod_wheels.py`
+        if: ${{ inputs.rocm_version }}
+        run: |
+          pip install packaging
+          python build_tools/github_actions/determine_version.py \
+            --rocm-version ${{ inputs.rocm_version }}
+
       - name: Build JAX Wheels
         env:
           ROCM_VERSION: ${{ inputs.rocm_version }}
