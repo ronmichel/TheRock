@@ -84,8 +84,8 @@ on:
 permissions:
   id-token: write
   contents: read
-  packages: write
-
+  packages: none
+  
 jobs:
   test_jax_wheels:
     name: Test | ${{ inputs.amdgpu_family }}
