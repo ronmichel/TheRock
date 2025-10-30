@@ -99,7 +99,6 @@ jobs:
         run: |
           ls -lah
           pushd jax
-          BUILD_DATE=$(date '+%Y%m%d')
           python3 build/ci_build \
             --compiler=clang \
             --python-versions="${{ inputs.python_versions }}" \
@@ -118,30 +117,16 @@ jobs:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-${{ inputs.release_type }}-releases
 
+      - name: Rename wheels with ROCm version
+        if: ${{ github.repository_owner == 'ROCm' }}
+        run: |
+          python3 ./build_tools/update_rocm_tag_wheels.py \
+            ${{ env.PACKAGE_DIST_DIR }} \
+            ${{ inputs.rocm_version }}
+
       - name: Upload wheels to S3
         if: ${{ github.repository_owner == 'ROCm' }}
         run: |
-          BUILD_DATE=$(date '+%Y%m%d')
-
-          # Rename wheels to include build date
-          cd ${{ env.PACKAGE_DIST_DIR }}
-          for wheel in *.whl; do
-            if [[ -f "$wheel" ]]; then
-              # Extract components of the wheel filename
-              # jax_rocm7_plugin-0.7.1-cp312-cp312-manylinux_2_28_x86_64.whl
-              # becomes jax_rocm7_plugin-0.7.1-20251028-cp312-cp312-manylinux_2_28_x86_64.whl
-              new_name=$(echo "$wheel" | sed -E "s/^([^-]+-[0-9]+\.[0-9]+\.[0-9]+)-/\1-${BUILD_DATE}-/")
-              if [[ "$wheel" != "$new_name" ]]; then
-                mv "$wheel" "$new_name"
-                echo "Renamed $wheel to $new_name"
-              else
-                echo "Skipping $wheel (no change needed)"
-              fi
-            fi
-          done
-
-          cd ..
-
           aws s3 cp ${{ env.PACKAGE_DIST_DIR }}/ s3://${{ env.S3_BUCKET_PY }}/${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}/ \
             --recursive --exclude "*" --include "*.whl"
 
