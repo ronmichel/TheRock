@@ -18,12 +18,12 @@ def rename_wheels(wheel_dir: Path, rocm_version: str) -> None:
     """
     # Pattern for standard wheels (e.g., cp312-cp312)
     wheel_pattern = re.compile(
-        r'^([^-]+)-([0-9]+\.[0-9]+\.[0-9]+)-(cp\d+-cp\d+-[^.]+\.whl)$'
+        r'^([^-]+)-([0-9]+\.[0-9]+\.[0-9]+)-(cp\d+-[^.]+\.whl)$'
     )
     
     # Pattern for universal wheels (e.g., py3-none)
     universal_pattern = re.compile(
-        r'^([^-]+)-([0-9]+\.[0-9]+\.[0-9]+)-(py\d+-none-[^.]+\.whl)$'
+        r'^([^-]+)-([0-9]+\.[0-9]+\.[0-9]+)-(py\d+-[^.]+\.whl)$'
     )
     
     renamed_count = 0
