@@ -82,6 +82,7 @@ on:
         default: "https://rocm.nightlies.amd.com/v2"
 
 permissions:
+  id-token: write
   contents: read
   packages: write
 
