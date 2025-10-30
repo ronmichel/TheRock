@@ -6,7 +6,7 @@ This document describes the steps for bringing a new component into TheRock (ROC
 
 ## Pre-Requisites  
 Before you start, ensure you have:  
-- A publicly or privately accessible upstream repository for your component (cloneable).  
+- A publicly accessible upstream repository for your component (cloneable).  
 - A reproducible build (preferably CMake) of your component.  
 - A test suite (smoke and full/regression) that can be run non-interactively in CI.  
 - Any patches needed for TheRock integration (packaged as `.patch` files).  
