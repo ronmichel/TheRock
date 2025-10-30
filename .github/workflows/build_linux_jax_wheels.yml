@@ -102,7 +102,7 @@ jobs:
           python3 build/ci_build \
             --compiler=clang \
             --python-versions="${{ inputs.python_versions }}" \
-            --rocm-version="${ROCM_VERSION:0:5}" \
+            --rocm-version="${ROCM_VERSION}" \
             --therock-path="${{ inputs.tar_url }}" \
             dist_wheels
 
