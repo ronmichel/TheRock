@@ -117,7 +117,7 @@ jobs:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-${{ inputs.release_type }}-releases
 
-      - name: Rename wheels with ROCm version
+      - name: Rename JAX wheels with ROCm version tag
         if: ${{ github.repository_owner == 'ROCm' }}
         run: |
           python3 ./build_tools/update_rocm_tag_wheels.py \
