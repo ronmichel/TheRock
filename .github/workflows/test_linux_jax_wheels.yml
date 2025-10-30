@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       release_type:
-        description: The type of release ("nightly" or "dev")
+        description: The type of release
         required: true
         type: string
       s3_subdir:
@@ -53,7 +53,7 @@ on:
         default: gfx94X-dcgpu
       release_type:
         type: choice
-        options: [dev, nightly]
+        options: [dev, nightly, prerelease]
         default: dev
       s3_subdir:
         type: string
@@ -178,10 +178,12 @@ jobs:
           IMAGE_NAME="jax-ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
           echo "Running CPU-only tests in image: ${IMAGE_NAME}"
           # Run tests without GPU device flags and force CPU mode
-          docker run --rm -i \
-            -v "${PWD}:/rocm-jax" \
-            --shm-size 16G \
-            "${IMAGE_NAME}" \
-            bash -c 'cd /rocm-jax && JAX_PLATFORM_NAME=cpu JAX_PLATFORMS=cpu pytest jax_tests/tests/core_test.py'
-            # TODO
-            # Analyze single_gpu_test and add GPU based tests
+          # Use the container option instead of running docker manually
+            container:
+              image: "${IMAGE_NAME}"
+              options: --shm-size 16G -v "${PWD}:/rocm-jax"
+            run: |
+              set -euo pipefail
+              cd /rocm-jax
+              JAX_PLATFORM_NAME=cpu JAX_PLATFORMS=cpu pytest jax_tests/tests/core_test.py
+            # TODO: Analyze single_gpu_test and add GPU based tests

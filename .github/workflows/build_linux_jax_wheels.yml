@@ -31,6 +31,12 @@ on:
         description: CloudFront base URL pointing to staging Python index
         required: true
         type: string
+      repository:
+        description: "Repository to checkout. Otherwise, defaults to `github.repository`."
+        type: string
+      ref:
+        description: "Branch, tag or SHA to checkout. Defaults to the reference or SHA that triggered the workflow."
+        type: string
   workflow_dispatch:
     inputs:
       amdgpu_family:
@@ -71,8 +77,8 @@ on:
         default: "https://d25kgig7rdsyks.cloudfront.net/v2-staging"
 
 permissions:
-  id-token: write
   contents: read
+  packages: write
 
 jobs:
   build_jax_wheels:
@@ -87,6 +93,9 @@ jobs:
     steps:
       - name: Checkout TheRock
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          repository: ${{ inputs.repository || github.repository }}
+          ref: ${{ inputs.ref || '' }}
 
       - name: Checkout JAX
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
