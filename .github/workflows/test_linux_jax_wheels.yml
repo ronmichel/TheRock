@@ -85,7 +85,7 @@ permissions:
   id-token: write
   contents: read
   packages: none
-  
+
 jobs:
   test_jax_wheels:
     name: Test | ${{ inputs.amdgpu_family }}
@@ -115,28 +115,14 @@ jobs:
       - name: Prepare wheelhouse and download JAX wheels
         shell: bash
         working-directory: jax
+        env:
+          PY_VER: ${{ inputs.python_versions }}
+          PACKAGE_INDEX_URL: ${{ inputs.package_index_url }}
+          AMDGPU_FAMILY: ${{ inputs.amdgpu_family }}
+          WHEELHOUSE_DIR: ${{ env.WHEELHOUSE_DIR }}
         run: |
-          #TODO convert this to a python script
           set -euo pipefail
-          mkdir -p "${WHEELHOUSE_DIR}"
-          AWS_FLAGS="--no-sign-request"
-          PY_VER="${{ inputs.python_versions }}"
-          CP="${PY_VER//./}"
-          BASE_CF_URL_WHL="${{ inputs.package_index_url }}/${{ inputs.amdgpu_family }}/"
-
-          echo "Copying wheels from ${BASE_CF_URL_WHL} -> ${WHEELHOUSE_DIR}"
-          echo "Using Python ${PY_VER}, CP=${CP}"
-          sudo apt update && sudo apt install wget -y
-
-          # Plugin and PJRT wheel
-          wget -nv -r -np -nd \
-            --accept "jax_rocm7_plugin-*-cp${CP}-cp${CP}-manylinux_*_x86_64.whl,jax_rocm7_pjrt-*-py3-none-manylinux_*_x86_64.whl" \
-            -P "${WHEELHOUSE_DIR}" \
-            "${BASE_CF_URL_WHL}"
-
-          echo "Contents of wheelhouse:"
-          pwd
-          ls -lah "${WHEELHOUSE_DIR}"
+          python3 build_tools/fetch_wheels.py
 
       - name: Build JAX Docker image
         working-directory: jax
@@ -148,16 +134,14 @@ jobs:
           # Extract major.minor.patch from ROCM_VERSION
           # e.g., "7.9.0.dev0+abcdef" -> "7.9.0"
           # Replacement: \1.\2.\3 reconstructs the version as "major.minor.patch" using the three captured groups.
-          ROCM_SEMVER="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
+          echo "ROCM_SEMVER=$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')" >> "$GITHUB_ENV"
           echo "Full ROCm version: ${ROCM_VERSION}"
           echo "Using semantic ROCm version: ${ROCM_SEMVER}"
-
           python3 build/ci_build \
-            --rocm-version="${ROCM_SEMVER}" \
+            --rocm-version="${{ env.ROCM_SEMVER }}" \
             --therock-path="${{ inputs.tar_url }}" \
             build_dockers \
             -f ubu24
-
           echo "Local images after build:"
           docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | sort
 
@@ -174,17 +158,12 @@ jobs:
           ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
           set -euo pipefail
-          # Compute image name to match ci_build tag: ubu24.rocm<maj><min><patch>
-          ROCM_SEMVER="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
-          IMAGE_NAME="jax-ubu24.rocm$(echo "${ROCM_SEMVER}" | tr -d '.')"
+          IMAGE_NAME="jax-ubu24.rocm$(echo ""${{ env.ROCM_SEMVER }}" | tr -d '.')"
           echo "Running CPU-only tests in image: ${IMAGE_NAME}"
           # Run tests without GPU device flags and force CPU mode
           # Use the container option instead of running docker manually
-            container:
-              image: "${IMAGE_NAME}"
-              options: --shm-size 16G -v "${PWD}:/rocm-jax"
-            run: |
-              set -euo pipefail
-              cd /rocm-jax
-              JAX_PLATFORM_NAME=cpu JAX_PLATFORMS=cpu pytest jax_tests/tests/core_test.py
-            # TODO: Analyze single_gpu_test and add GPU based tests
+          docker run --rm -i \
+            -v "${PWD}:/rocm-jax" \
+            --shm-size 16G \
+            "${IMAGE_NAME}" \
+            bash -c 'cd /rocm-jax && JAX_PLATFORM_NAME=cpu JAX_PLATFORMS=cpu pytest jax_tests/tests/core_test.py'
