@@ -126,24 +126,24 @@ class TestOpenBLASAvailability:
         patterns = [
             r"blas_info=open",
         ]
-        assert any(re.search(p, cfg_text) for p in patterns), (
-            "OpenBLAS is not available or not detected by PyTorch"
-        )
+        assert any(
+            re.search(p, cfg_text) for p in patterns
+        ), "OpenBLAS is not available or not detected by PyTorch"
 
     def test_config_indicates_lapack_enabled(self):
         cfg_text = torch.__config__.show().lower()
         patterns = [
             r"lapack is enabled",
         ]
-        assert any(re.search(p, cfg_text) for p in patterns), (
-            "LAPACK is not available or not detected by PyTorch"
-        )
+        assert any(
+            re.search(p, cfg_text) for p in patterns
+        ), "LAPACK is not available or not detected by PyTorch"
 
     # Implementation of svd on CPU uses LAPACK:
     # See https://docs.pytorch.org/docs/stable/generated/torch.svd.html
     def test_lapack_available_svd(self):
-        input = torch.randn(50, 50, device='cpu')
+        input = torch.randn(50, 50, device="cpu")
         output_u, output_s, output_vh = torch.linalg.svd(input)
-        assert output_u.device == torch.device('cpu')
-        assert output_s.device == torch.device('cpu')
-        assert output_vh.device == torch.device('cpu')
+        assert output_u.device == torch.device("cpu")
+        assert output_s.device == torch.device("cpu")
+        assert output_vh.device == torch.device("cpu")
