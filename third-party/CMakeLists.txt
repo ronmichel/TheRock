@@ -15,9 +15,6 @@ add_subdirectory(FunctionalPlus)
 add_subdirectory(fftw3)
 add_subdirectory(tbb)
 
-# dyninst depends on boost, tbb
-add_subdirectory(dyninst)
-
 # frugally-deep depends on eigen, FunctionalPlus and nlohmann-json
 add_subdirectory(frugally-deep)
 
@@ -40,3 +37,6 @@ if(THEROCK_BUNDLE_SYSDEPS)
     add_subdirectory(sysdeps/windows)
   endif()
 endif()
+
+# dyninst depends on elfutils, boost, tbb
+add_subdirectory(dyninst)

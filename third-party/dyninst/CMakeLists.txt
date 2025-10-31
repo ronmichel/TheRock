@@ -14,7 +14,11 @@ therock_cmake_subproject_declare(therock-dyninst
   EXTERNAL_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/source"
   BUILD_DEPS
     therock-boost
+    therock-elfutils
     therock-tbb
+  CMAKE_ARGS
+    -DBoost_ROOT_DIR="${CMAKE_CURRENT_BINARY_DIR}/../boost/source"
+    -DTBB_ROOT_DIR="${CMAKE_CURRENT_BINARY_DIR}/../tbb/stage"
 )
 therock_cmake_subproject_provide_package(therock-dyninst dyninst lib/cmake)
 therock_cmake_subproject_activate(therock-dyninst)

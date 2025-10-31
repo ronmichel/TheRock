@@ -1,6 +1,7 @@
 # Installs a limited subset of boost sufficient to build ROCM subprojects.
 # Currently, this includes:
 #   atomic
+#   chrono
 #   filesystem
 #   multi_index
 #   system
@@ -28,7 +29,7 @@ therock_cmake_subproject_declare(therock-boost
   OUTPUT_ON_FAILURE
   CMAKE_ARGS
     "-DBOOST_SOURCE_DIR=${_source_dir}"
-    "-DTHEROCK_BOOST_LIBRARIES=atomic,filesystem,multi_index,system"
+    "-DTHEROCK_BOOST_LIBRARIES=atomic,chrono,filesystem,multi_index,system"
   EXTRA_DEPENDS
     "${_download_stamp}"
 )
