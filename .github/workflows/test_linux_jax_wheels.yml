@@ -122,7 +122,7 @@ jobs:
           WHEELHOUSE_DIR: ${{ env.WHEELHOUSE_DIR }}
         run: |
           set -euo pipefail
-          python3 ../build_tools/fetch_wheels.py
+          python3 ../build_tools/fetch_jax_wheels.py
 
       - name: Build JAX Docker image
         working-directory: jax
