@@ -144,6 +144,14 @@ test_matrix = {
         "platform": ["linux"],
         "total_shards": 1,
     },
+    "rocfft_bench": {
+        "job_name": "rocfft_bench",
+        "fetch_artifact_args": "--fft --rand --tests",
+        "timeout_minutes": 60,
+        "test_script": f"python {_get_script_path('test_rocfft_benchmark.py')}",
+        "platform": ["linux", "windows"],
+        "total_shards": 1,
+    },
     "hipfft": {
         "job_name": "hipfft",
         "fetch_artifact_args": "--fft --rand --tests",
