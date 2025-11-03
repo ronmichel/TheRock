@@ -201,6 +201,46 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
     )
   endif()
 
+
+  if(THEROCK_BUILD_TESTING)
+    set(HIP_TESTS_CMAKE_ARGS)
+    set(HIP_TESTS_RUNTIME_DEPS)
+    set(_hip_tests_subproject_names)
+    if(WIN32)
+    else()
+      # Non-Windows CLR options.
+      list(APPEND HIP_TESTS_RUNTIME_DEPS
+        hip-clr
+      )
+    endif()
+    therock_cmake_subproject_declare(hip-tests
+      USE_DIST_AMDGPU_TARGETS
+      EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/hip-tests/catch"
+      BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/hip-tests"
+      COMPILER_TOOLCHAIN
+        amd-hip
+      CMAKE_ARGS
+        -DHIP_PLATFORM="amd"
+        -DTHEROCK_BUILD_MODE=ON
+      BUILD_DEPS
+        rocm-cmake
+        therock-boost
+        therock-catch2
+      RUNTIME_DEPS
+        # rocm-cmake
+        hip-clr
+        ${THEROCK_BUNDLED_NUMACTL}
+      INTERFACE_LINK_DIRS
+        lib
+        lib/rocm_sysdeps/lib
+      INTERFACE_INSTALL_RPATH_DIRS
+        lib
+        lib/rocm_sysdeps/lib
+    )
+    therock_cmake_subproject_glob_c_sources(hip-tests SUBDIRS catch)
+    therock_cmake_subproject_activate(hip-tests)
+    list(APPEND _hip_tests_subproject_names hip-tests)
+  endif(THEROCK_BUILD_TESTING)
 endif(THEROCK_ENABLE_HIP_RUNTIME)
 
 ################################################################################
