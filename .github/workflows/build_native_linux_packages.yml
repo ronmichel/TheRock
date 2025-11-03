@@ -114,11 +114,11 @@ jobs:
 
       - name: Install non-composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/installer.py --dest_dir ${{ env.PACKAGE_DIST_DIR}} --version true --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Install non-composite non-versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/installer.py --dest_dir ${{ env.PACKAGE_DIST_DIR}} --version false --package_json build_tools/packaging/linux/package.json --composite=false --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Uninstall non-composite packages (Python script)
         run: |
@@ -126,11 +126,11 @@ jobs:
 
       - name: Install composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/installer.py --dest_dir ${{ env.PACKAGE_DIST_DIR}} --version true --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Install composite non-versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre  --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/installer.py --dest_dir ${{ env.PACKAGE_DIST_DIR}} --version false --package_json build_tools/packaging/linux/package.json --composite=true --amdgpu_family ${{ inputs.amdgpu_family }} --upload pre  --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Uninstall composite packages (Python script)
         run: |
