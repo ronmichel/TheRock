@@ -1,5 +1,4 @@
 name: Install Native Linux Packages
-
 on:
   push:
     branches:
