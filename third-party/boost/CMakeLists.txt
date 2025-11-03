@@ -5,6 +5,7 @@
 #   filesystem
 #   multi_index
 #   system
+#   thread
 #   Static libraries only
 #   Release build
 #   Multithreaded
@@ -29,7 +30,7 @@ therock_cmake_subproject_declare(therock-boost
   OUTPUT_ON_FAILURE
   CMAKE_ARGS
     "-DBOOST_SOURCE_DIR=${_source_dir}"
-    "-DTHEROCK_BOOST_LIBRARIES=atomic,chrono,filesystem,multi_index,system"
+    "-DTHEROCK_BOOST_LIBRARIES=atomic,chrono,filesystem,multi_index,system,thread"
   EXTRA_DEPENDS
     "${_download_stamp}"
 )
