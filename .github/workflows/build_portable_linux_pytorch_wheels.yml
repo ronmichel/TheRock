@@ -174,7 +174,7 @@ jobs:
           python build_tools/github_actions/determine_version.py \
             --rocm-version ${{ inputs.rocm_version }}
       - name: Install required system packages
-        run: sudo dnf install -y libzstd-devel
+        run: dnf install -y libzstd-devel
       - name: Build PyTorch Wheels
         id: build-pytorch-wheels
         run: |
