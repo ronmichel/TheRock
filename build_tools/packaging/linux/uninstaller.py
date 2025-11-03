@@ -6,18 +6,25 @@ from pathlib import Path
 from typing import List
 from base_manager import PackageManagerBase
 from package_info import PackageInfo
+from package_info import PackageLoader
 from utils import logger
+from utils import get_os_id
+import subprocess
+
 
 
 class PackageUninstaller(PackageManagerBase):
     """
     Handles package uninstallation.
     """
-    def __init__(self, package_list: List[PackageInfo], rocm_version: str, composite: bool, run_id: str):
+    def __init__(self, package_list: List[PackageInfo], rocm_version: str, composite: bool, run_id: str, loader):
         super().__init__(package_list)
         self.rocm_version = rocm_version
         self.composite = composite
         self.run_id = run_id
+        self.loader = loader
+        self.os_family = get_os_id()
+
 
     def execute(self):
         logger.info(f"\n=== UNINSTALLATION PHASE ===")
@@ -35,20 +42,50 @@ class PackageUninstaller(PackageManagerBase):
     def _remove_package(self, pkg: PackageInfo):
         logger.info(f"   - Removing files and cleaning up {pkg.package}...")
 
+        if self.composite:
+            for pkg in reversed(pkg_list):
+                pkg = pkg.strip()
+                if pkg:
+                    derived_name = self.loader.derive_package_names(pkg,True)
+        else:
+            derived_name = self.loader.derive_package_names(pkg,True)
 
-def load_packages_from_json(json_path: str) -> List[PackageInfo]:
-    """
-    Utility function to load package info list from a JSON file.
-    """
-    path = Path(json_path)
-    if not path.exists():
-        raise FileNotFoundError(f"JSON file not found: {json_path}")
+        if derived_name:
+            for derived_pkg in derived_name:
+                self._run_uninstall_command(derived_pkg)
 
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
 
-    return [PackageInfo(entry) for entry in data]
+    def _run_uninstall_command(self, pkg_name):
+        """
+        Build and run OS-specific install command for a package.
 
+        :param pkg_name: Name of the package (base name)
+        :param pkg_path: Full path for local install (required for local)
+        :param source_type: 'local' or 'repo'
+        """
+        cmd = None
+
+        if self.os_family == "debian":
+            cmd = ["sudo", "apt-get", "autoremove", "-y", pkg_name]
+        elif self.os_family == "redhat":
+            cmd = ["sudo", "yum", "remove", "-y", pkg_name]
+        elif self.os_family == "suse":
+            cmd = ["sudo", "zypper", "remove", pkg_name]
+        else:
+            logger.error(f"Unsupported OS for repo uninstall: {pkg_name}")
+            return
+
+        # Execute command
+        try:
+            result = subprocess.run(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+            )
+            if result.returncode != 0:
+                logger.error(f"Failed to uninstall {pkg_name}:\n{result.stdout}")
+            else:
+                logger.info(f"Uninstalled {pkg_name}")
+        except Exception as e:
+            logger.exception(f"Exception uninstalling {pkg_name}: {e}")
 
 def parse_arguments():
     """
@@ -70,13 +107,17 @@ def main():
     """
     args = parse_arguments()
 
-    packages = load_packages_from_json(args.package_json)
+    loader = PackageLoader(args.package_json, args.rocm_version, args.amdgpu_family)
+    #packages = load_packages_from_json(args.package_json)
+    packages = loader.load_composite_packages() if args.composite.lower() == "true" else loader.load_non_composite_packages()
+
 
     uninstaller = PackageUninstaller(
         package_list=packages,
         rocm_version=args.rocm_version,
         composite=(args.composite.lower() == "true"),
-        run_id=args.run_id
+        run_id=args.run_id,
+        loader=loader
     )
 
     uninstaller.execute()

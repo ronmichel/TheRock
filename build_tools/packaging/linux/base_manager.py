@@ -1,4 +1,4 @@
-# rocm_package_manager/base_manager.py
+# base_manager.py
 
 from abc import ABC, abstractmethod
 from typing import List
