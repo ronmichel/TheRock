@@ -237,13 +237,13 @@ def parse_arguments():
     Parses command-line arguments for the installer.
     """
     parser = argparse.ArgumentParser(description="ROCm Package Installer")
-    parser.add_argument("--dest_dir", required=True, help="Destination directory for installation")
+    parser.add_argument("--dest-dir", required=True, help="Destination directory for installation")
     parser.add_argument("--version", default="false", help="Enable versioning output (true/false)")
-    parser.add_argument("--package_json", required=True, help="Path to package JSON definition file")
+    parser.add_argument("--package-json", required=True, help="Path to package JSON definition file")
     parser.add_argument("--composite", default="false", help="Enable composite build mode (true/false)")
-    parser.add_argument("--amdgpu_family", default="gfx000", help="GPU family identifier")
+    parser.add_argument("--amdgpu-family", default="gfx000", help="GPU family identifier")
     parser.add_argument("--upload", default="none", help="Upload mode (pre/post/none)")
-    parser.add_argument("--rocm_version", required=True, help="ROCm version to install")
+    parser.add_argument("--rocm-version", required=True, help="ROCm version to install")
     return parser.parse_args()
 
 

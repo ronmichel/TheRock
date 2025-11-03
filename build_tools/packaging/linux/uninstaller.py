@@ -92,11 +92,11 @@ def parse_arguments():
     Parses command-line arguments for the uninstaller.
     """
     parser = argparse.ArgumentParser(description="ROCm Package Uninstaller")
-    parser.add_argument("--run_id", required=True, help="Unique identifier for this uninstall run")
+    parser.add_argument("--run-id", required=True, help="Unique identifier for this uninstall run")
     parser.add_argument("--version", default="false", help="Enable version output (true/false)")
-    parser.add_argument("--package_json", required=True, help="Path to package JSON definition file")
+    parser.add_argument("--package-json", required=True, help="Path to package JSON definition file")
     parser.add_argument("--composite", default="false", help="Composite build mode (true/false)")
-    parser.add_argument("--amdgpu_family", default="gfx000", help="GPU family identifier")
+    parser.add_argument("--amdgpu-family", default="gfx000", help="GPU family identifier")
     parser.add_argument("--rocm-version", required=True, help="ROCm version to uninstall")
     return parser.parse_args()
 
