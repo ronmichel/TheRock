@@ -337,47 +337,47 @@ shared/
   therock.cmake
   therock_subprojects.cmake
 
-gemmla/
+gemm-linalg/
   common/
     [blas-common] -> project/hipblas-common
     therock.cmake
     therock_subprojects.cmake
     therock_artifact_gemmla-common.toml
-  gemm-dense/
+  blas/
     [rocblas] -> projects/rocblas
+    [hipblas] -> projects/hipblas
     [hipblaslt] -> projects/hipblaslt
     therock.cmake
     therock_subprojects.cmake
-    therock_artifact_gemm-dense.toml
-  gemm-sparse/
+    therock_artifact_blas.toml
+  sparse/
     [rocsparse] -> projects/rocsparse
     [hipsparselt] -> projects/hipsparselt
     [hipsparse] -> projects/hipsparse
     therock.cmake
     therock_subprojects.cmake
-    therock_artifact_gemm-sparse.toml
-  la/
+    therock_artifact_sparse.toml
+  solver/
     [rocsolver] -> projects/rocsolver
     [hipsolver] -> projects/hipsolver
     therock.cmake
     therock_subprojects.cmake
     therock_artifact_la.toml
-  gemm-api/
-    [hipblas] -> projects/hipblas
-    therock.cmake
-    therock_subprojects.cmake
-    therock_artifact_gemm-api.toml
 
-kernel-libs/
-  [rocrand] -> projects/rocrand # Should we merge into hiprand?
-  [hiprand] -> projects/hiprand
-  [hipfft] -> projects/hipfft #Merge rocFFT into one folder 
+fft/
+  [hipfft] -> projects/hipfft #Merge rocFFT into one folder
   therock.cmake
   therock_subprojects.cmake
-  therock_artifact_fft.toml
+  therock_artifact_fft.toml 
+
+rand/
+  [rocrand] -> projects/rocrand # Should we merge into hiprand?
+  [hiprand] -> projects/hiprand
+  therock.cmake
+  therock_subprojects.cmake
   therock_artifact_rand.toml
 
-compute-libs/
+core-compute-libs/
   [rocprim] -> projects/rocprim
   [hipcub] -> projects/hipcub
   [rocthrust] -> projects/rocthrust
