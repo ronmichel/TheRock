@@ -343,14 +343,14 @@ gemm-linalg/
     therock.cmake
     therock_subprojects.cmake
     therock_artifact_gemmla-common.toml
-  blas/
+  dense-blas/
     [rocblas] -> projects/rocblas
     [hipblas] -> projects/hipblas
     [hipblaslt] -> projects/hipblaslt
     therock.cmake
     therock_subprojects.cmake
     therock_artifact_blas.toml
-  sparse/
+  sparse-blas/
     [rocsparse] -> projects/rocsparse
     [hipsparselt] -> projects/hipsparselt
     [hipsparse] -> projects/hipsparse
