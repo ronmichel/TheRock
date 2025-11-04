@@ -70,6 +70,7 @@ amdgpu_family_info_matrix_presubmit = {
             "bypass_tests_for_releases": True,
             "build_variants": ["release"],
         },
+    },
     "gfx1103": {
         "linux": {
             "test-runs-on": "linux-gfx110X-gpu-rocm",
@@ -84,6 +85,7 @@ amdgpu_family_info_matrix_presubmit = {
             "bypass_tests_for_releases": True,
             "build_variants": ["release"],
         },
+    },
     "gfx1151": {
         "linux": {
             "test-runs-on": "linux-strix-halo-gpu-rocm",
