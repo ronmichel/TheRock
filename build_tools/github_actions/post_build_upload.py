@@ -59,6 +59,7 @@ def check_aws_cli_available():
     if is_windows():
         get_time_sync_logs()
 
+
 def get_time_sync_logs():
     startfile = Path("H:\\start.log")
     timefile = Path("H:\\time.log")
@@ -72,6 +73,7 @@ def get_time_sync_logs():
         log(timelines[-40:])
     else:
         log("[*] time.log and/or start.log not present in H:")
+
 
 def run_aws_cp(source_path: Path, s3_destination: str, content_type: str = None):
     if source_path.is_dir():
