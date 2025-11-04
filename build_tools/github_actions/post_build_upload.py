@@ -64,13 +64,13 @@ def get_time_sync_logs():
     startfile = Path("H:\\start.log")
     timefile = Path("H:\\time.log")
     if startfile.is_file() and timefile.is_file():
-        log("[*] Checking time sync at: {datetime.datetime.now()}")
+        log(f"[*] Checking time sync at: {datetime.datetime.now()}")
         log("[*] Start Time Sync Log:")
         log(startfile.read_text())
         log("[*] Time Sync Log:")
         timef = open(timefile)
         timelines = timef.readlines()
-        log(timelines[-40:])
+        log(''.join(timelines[-40:]))
     else:
         log("[*] time.log and/or start.log not present in H:")
 
