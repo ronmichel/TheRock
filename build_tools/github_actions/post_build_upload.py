@@ -70,7 +70,7 @@ def get_time_sync_logs():
         log("[*] Time Sync Log:")
         timef = open(timefile)
         timelines = timef.readlines()
-        log(''.join(timelines[-40:]))
+        log("".join(timelines[-40:]))
     else:
         log("[*] time.log and/or start.log not present in H:")
 
