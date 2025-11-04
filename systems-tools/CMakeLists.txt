@@ -43,15 +43,25 @@ if(THEROCK_ENABLE_RDC)
 
     therock_cmake_subproject_activate(rdc)
 
-    # RDC: use custom script to validate shared libraries
+    # RDC: use custom bash script to validate shared libraries
     foreach(lib_name librdc_rocr.so librdc_rocp.so)
         add_test(
             NAME therock-validate-shared-lib-${lib_name}
             COMMAND
-                "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/validate_rdc_library.py"
+                "${CMAKE_CURRENT_SOURCE_DIR}/validate_rdc_library.sh"
                     "${CMAKE_CURRENT_BINARY_DIR}/dist/lib/rdc/${lib_name}"
         )
     endforeach()
+
+    # # RDC: use custom script to validate shared libraries
+    # foreach(lib_name librdc_rocr.so librdc_rocp.so)
+    #     add_test(
+    #         NAME therock-validate-shared-lib-${lib_name}
+    #         COMMAND
+    #             "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/validate_rdc_library.py"
+    #                 "${CMAKE_CURRENT_BINARY_DIR}/dist/lib/rdc/${lib_name}"
+    #     )
+    # endforeach()
 
     # therock_test_validate_shared_lib(
     #     # PATH rdc/dist/lib
