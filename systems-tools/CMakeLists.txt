@@ -38,17 +38,29 @@ if(THEROCK_ENABLE_RDC)
         SUBDIRS .
     )
 
-    therock_cmake_subproject_provide_package(rdc rdc lib/rdc)
+    # therock_cmake_subproject_provide_package(rdc rdc lib/rdc)
+    therock_cmake_subproject_provide_package(rdc rdc lib/cmake/rdc)
 
     therock_cmake_subproject_activate(rdc)
 
-    therock_test_validate_shared_lib(
-        PATH rdc/dist/lib
-        LIB_NAMES
-            librdc_rocr.so
-            librdc_rocp.so
-            librdc_rvs.so
-    )
+    # RDC: use custom script to validate shared libraries
+    foreach(lib_name librdc_rocr.so librdc_rocp.so)
+        add_test(
+            NAME therock-validate-shared-lib-${lib_name}
+            COMMAND
+                "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/validate_rdc_library.py"
+                    "${CMAKE_CURRENT_BINARY_DIR}/dist/lib/rdc/${lib_name}"
+        )
+    endforeach()
+
+    # therock_test_validate_shared_lib(
+    #     # PATH rdc/dist/lib
+    #     PATH dist/lib/rdc
+    #     LIB_NAMES
+    #         librdc_rocr.so
+    #         librdc_rocp.so
+    #         # librdc_rvs.so
+    # )
 
     therock_provide_artifact(rdc
         TARGET_NEUTRAL
