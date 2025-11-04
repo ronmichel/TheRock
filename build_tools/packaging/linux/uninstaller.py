@@ -33,26 +33,22 @@ class PackageUninstaller(PackageManagerBase):
         logger.info(f"Composite Build: {self.composite}")
 
         # Uninstall in reverse dependency order
-        for pkg in reversed(self.packages):
-            logger.info(f"[REMOVE] Uninstalling {pkg.package}")
-            self._remove_package(pkg)
-
-        logger.info(" Uninstallation complete.")
-
-    def _remove_package(self, pkg: PackageInfo):
-        logger.info(f"   - Removing files and cleaning up {pkg.package}...")
-
         if self.composite:
-            for pkg in reversed(pkg_list):
-                pkg = pkg.strip()
+            for pkg in reversed(self.packages):
+                logger.info(f"[REMOVE] Uninstalling {pkg.package}")
                 if pkg:
                     derived_name = self.loader.derive_package_names(pkg,True)
+                if derived_name:
+                    for derived_pkg in derived_name:
+                        self._run_uninstall_command(derived_pkg)
         else:
-            derived_name = self.loader.derive_package_names(pkg,True)
-
-        if derived_name:
-            for derived_pkg in derived_name:
-                self._run_uninstall_command(derived_pkg)
+            pkg = self.loader.get_package_by_name("rocm-core")
+            if pkg:
+                derived_name = self.loader.derive_package_names(pkg, True)
+                if derived_name:
+                    for derived_pkg in derived_name:
+                        self._run_uninstall_command(derived_pkg)
+        logger.info(" Uninstallation complete.")
 
 
     def _run_uninstall_command(self, pkg_name):
