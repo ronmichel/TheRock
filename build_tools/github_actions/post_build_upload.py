@@ -55,14 +55,14 @@ def check_aws_cli_available():
     if not shutil.which("aws"):
         log("[ERROR] AWS CLI not found in PATH.")
         sys.exit(1)
-        
+
     if is_windows():
         get_time_sync_logs()
 
 def get_time_sync_logs():
     startfile = Path("H:\\start.log")
     timefile = Path("H:\\time.log")
-    if(startfile.is_file() and timefile.is_file()):
+    if startfile.is_file() and timefile.is_file():
         log("[*] Checking time sync at: {datetime.datetime.now()}")
         log("[*] Start Time Sync Log:")
         log(startfile.read_text())
