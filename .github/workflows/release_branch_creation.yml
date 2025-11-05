@@ -1,0 +1,78 @@
+name: Run Release Script (External Python Repo)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: "Name of branch to create (e.g., release/v1.2.3)"
+        required: true
+      environment:
+        description: "Choose environment: staging (-S) or prod (-P)"
+        required: true
+        default: "staging"
+        type: choice
+        options:
+          - staging
+          - prod
+      mailing_list:
+        description: "Comma-separated list of mail IDs for notifications"
+        required: false
+        default: ""
+
+jobs:
+  run-script:
+    runs-on: rocm-ci-runner
+
+    steps:
+      # 1️⃣ Checkout this workflow repo
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+
+      # 2️⃣ Checkout Python code from another organization
+      - name: Checkout Python repo from other org
+        uses: actions/checkout@v4
+        with:
+          repository: other-org/python-repo         # 👈 The org/repo where your Python code lives
+          ref: rock-branching                    # 👈 The branch name you want to pull
+          token: ${{ secrets.ACCESS_TOKEN }}        # 👈 PAT secret with read access
+          path: rock-branching/rock-release-branching.py                           # local folder name
+
+      # 3️⃣ Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 4️⃣ Install dependencies from the external repo
+      - name: Install dependencies
+        run: |
+          pip install -r rock-branching/requirements.txt
+
+      # 5️⃣ Run the Python release script with user-provided inputs
+      - name: Run release script
+        run: |
+          BRANCH=${{ github.event.inputs.release_branch }}
+          ENVIRONMENT=${{ github.event.inputs.environment }}
+          MAILS=${{ github.event.inputs.mailing_list }}
+
+          echo "Release branch: $BRANCH"
+          echo "Environment: $ENVIRONMENT"
+          echo "Mailing list: $MAILS"
+
+          # Choose environment flag and secret dynamically
+          if [ "$ENVIRONMENT" = "prod" ]; then
+            ENV_FLAG="-P"
+            API_TOKEN="${{ secrets.PROD_API_TOKEN }}"
+            echo "Running in PRODUCTION mode"
+          else
+            ENV_FLAG="-S"
+            API_TOKEN="${{ secrets.STAGING_API_TOKEN }}"
+            echo "Running in STAGING mode"
+          fi
+
+          # Run the external Python script
+          python rock-branching/rock-release-branching.py \
+            -A "$API_TOKEN" \
+            -B "$BRANCH" \
+            $ENV_FLAG \
+            -M "$MAILS"
