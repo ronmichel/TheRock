@@ -24,31 +24,26 @@ jobs:
     runs-on: rocm-ci-runner
 
     steps:
-      # 1️⃣ Checkout this workflow repo
       - name: Checkout current repo
         uses: actions/checkout@v4
-
-      # 2️⃣ Checkout Python code from another organization
+        
       - name: Checkout Python repo from other org
         uses: actions/checkout@v4
         with:
-          repository: other-org/python-repo         # 👈 The org/repo where your Python code lives
-          ref: rock-branching                    # 👈 The branch name you want to pull
-          token: ${{ secrets.ACCESS_TOKEN }}        # 👈 PAT secret with read access
-          path: rock-branching/rock-release-branching.py                           # local folder name
-
-      # 3️⃣ Set up Python environment
+          repository: AMD-ROCm-Internal        
+          ref: rock-branching         
+          token: ${{ secrets.EMU_GITHUB_TOKEN }}
+          path: rock-branching/rock-release-branching.py  
+          
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      # 4️⃣ Install dependencies from the external repo
       - name: Install dependencies
         run: |
           pip install -r rock-branching/requirements.txt
 
-      # 5️⃣ Run the Python release script with user-provided inputs
       - name: Run release script
         run: |
           BRANCH=${{ github.event.inputs.release_branch }}
