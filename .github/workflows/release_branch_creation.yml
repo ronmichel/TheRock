@@ -1,4 +1,4 @@
-name: Run Release Script (External Python Repo)
+name: Run Rock Release Branching
 
 on:
   workflow_dispatch:
