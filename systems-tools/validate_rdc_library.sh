@@ -5,12 +5,12 @@ set -e
 
 for lib_path in "$@"; do
     echo -n "Validating shared library: $lib_path"
-    
+
     # Get dependencies
     lib_dir=$(dirname "$lib_path")
     dist_lib_dir=$(dirname "$lib_dir")
     LD_PRELOAD="$dist_lib_dir/librdc_bootstrap.so.1:$dist_lib_dir/librdc.so.1"
-    
+
     # Compile and run in one step using gcc -x
     output=$(LD_PRELOAD="$LD_PRELOAD" timeout 5 bash -c "
         gcc -x c -o /tmp/validate_rdc_\$\$ -ldl - <<'EOFC' && /tmp/validate_rdc_\$\$ \"$lib_path\" 2>&1; rm -f /tmp/validate_rdc_\$\$
@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
 }
 EOFC
     ") || exit_code=$?
-    
+
     # Handle results
     case ${exit_code:-0} in
         0)
