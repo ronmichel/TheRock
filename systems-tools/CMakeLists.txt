@@ -13,12 +13,16 @@ if(THEROCK_ENABLE_RDC)
 
         CMAKE_ARGS
             -DBUILD_PROFILER=ON
-            # disable rdcd and rdci (need to discuss)
-            -DBUILD_STANDALONE=OFF
+            # Enable rdcd and rdci with standalone mode
+            -DBUILD_STANDALONE=ON
             -DBUILD_RUNTIME=ON
             -DBUILD_RVS=OFF
             -DBUILD_TESTS=ON
             -DHIP_PLATFORM=amd
+            -DCMAKE_CXX_STANDARD=17
+            # Pass gRPC installation directory - will be expanded at configure time to staged location
+            "-DGRPC_ROOT=\${THEROCK_STAGE_INSTALL_ROOT}/lib/rocm_sysdeps"
+            -DGRPC_DESIRED_VERSION=1.76.0
 
         BUILD_DEPS
             amd-llvm
@@ -29,6 +33,7 @@ if(THEROCK_ENABLE_RDC)
             rocprofiler-sdk
             ${THEROCK_BUNDLED_LIBCAP}
             ${THEROCK_BUNDLED_ZLIB}
+            ${THEROCK_BUNDLED_GRPC}
 
         INTERFACE_LINK_DIRS
             lib
