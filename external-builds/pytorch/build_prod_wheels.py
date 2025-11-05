@@ -143,7 +143,6 @@ LINUX_LIBRARY_PRELOADS = [
     "hipblaslt",
     "miopen",
     "rocm_sysdeps_liblzma",
-    "rocm-openblas",
 ]
 
 # List of library preloads for Windows to generate into _rocm_init.py
