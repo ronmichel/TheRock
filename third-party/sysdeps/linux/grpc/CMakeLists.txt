@@ -5,8 +5,10 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
 
   therock_subproject_fetch(therock-grpc-sources
     SOURCE_DIR "${_source_dir}"
-    URL "https://github.com/grpc/grpc/archive/refs/tags/v1.76.0.tar.gz"
-    URL_HASH "SHA256=9eb677e9b5889e1387399b69aedd9c9c68ff9f2ce2e21d60e2a7c08c8674aa98"
+    GIT_REPOSITORY "https://github.com/grpc/grpc.git"
+    GIT_TAG "v1.76.0"
+    GIT_SHALLOW ON
+    GIT_SUBMODULES_RECURSE ON
     TOUCH "${_download_stamp}"
   )
 
@@ -109,13 +111,28 @@ add_custom_target(
       "-DgRPC_INSTALL=ON"
       # Install to lib/ not lib64/
       "-DCMAKE_INSTALL_LIBDIR=lib"
-      # Set RPATH for installed libraries
-      "-DCMAKE_INSTALL_RPATH=\$ORIGIN"
+      # Set RPATH for installed libraries and executables
+      # $ORIGIN for libs, $ORIGIN/../lib for bins (protoc, grpc_cpp_plugin)
+      "-DCMAKE_INSTALL_RPATH=\$ORIGIN:\$ORIGIN/../lib"
       "-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
+      # Add build-time RPATH to find zlib during gRPC build/test phase
+      # This is separate from install RPATH and only used during build
+      "-DCMAKE_BUILD_RPATH=${ZLIB_ROOT}/lib"
+      "-DCMAKE_SKIP_BUILD_RPATH=OFF"
   COMMAND
     "${CMAKE_COMMAND}" --build "${CMAKE_CURRENT_BINARY_DIR}/b" -j "${PAR_JOBS}"
   COMMAND
     "${CMAKE_COMMAND}" --install "${CMAKE_CURRENT_BINARY_DIR}/b"
+  COMMAND
+    # Copy zlib shared libraries to gRPC's lib directory so grpc_cpp_plugin can find it via RPATH
+    # This makes each stage directory self-contained for tools execution
+    # Use shell globbing to copy all zlib .so* files (handles symlinks and actual files)
+    bash -c "cp -L ${ZLIB_ROOT}/lib/librocm_sysdeps_z.so* ${CMAKE_INSTALL_PREFIX}/lib/ 2>/dev/null || true"
+  COMMAND
+    # Also create the libz.so symlink for compatibility
+    "${CMAKE_COMMAND}" -E create_symlink
+      "librocm_sysdeps_z.so.1"
+      "${CMAKE_INSTALL_PREFIX}/lib/libz.so"
   COMMAND
     "${CMAKE_COMMAND}" -E env
       "PATCHELF=${PATCHELF}"
