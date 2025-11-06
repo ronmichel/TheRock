@@ -18,6 +18,7 @@ include(CMakeDependentOption)
 include(ExternalProject)
 include(therock_globals)
 include(therock_default_targets)
+include(therock_detect_python_versions)
 include(therock_amdgpu_targets)
 include(therock_artifacts)
 include(therock_compiler_config)
@@ -77,6 +78,9 @@ option(THEROCK_BUNDLE_SYSDEPS "Builds bundled system deps for portable builds in
 option(THEROCK_ENABLE_MPI "Enables building components with Message Passing Interface (MPI) support" OFF)
 
 set(THEROCK_SANITIZER "" CACHE STRING "Enable project wide sanitizer build (e.g. 'ASAN')")
+
+# List of python executables to use for multi-version python builds
+set(THEROCK_DIST_PYTHON_EXECUTABLES "" CACHE STRING "Build for multiple python versions in supported projects (default to Python3_EXECUTABLE if empty)")
 
 # Source settings.
 # Use the rocm-libraries superrepo tracked in TheRock's `.gitmodules` or
@@ -328,6 +332,12 @@ if(NOT WIN32)
     GROUP ML_LIBS
     DESCRIPTION "Enables the hipDNN project"
     REQUIRES COMPILER HIP_RUNTIME
+  )
+
+  therock_add_feature(MIOPEN_PLUGIN
+    GROUP ML_LIBS
+    DESCRIPTION "Enables the MIOpen plugin project"
+    REQUIRES COMPILER MIOPEN HIPDNN HIP_RUNTIME
   )
 endif()
 
