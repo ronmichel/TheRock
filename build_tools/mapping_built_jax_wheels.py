@@ -23,15 +23,18 @@ from pathlib import Path
 from typing import List
 from github_actions.github_actions_utils import gha_append_step_summary
 
+
 def collect_wheel_filenames(directory: Path) -> List[str]:
     if not directory.exists() or not directory.is_dir():
         raise FileNotFoundError(f"Directory not found: {directory}")
     return sorted(whl.name for whl in directory.glob("*.whl"))
 
+
 def parse_args(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument("--dir", required=True)
     return parser.parse_args(argv)
+
 
 def main(argv):
     args = parse_args(argv)
@@ -39,6 +42,7 @@ def main(argv):
     print(json.dumps(array, separators=(",", ",")))
     gha_append_step_summary("Built wheels", json.dumps(array, separators=(",", ",")))
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))
