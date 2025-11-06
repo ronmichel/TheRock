@@ -11,7 +11,7 @@ if(THEROCK_ENABLE_RDC)
     # RDC's CMakeLists.txt will try to install gRPC from this location,
     # and TheRock will also merge it via RUNTIME_DEPS
     set(_grpc_build_path "${THEROCK_BINARY_DIR}/third-party/sysdeps/linux/grpc/build/stage/lib/rocm_sysdeps")
-    
+
     therock_cmake_subproject_declare(rdc
         EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/rdc"
         BACKGROUND_BUILD

@@ -109,7 +109,6 @@ add_custom_target(
       "-DgRPC_BUILD_GRPC_PYTHON_PLUGIN=OFF"
       "-DgRPC_BUILD_GRPC_RUBY_PLUGIN=OFF"
       "-DgRPC_INSTALL=ON"
-      # Install to lib/ not lib64/
       "-DCMAKE_INSTALL_LIBDIR=lib"
       # Set RPATH for installed libraries and executables
       # $ORIGIN for libs, $ORIGIN/../lib for bins (protoc, grpc_cpp_plugin)
@@ -141,4 +140,3 @@ add_custom_target(
     bash "${CMAKE_CURRENT_SOURCE_DIR}/patch_install.sh" ${CMAKE_INSTALL_PREFIX}
   VERBATIM
 )
-

@@ -68,4 +68,3 @@ if [ -d "$PREFIX/lib/cmake/absl" ]; then
 fi
 
 echo "gRPC patching completed successfully"
-
