@@ -21,7 +21,7 @@ on:
 
 jobs:
   run-script:
-    runs-on: rocm-ci-runner
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout current repo
