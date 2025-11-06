@@ -156,5 +156,5 @@ jobs:
       rocm_version: ${{ inputs.rocm_version }}
       tar_url: ${{ inputs.tar_url }}
       python_versions: ${{ inputs.python_versions }}
-      jax_ref: master
+      jax_ref: rocm-jaxlib-v0.7.1
       jax_whl_list: ${{ needs.build_jax_wheels.outputs.jax_whl_list }}
