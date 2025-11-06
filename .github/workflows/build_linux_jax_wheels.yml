@@ -157,3 +157,4 @@ jobs:
       python_versions: ${{ inputs.python_versions }}
       jax_ref: rocm-jaxlib-v0.7.1
       jax_whl_list: ${{ needs.build_jax_wheels.outputs.jax_whl_list }}
+      test_runs_on: "linux-mi325-1gpu-ossci-rocm"
