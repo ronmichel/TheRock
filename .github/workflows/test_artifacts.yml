@@ -42,7 +42,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r rock-branching/requirements.txt
+          pip install -r rock-branching/rock-branching/requirements.txt
 
       - name: Run release script
         run: |
@@ -66,7 +66,7 @@ jobs:
           fi
 
           # Run the external Python script
-          python rock-branching/rock-release-branching.py \
+          python rock-branching/rock-branching/rock-release-branching.py \
             -A "$API_TOKEN" \
             -B "$BRANCH" \
             $ENV_FLAG \
