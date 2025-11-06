@@ -21,7 +21,7 @@ on:
 
 jobs:
   run-script:
-    runs-on: ubuntu-24.04
+    runs-on: azure-linux-scale-rocm
 
     steps:
       - name: Checkout current repo
