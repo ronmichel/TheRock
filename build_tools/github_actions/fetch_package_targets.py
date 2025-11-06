@@ -70,6 +70,7 @@ def determine_package_targets(args):
         # Sanitizing the string to remove any punctuation from the input
         # After replacing punctuation with spaces, turning string input to an array
         # (ex: ",gfx94X ,|.gfx1201" -> "gfx94X   gfx1201" -> ["gfx94X", "gfx1201"])
+        # like WTF it also does "gfx110X-all" to ["gfx110X", "all"]
         translator = str.maketrans(string.punctuation, " " * len(string.punctuation))
         family_matrix = [
             item.lower() for item in amdgpu_families.translate(translator).split()
