@@ -56,6 +56,21 @@ amdgpu_family_info_matrix_presubmit = {
             "build_variants": ["release"],
         },
     },
+    "gfx110x-extra": {
+        "linux": {
+            "test-runs-on": "linux-gfx110X-gpu-rocm",
+            "family": "gfx110X-all",
+            "bypass_tests_for_releases": True,
+            "build_variants": ["release"],
+            "sanity_check_only_for_family": True,
+        },
+        "windows": {
+            "test-runs-on": "",
+            "family": "gfx110X-all",
+            "bypass_tests_for_releases": True,
+            "build_variants": ["release"],
+        },
+    },
     "gfx1151": {
         "linux": {
             "test-runs-on": "linux-strix-halo-gpu-rocm",
