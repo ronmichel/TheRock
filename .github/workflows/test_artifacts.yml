@@ -33,7 +33,7 @@ jobs:
           repository: AMD-ROCm-Internal/release-automations        
           ref: rock-branching         
           token: ${{ secrets.EMU_GITHUB_TOKEN }}
-          path: rock-branching/rock-release-branching.py  
+          path: rock-branching  
           
       - name: Set up Python
         uses: actions/setup-python@v5
