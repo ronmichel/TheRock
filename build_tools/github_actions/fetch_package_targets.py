@@ -80,6 +80,7 @@ def determine_package_targets(args):
 
         # In case an invalid target is requested and returns null, we continue to the next target
         if not info_for_key:
+            print("skipping key", key)
             continue
 
         platform_for_key = info_for_key.get(package_platform)

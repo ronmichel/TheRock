@@ -56,7 +56,7 @@ amdgpu_family_info_matrix_presubmit = {
             "build_variants": ["release"],
         },
     },
-    "gfx110x-extra": {
+    "gfx110x-all": {
         "linux": {
             "test-runs-on": "linux-gfx110X-gpu-rocm",
             "family": "gfx110X-all",
