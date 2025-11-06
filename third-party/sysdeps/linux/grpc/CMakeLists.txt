@@ -43,10 +43,15 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   therock_cmake_subproject_provide_package(therock-grpc protobuf lib/rocm_sysdeps/lib/cmake/protobuf)
   therock_cmake_subproject_activate(therock-grpc)
 
-  therock_test_validate_shared_lib(
-    PATH build/dist/lib/rocm_sysdeps/lib
-    LIB_NAMES libgrpc++.so libgrpc.so libprotobuf.so
-  )
+  # Validate that key static libraries are built correctly
+  foreach(lib_name libgrpc++.a libgrpc.a libprotobuf.a)
+    add_test(
+      NAME therock-validate-static-lib-${lib_name}
+      COMMAND
+        "${CMAKE_CURRENT_SOURCE_DIR}/validate_static_library.sh"
+          "${CMAKE_CURRENT_BINARY_DIR}/build/dist/lib/rocm_sysdeps/lib/${lib_name}"
+    )
+  endforeach()
   return()
 endif()
 
