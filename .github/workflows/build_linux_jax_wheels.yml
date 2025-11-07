@@ -147,7 +147,7 @@ jobs:
       - name: jax wheel list
         id: jax_wheel_list
         run: |
-          export jax_whl_list="$(python3 build_tools/mapping_built_jax_wheels.py --dir "${{ env.PACKAGE_DIST_DIR }}")"
+          export jax_whl_list="$(python3 ./build_tools/mapping_built_jax_wheels.py --dir "${{ env.PACKAGE_DIST_DIR }}")"
           echo "jax_whl_list=${jax_whl_list}" >> "$GITHUB_OUTPUT"
 
       - name: Upload wheels to S3
