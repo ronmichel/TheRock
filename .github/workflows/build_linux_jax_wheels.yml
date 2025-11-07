@@ -104,7 +104,8 @@ jobs:
             --python-versions="${{ inputs.python_versions }}" \
             --rocm-version="${ROCM_VERSION}" \
             --therock-path="${{ inputs.tar_url }}" \
-            --retag dist_wheels
+            --retag-wheels-from-dir="${{ env.PACKAGE_DIST_DIR }}" \
+            dist_wheels  
 
       - name: Install AWS CLI
         if: always()
