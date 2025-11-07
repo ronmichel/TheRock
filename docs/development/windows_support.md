@@ -70,6 +70,7 @@ mainline, in open source, using MSVC, etc.).
 | ml-libs             | [MIOpen](https://github.com/ROCm/MIOpen)                                                                                 | ✅        |                                               |
 | ml-libs             | [hipDNN](https://github.com/ROCm/rocm-libraries/tree/develop/projects/hipdnn)                                            | ❌        | Unsupported                                   |
 | ml-libs             | [MIOpen Legacy Plugin](https://github.com/ROCm/rocm-libraries/tree/develop/projects/hipdnn/plugins/miopen_legacy_plugin) | ❌        | Unsupported (requires hipDNN)                 |
+
 ## Building TheRock from source
 
 These instructions mostly mirror the instructions in the root
