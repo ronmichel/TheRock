@@ -120,7 +120,7 @@ jobs:
             --cloudfront_url ${{ inputs.package_index_url }} \
             --amdgpu_family ${{ inputs.amdgpu_family }} \
             --dir "${{ env.WHEELHOUSE_DIR }}" \
-            --list_whls ${{ inputs.jax_whl_list }}
+            --list_whls '${{ inputs.jax_whl_list }}'
 
       - name: Compute ROCM_VERSION_SHORT
         working-directory: jax
