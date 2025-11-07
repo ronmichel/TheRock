@@ -148,3 +148,6 @@ jobs:
       rocm_version: ${{ needs.extract-and-call.outputs.version }}
       package_type: 'rpm'
       package_suffix: ${{ needs.extract-and-call.outputs.suffix }}
+    permissions:
+      contents: read
+      id-token: write
