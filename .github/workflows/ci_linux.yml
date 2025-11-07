@@ -108,12 +108,15 @@ jobs:
       package_version: ${{ inputs.rocm_package_version }}
 
   parse_package_version:
-    needs: [build_portable_linux_artifacts]
     name: Parse package version
+    runs-on: ubuntu-latest
     outputs:
       package_version: ${{ steps.extract.outputs.version }}
       package_suffix: ${{ steps.extract.outputs.suffix }}
-      run: |
+    steps:
+      - name: Extract version segments
+        id: extract
+        run: |
           VERSION=$(echo "${{ inputs.rocm_package_version }}" | cut -d '.' -f1-3)
           SUFFIX=$(echo "${{ inputs.rocm_package_version }}" | cut -d '.' -f4)
           echo "Base version: $VERSION"
