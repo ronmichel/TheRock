@@ -125,7 +125,7 @@ jobs:
           echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
 
   build_native_linux_rpm_packages:
-    needs: [build_portable_linux_artifacts, parse_rocm_version]
+    needs: [build_portable_linux_artifacts, parse_package_version]
     name: Build RPM Package
     # If the dependent job failed/cancelled, this job will not be run
     # The use_prebuilt_artifacts "or" statement ensures that tests will run if
