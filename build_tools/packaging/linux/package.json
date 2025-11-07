@@ -256,7 +256,8 @@
     ],
     "Artifact": "amd-llvm",
     "Artifact_Subdir": "amd-llvm",
-    "Gfxarch": "False"
+    "Gfxarch": "False",
+    "Disablepackaging": "True"
   },
   {
     "Package": "amd-smi-lib",
@@ -1923,7 +1924,8 @@
     ],
     "Artifact": "amd-llvm",
     "Gfxarch": "False",
-    "Composite": "Yes"
+    "Composite": "Yes",
+    "Disablepackaging": "True"
   },
   {
     "Package": "rocm-hsa-runtime",

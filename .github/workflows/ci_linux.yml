@@ -106,3 +106,42 @@ jobs:
       artifact_run_id: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
       artifact_group: ${{ inputs.artifact_group }}
       package_version: ${{ inputs.rocm_package_version }}
+
+  parse_package_version:
+    needs: [build_portable_linux_artifacts]
+    name: Parse package version
+    outputs:
+      package_version: ${{ steps.extract.outputs.version }}
+      package_suffix: ${{ steps.extract.outputs.suffix }}
+      run: |
+          VERSION=$(echo "${{ inputs.rocm_package_version }}" | cut -d '.' -f1-3)
+          SUFFIX=$(echo "${{ inputs.rocm_package_version }}" | cut -d '.' -f4)
+          echo "Base version: $VERSION"
+          echo "Suffix segment: $SUFFIX"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "suffix=$SUFFIX" >> $GITHUB_OUTPUT
+
+  build_native_linux_rpm_packages:
+    needs: [build_portable_linux_artifacts, parse_rocm_version]
+    name: Build RPM Package
+    # If the dependent job failed/cancelled, this job will not be run
+    # The use_prebuilt_artifacts "or" statement ensures that tests will run if
+    # previous build step is run or skipped.concurrency.
+    if: >-
+      ${{
+        !failure() &&
+        !cancelled() &&
+        (
+          inputs.use_prebuilt_artifacts == 'false' ||
+          inputs.use_prebuilt_artifacts == 'true'
+        ) &&
+        inputs.expect_failure == false
+      }}
+
+    uses: ./.github/workflows/build_native_linux_packages.yml
+    with:
+      artifact_run_id: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
+      artifact_group: ${{ inputs.artifact_group }}
+      rocm_version: ${{ needs.extract-and-call.outputs.version }}
+      package_type: 'rpm'
+      package_suffix: ${{ needs.extract-and-call.outputs.suffix }}

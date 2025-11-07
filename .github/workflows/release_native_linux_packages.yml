@@ -3,8 +3,8 @@ name: Release native Linux Packages
 on:
   workflow_call:
     inputs:
-      amdgpu_family:
-        description: gfx arch for creating the s3 bucket url
+      artifact_group:
+        description: gfx arch group for the s3 bucket
         required: true
         type: string
       artifact_run_id:
@@ -24,7 +24,7 @@ on:
         type: string
   workflow_dispatch:
     inputs:
-      amdgpu_family:
+      artifact_group:
         type: string
         default: gfx94X-dcgpu
       artifact_run_id:
@@ -59,7 +59,7 @@ jobs:
 
     uses: ./.github/workflows/build_native_linux_packages.yml
     with:
-      amdgpu_family: ${{ inputs.amdgpu_family }}
+      artifact_group: ${{ inputs.artifact_group }}
       artifact_run_id: ${{ inputs.artifact_run_id }}
       rocm_version: ${{ inputs.rocm_version }}
       package_type: ${{ inputs.package_type }}

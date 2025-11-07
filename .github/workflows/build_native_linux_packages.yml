@@ -3,8 +3,8 @@ name: Build Native Linux Packages
 on:
   workflow_call:
     inputs:
-      amdgpu_family:
-        description: gfx arch for creating the artifact fetch url
+      artifact_group:
+        description: gfx arch group for creating the artifact fetch url
         required: true
         type: string
       artifact_run_id:
@@ -24,7 +24,7 @@ on:
         type: string
   workflow_dispatch:
     inputs:
-      amdgpu_family:
+      artifact_group:
         type: string
         default: gfx94X-dcgpu
       artifact_run_id:
@@ -88,17 +88,17 @@ jobs:
           python ./build_tools/fetch_artifacts.py \
             --run-id=${{ env.ARTIFACT_RUN_ID }} \
             --run-github-repo="ROCm/TheRock" \
-            --target=${{ inputs.amdgpu_family }} \
+            ----artifact-group=${{ inputs.artifact_group }} \
             --output-dir=${{ env.ARTIFACTS_DIR }}
 
       - name: Build Packages
         id: build-packages
         run: |
-          echo "Building ${{ inputs.package_type }} packages for ${{ inputs.amdgpu_family }} ${{ inputs.artifact_run_id }}"
+          echo "Building ${{ inputs.package_type }} packages for ${{ inputs.artifact_group }} ${{ inputs.artifact_run_id }}"
           python ./build_tools/packaging/linux/build_package.py \
             --dest-dir ${{ env.PACKAGE_DIST_DIR }} \
             --rocm-version  ${{ inputs.rocm_version }} \
-            --target  ${{ inputs.amdgpu_family }} \
+            --target  ${{ inputs.artifact_group }} \
             --artifacts-dir ${{ env.ARTIFACTS_DIR }} \
             --pkg-type ${{ inputs.package_type }} \
             --version-suffix ${{ env.PACKAGE_SUFFIX }}
@@ -119,5 +119,5 @@ jobs:
           python ./build_tools/packaging/linux/upload_package_repo.py \
             --pkg-type ${{ inputs.package_type }} \
             --s3-bucket therock-deb-rpm-test \
-            --amdgpu-family ${{ inputs.amdgpu_family }} \
+            --amdgpu-family ${{ inputs.artifact_group }} \
             --artifact-id ${{ env.ARTIFACT_RUN_ID }}
