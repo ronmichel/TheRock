@@ -39,8 +39,12 @@ def parse_args(argv):
 def main(argv):
     args = parse_args(argv)
     array = collect_wheel_filenames(Path(args.dir))
-    print(json.dumps(array, separators=(",", ",")))
-    gha_append_step_summary("Built wheels", json.dumps(array, separators=(",", ",")))
+    json_array = json.dumps(array, separators=(",", ","))
+    print(json_array)
+
+    summary_text = "Built wheels\n\n" + json_array
+    gha_append_step_summary(summary_text)
+
     return 0
 
 
