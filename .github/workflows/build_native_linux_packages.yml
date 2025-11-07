@@ -88,7 +88,7 @@ jobs:
           python ./build_tools/fetch_artifacts.py \
             --run-id=${{ env.ARTIFACT_RUN_ID }} \
             --run-github-repo="ROCm/TheRock" \
-            ----artifact-group=${{ inputs.artifact_group }} \
+            --artifact-group=${{ inputs.artifact_group }} \
             --output-dir=${{ env.ARTIFACTS_DIR }}
 
       - name: Build Packages
