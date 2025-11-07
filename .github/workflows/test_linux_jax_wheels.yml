@@ -115,16 +115,12 @@ jobs:
       - name: Prepare wheelhouse and download JAX wheels
         shell: bash
         working-directory: jax
-        env:
-          PACKAGE_INDEX_URL: ${{ inputs.package_index_url }}
-          AMDGPU_FAMILY: ${{ inputs.amdgpu_family }}
-          JAX_WHL_LIST: ${{ inputs.jax_whl_list }}
         run: |
           python3 ../build_tools/fetch_wheels.py \
-            --cloudfront_url $PACKAGE_INDEX_URL \
-            --amdgpu_family $AMDGPU_FAMILY \
-            --dir ${{ env.WHEELHOUSE_DIR }} \
-            --list_whls $JAX_WHL_LIST
+            --cloudfront_url ${{ inputs.package_index_url }} \
+            --amdgpu_family ${{ inputs.amdgpu_family }} \
+            --dir "${{ env.WHEELHOUSE_DIR }}" \
+            --list_whls ${{ inputs.jax_whl_list }}
 
       - name: Compute ROCM_VERSION_SHORT
         working-directory: jax
