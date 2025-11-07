@@ -3,7 +3,7 @@ name: Build Native Linux Packages
 on:
   workflow_call:
     inputs:
-      amdgpu_family:
+      artifact_group:
         description: gfx arch for creating the artifact fetch url
         required: true
         type: string
@@ -24,7 +24,7 @@ on:
         type: string
   workflow_dispatch:
     inputs:
-      amdgpu_family:
+      artifact_group:
         type: string
         default: gfx94X-dcgpu
       artifact_run_id:
@@ -88,17 +88,17 @@ jobs:
           python ./build_tools/fetch_artifacts.py \
             --run-id=${{ env.ARTIFACT_RUN_ID }} \
             --run-github-repo="ROCm/TheRock" \
-            --artifact-group=${{ inputs.amdgpu_family }} \
+            --artifact-group=${{ inputs.artifact_group }} \
             --output-dir=${{ env.ARTIFACTS_DIR }}
 
       - name: Build Packages
         id: build-packages
         run: |
-          echo "Building ${{ inputs.package_type }} packages for ${{ inputs.amdgpu_family }} ${{ inputs.artifact_run_id }}"
+          echo "Building ${{ inputs.package_type }} packages for ${{ inputs.artifact_group }} ${{ inputs.artifact_run_id }}"
           python ./build_tools/packaging/linux/build_package.py \
             --dest-dir ${{ env.PACKAGE_DIST_DIR }} \
             --rocm-version  ${{ inputs.rocm_version }} \
-            --target  ${{ inputs.amdgpu_family }} \
+            --target  ${{ inputs.artifact_group }} \
             --artifacts-dir ${{ env.ARTIFACTS_DIR }} \
             --pkg-type ${{ inputs.package_type }} \
             --version-suffix ${{ env.PACKAGE_SUFFIX }}
@@ -114,27 +114,27 @@ jobs:
 
       - name: Install non-composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package-json build_tools/packaging/linux/package.json --composite=false --amdgpu-family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package-json build_tools/packaging/linux/package.json --composite=false --artifact-group ${{ inputs.artifact_group }} --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Install non-composite non-versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package-json build_tools/packaging/linux/package.json --composite=false --amdgpu-family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package-json build_tools/packaging/linux/package.json --composite=false --artifact-group ${{ inputs.artifact_group }} --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Uninstall non-composite packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/uninstaller.py --run-id ${{ env.ARTIFACT_RUN_ID }} --version false --package-json build_tools/packaging/linux/package.json --composite=false --amdgpu-family ${{ inputs.amdgpu_family }} --rocm-version ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/uninstaller.py --run-id ${{ env.ARTIFACT_RUN_ID }} --version false --package-json build_tools/packaging/linux/package.json --composite=false --artifact-group ${{ inputs.artifact_group }} --rocm-version ${{ inputs.rocm_version }}
 
       - name: Install composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package-json build_tools/packaging/linux/package.json --composite=true --amdgpu-family ${{ inputs.amdgpu_family }} --upload pre --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version true --package-json build_tools/packaging/linux/package.json --composite=true --artifact-group ${{ inputs.artifact_group }}  --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Install composite non-versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package-json build_tools/packaging/linux/package.json --composite=true --amdgpu-family ${{ inputs.amdgpu_family }} --upload pre  --rocm-version  ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.PACKAGE_DIST_DIR}} --version false --package-json build_tools/packaging/linux/package.json --composite=true --artifact-group ${{ inputs.artifact_group }}   --rocm-version  ${{ inputs.rocm_version }}
 
       - name: Uninstall composite packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/uninstaller.py --run-id ${{ env.ARTIFACT_RUN_ID }} --version false --package-json build_tools/packaging/linux/package.json --composite=true --amdgpu-family ${{ inputs.amdgpu_family }} --rocm-version ${{ inputs.rocm_version }}
+          python3 ./build_tools/packaging/linux/uninstaller.py --run-id ${{ env.ARTIFACT_RUN_ID }} --version false --package-json build_tools/packaging/linux/package.json --composite=true --artifact-group ${{ inputs.artifact_group }} --rocm-version ${{ inputs.rocm_version }}
 
       - name: Upload Package repo to S3
         id: upload-packages
@@ -143,5 +143,5 @@ jobs:
           python ./build_tools/packaging/linux/upload_package_repo.py \
             --pkg-type ${{ inputs.package_type }} \
             --s3-bucket therock-deb-rpm-test \
-            --amdgpu-family ${{ inputs.amdgpu_family }} \
+            --artifact-group ${{ inputs.artifact_group }} \
             --artifact-id ${{ env.ARTIFACT_RUN_ID }}

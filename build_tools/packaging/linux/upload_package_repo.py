@@ -148,7 +148,7 @@ def main():
     )
     parser.add_argument("--s3-bucket", required=True, help="Target S3 bucket name")
     parser.add_argument(
-        "--amdgpu-family", required=True, help="AMDGPU family identifier (e.g., gfx94X)"
+        "--artifact-group", required=True, help="AMDGPU family identifier (e.g., gfx94X)"
     )
     parser.add_argument(
         "--artifact-id", required=True, help="Unique artifact ID or version tag"
@@ -156,7 +156,7 @@ def main():
     args = parser.parse_args()
 
     package_dir = find_package_dir()
-    s3_prefix = f"{args.amdgpu_family}_{args.artifact_id}/{args.pkg_type}"
+    s3_prefix = f"{args.artifact_group}_{args.artifact_id}/{args.pkg_type}"
 
     if args.pkg_type == "deb":
         create_deb_repo(package_dir, args.s3_bucket)

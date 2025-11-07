@@ -20,14 +20,15 @@ class PackageInstaller(PackageManagerBase):
     Handles package installation.
     """
 
-    def __init__(self, package_list: List[PackageInfo], dest_dir: str, rocm_version: str, version_flag: bool, upload: str, amdgpu_family: str, composite: bool, loader):
+    def __init__(self, package_list: List[PackageInfo], dest_dir: str, run_id: str, rocm_version: str, version_flag: bool, upload: str, artifact_group: str, composite: bool, loader):
         super().__init__(package_list)
         self.dest_dir = dest_dir
+        self.run_id = run_id
         self.rocm_version = rocm_version
         self.composite = composite
         self.version_flag = version_flag
         self.os_family = get_os_id()
-        self.amdgpu_family = amdgpu_family
+        self.artifact_group = artifact_group
         self.upload = upload
         self.loader = loader
 
@@ -40,7 +41,7 @@ class PackageInstaller(PackageManagerBase):
 
 
         if self.upload == "post":
-            self.populate_repo_file(self.dest_dir)
+            self.populate_repo_file(self.run_id)
 
         for pkg in self.packages:
             logger.info(f"[INSTALL] Installing {pkg.package} ({pkg.architecture})")
@@ -122,7 +123,7 @@ class PackageInstaller(PackageManagerBase):
     # ---------------------------------------------------------------------
     # Repo Population
     # ---------------------------------------------------------------------
-    def populate_repo_file(self, dest_dir: str):
+    def populate_repo_file(self, run_id: str):
         """
         Populate a repo file for post-upload installation.
         - Debian: creates /etc/apt/sources.list.d/rocm.list
@@ -131,7 +132,7 @@ class PackageInstaller(PackageManagerBase):
         logger.info(f"Populating repo file for OS: {self.os_family}")
 
         try:
-            base_url = f"https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{self.amdgpu_family}_{dest_dir}"
+            base_url = f"https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{self.artifact_group}_{run_id}"
 
             if self.os_family == "debian":
                 repo_file_path = "/etc/apt/sources.list.d/rocm.list"
@@ -237,13 +238,17 @@ def parse_arguments():
     Parses command-line arguments for the installer.
     """
     parser = argparse.ArgumentParser(description="ROCm Package Installer")
-    parser.add_argument("--dest-dir", required=True, help="Destination directory for installation")
+    #parser.add_argument("--dest-dir", required=True, help="Destination directory for installation")
     parser.add_argument("--version", default="false", help="Enable versioning output (true/false)")
     parser.add_argument("--package-json", required=True, help="Path to package JSON definition file")
     parser.add_argument("--composite", default="false", help="Enable composite build mode (true/false)")
-    parser.add_argument("--amdgpu-family", default="gfx000", help="GPU family identifier")
-    parser.add_argument("--upload", default="none", help="Upload mode (pre/post/none)")
+    parser.add_argument("--artifact-group", default="gfx000", help="GPU family identifier")
     parser.add_argument("--rocm-version", required=True, help="ROCm version to install")
+
+    # Add both as optional
+    parser.add_argument("--dest-dir", help="Destination directory for installation (optional)")
+    parser.add_argument("--run-id", help="Unique identifier for this installation run (optional)")
+
     return parser.parse_args()
 
 
@@ -253,18 +258,29 @@ def main():
     """
     args = parse_arguments()
 
-    loader = PackageLoader(args.package_json, args.rocm_version, args.amdgpu_family)
+    #  Validation: Ensure at least one of them is provided
+    if not args.dest_dir and not args.run_id:
+        parser.error("You must specify at least one of --dest-dir or --run-id")
+
+
+    loader = PackageLoader(args.package_json, args.rocm_version, args.artifact_group)
     #packages = load_packages_from_json(args.package_json)
     packages = loader.load_composite_packages() if args.composite.lower() == "true" else loader.load_non_composite_packages()
 
+    upload = "pre"
+    # You can also normalize or auto-assign dest_dir if run_id is given
+    if args.run_id and not args.dest_dir:
+        upload = "post"
 
+    print("upload=",upload)
     installer = PackageInstaller(
         package_list=packages,
         dest_dir=args.dest_dir,
+        run_id=args.run_id,
         rocm_version=args.rocm_version,
         version_flag=args.version.lower() == "true",
-        upload=args.upload,
-        amdgpu_family=args.amdgpu_family,
+        upload=upload,
+        artifact_group=args.artifact_group,
         composite=(args.composite.lower() == "true"),
         loader = loader
 

@@ -92,7 +92,7 @@ def parse_arguments():
     parser.add_argument("--version", default="false", help="Enable version output (true/false)")
     parser.add_argument("--package-json", required=True, help="Path to package JSON definition file")
     parser.add_argument("--composite", default="false", help="Composite build mode (true/false)")
-    parser.add_argument("--amdgpu-family", default="gfx000", help="GPU family identifier")
+    parser.add_argument("--artifact-group", default="gfx000", help="GPU family identifier")
     parser.add_argument("--rocm-version", required=True, help="ROCm version to uninstall")
     return parser.parse_args()
 
@@ -103,7 +103,7 @@ def main():
     """
     args = parse_arguments()
 
-    loader = PackageLoader(args.package_json, args.rocm_version, args.amdgpu_family)
+    loader = PackageLoader(args.package_json, args.rocm_version, args.artifact_group)
     #packages = load_packages_from_json(args.package_json)
     packages = loader.load_composite_packages() if args.composite.lower() == "true" else loader.load_non_composite_packages()
 

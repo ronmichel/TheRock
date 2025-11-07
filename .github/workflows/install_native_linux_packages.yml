@@ -5,7 +5,7 @@ on:
       - rponnuru_linux_installation
   workflow_call:
     inputs:
-      amdgpu_family:
+      artifact_group:
         description: gfx arch for creating the artifact fetch url
         required: true
         type: string
@@ -28,7 +28,7 @@ on:
         type: string
   workflow_dispatch:
     inputs:
-      amdgpu_family:
+      artifact_group:
         type: string
         default: gfx94X-dcgpu
       artifact_run_id:
@@ -64,7 +64,7 @@ jobs:
     env:
       BUILD_IMAGE: ghcr.io/rocm/therock_build_manylinux_x86_64@sha256:3ac188c17f88f08ce522297b616d8308361b8e9a9b31bcc3c3bbb9429b1efa6c
       ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id || '16418185899' }}
-      AMDGPU_FAMILY: ${{ inputs.amdgpu_family || 'gfx94X-dcgpu' }}
+      ARTIFACT_GROUP: ${{ inputs.artifact_group || 'gfx94X-dcgpu' }}
       ROCM_VERSION: ${{ inputs.rocm_version || '0.0.1' }}
       PACKAGE_SUFFIX: ${{ (inputs.package_suffix || github.event.inputs.package_suffix || 'nightly') }}-${{ inputs.artifact_run_id || github.run_id }}
       OUTPUT_DIR: ${{ github.workspace }}/output
@@ -99,24 +99,24 @@ jobs:
 
       - name: Install non-composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version true --package-json build_tools/packaging/linux/package.json --composite=false --amdgpu-family ${{ env.AMDGPU_FAMILY }} --upload post --rocm-version  ${{ env.ROCM_VERSION }}
+          python3 ./build_tools/packaging/linux/installer.py --run-id ${{ env.ARTIFACT_RUN_ID }}  --version true --package-json build_tools/packaging/linux/package.json --composite=false --artifact-group ${{ env.ARTIFACT_GROUP }}  --rocm-version  ${{ env.ROCM_VERSION }}
 
       - name: Install non-composite non-versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version false --package-json build_tools/packaging/linux/package.json --composite=false --amdgpu-family ${{ env.AMDGPU_FAMILY }} --upload post --rocm-version  ${{ env.ROCM_VERSION }}
+          python3 ./build_tools/packaging/linux/installer.py --run-id ${{ env.ARTIFACT_RUN_ID}} --version false --package-json build_tools/packaging/linux/package.json --composite=false --artifact-group ${{ env.ARTIFACT_GROUP }}  --rocm-version  ${{ env.ROCM_VERSION }}
 
       - name: Uninstall non-composite packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/uninstaller.py --run-id ${{ env.ARTIFACT_RUN_ID }} --version false --package-json build_tools/packaging/linux/package.json --composite=false --amdgpu-family ${{ env.AMDGPU_FAMILY }} --rocm-version ${{ env.ROCM_VERSION }}
+          python3 ./build_tools/packaging/linux/uninstaller.py --run-id ${{ env.ARTIFACT_RUN_ID }} --version false --package-json build_tools/packaging/linux/package.json --composite=false --artifact-group ${{ env.ARTIFACT_GROUP }} --rocm-version ${{ env.ROCM_VERSION }}
 
       - name: Install composite versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version true --package-json build_tools/packaging/linux/package.json --composite=true --amdgpu-family ${{ env.AMDGPU_FAMILY }} --upload post --rocm-version  ${{ env.ROCM_VERSION }}
+          python3 ./build_tools/packaging/linux/installer.py --run-id ${{ env.ARTIFACT_RUN_ID}} --version true --package-json build_tools/packaging/linux/package.json --composite=true --artifact-group ${{ env.ARTIFACT_GROUP }}  --rocm-version  ${{ env.ROCM_VERSION }}
 
       - name: Install composite non-versioned packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/installer.py --dest-dir ${{ env.ARTIFACT_RUN_ID}} --version false --package-json build_tools/packaging/linux/package.json --composite=true --amdgpu-family ${{ env.AMDGPU_FAMILY }} --upload post --rocm-version  ${{ env.ROCM_VERSION }}
+          python3 ./build_tools/packaging/linux/installer.py --run-id ${{ env.ARTIFACT_RUN_ID}} --version false --package-json build_tools/packaging/linux/package.json --composite=true --artifact-group ${{ env.ARTIFACT_GROUP }}  --rocm-version  ${{ env.ROCM_VERSION }}
 
       - name: Uninstall composite packages (Python script)
         run: |
-          python3 ./build_tools/packaging/linux/uninstaller.py --run-id ${{ env.ARTIFACT_RUN_ID }} --version false --package-json build_tools/packaging/linux/package.json --composite=true --amdgpu-family ${{ env.AMDGPU_FAMILY }} --rocm-version ${{ env.ROCM_VERSION }}
+          python3 ./build_tools/packaging/linux/uninstaller.py --run-id ${{ env.ARTIFACT_RUN_ID }} --version false --package-json build_tools/packaging/linux/package.json --composite=true --artifact-group ${{ env.ARTIFACT_GROUP }} --rocm-version ${{ env.ROCM_VERSION }}

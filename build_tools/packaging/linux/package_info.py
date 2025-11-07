@@ -14,7 +14,7 @@ class PackageInfo:
     Encapsulates metadata and dependency relationships.
     """
 
-    def __init__(self, data: Dict[str, Any], rocm_version: str = "", amdgpu_family: str = "" , os_family: str = ""):
+    def __init__(self, data: Dict[str, Any], rocm_version: str = "", artifact_group: str = "" , os_family: str = ""):
         self.package = data.get("Package")
         self.version = data.get("Version", "")
         self.architecture = data.get("Architecture", "amd64")
@@ -38,15 +38,15 @@ class PackageInfo:
 
         # Added new contextual fields
         self.rocm_version = rocm_version
-        self.amdgpu_family = amdgpu_family
-        self.gfx_suffix = self._derive_gfx_suffix(amdgpu_family)
+        self.artifact_group = artifact_group
+        self.gfx_suffix = self._derive_gfx_suffix(artifact_group)
         self.os_family = os_family
 
-    def _derive_gfx_suffix(self, amdgpu_family: str) -> str:
+    def _derive_gfx_suffix(self, artifact_group: str) -> str:
         """Extract gfx suffix like 'gfx94x' from 'gfx94X-dcgpu'."""
-        if not amdgpu_family:
+        if not artifact_group:
             return ""
-        return amdgpu_family.split("-")[0].lower()
+        return artifact_group.split("-")[0].lower()
 
     def is_composite(self) -> bool:
         """Check whether the package is composite (bundles multiple artifacts)."""
@@ -65,12 +65,12 @@ class PackageLoader:
     Handles loading and classifying packages from JSON files.
     """
 
-    def __init__(self, json_path: str, rocm_version: str = "", amdgpu_family: str = ""):
+    def __init__(self, json_path: str, rocm_version: str = "", artifact_group: str = ""):
         self.json_path = Path(json_path)
         if not self.json_path.exists():
             raise FileNotFoundError(f"Package JSON file not found: {json_path}")
         self.rocm_version = rocm_version
-        self.amdgpu_family = amdgpu_family
+        self.artifact_group = artifact_group
         self._data = self._load_json()
         self.os_family = get_os_id()
 
@@ -81,7 +81,7 @@ class PackageLoader:
     def load_all_packages(self) -> List[PackageInfo]:
         """Load all package definitions from the JSON."""
         return [
-            PackageInfo(entry, self.rocm_version, self.amdgpu_family, self.os_family)
+            PackageInfo(entry, self.rocm_version, self.artifact_group, self.os_family)
             for entry in self._data
         ]
 
@@ -159,7 +159,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="ROCm Package Info Loader")
     parser.add_argument("--package_json", required=True, help="Path to package JSON file")
     parser.add_argument("--rocm-version", default="", help="ROCm version string")
-    parser.add_argument("--amdgpu-family", default="", help="AMD GPU family (e.g. gfx94X-dcgpu)")
+    parser.add_argument("--artifact-group", default="", help="AMD GPU family (e.g. gfx94X-dcgpu)")
     parser.add_argument("--composite", default="false", help="Load composite packages only (true/false)")
     parser.add_argument("--version", default="false", help="Include ROCm version in derived name (true/false)")
     args = parser.parse_args()
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     loader = PackageLoader(
         args.package_json,
         rocm_version=args.rocm_version,
-        amdgpu_family=args.amdgpu_family,
+        artifact_group=args.artifact_group,
     )
 
     version_flag = args.version.lower() == "true"
