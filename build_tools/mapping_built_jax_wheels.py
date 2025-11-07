@@ -21,8 +21,6 @@ import json
 import sys
 from pathlib import Path
 from typing import List
-from github_actions.github_actions_utils import gha_append_step_summary
-
 
 def collect_wheel_filenames(directory: Path) -> List[str]:
     if not directory.exists() or not directory.is_dir():
@@ -41,10 +39,6 @@ def main(argv):
     array = collect_wheel_filenames(Path(args.dir))
     json_array = json.dumps(array, separators=(",", ","))
     print(json_array)
-
-    summary_text = "Built wheels\n\n" + json_array
-    gha_append_step_summary(summary_text)
-
     return 0
 
 
