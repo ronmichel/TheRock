@@ -119,7 +119,7 @@ jobs:
           python3 ../build_tools/fetch_wheels.py \
             --cloudfront_url ${{ inputs.package_index_url }} \
             --amdgpu_family ${{ inputs.amdgpu_family }} \
-            --dir "${{ env.WHEELHOUSE_DIR }}" \
+            --dir "wheelhouse" \
             --list_whls '${{ inputs.jax_whl_list }}'
 
       - name: Compute ROCM_VERSION_SHORT
@@ -138,13 +138,15 @@ jobs:
         env:
           ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
-          python3 build/ci_build \
+            python3 build/ci_build \
             --rocm-version="${ROCM_VERSION_SHORT}" \
             --therock-path="${{ inputs.tar_url }}" \
             build_dockers \
             -f ubu24
-          echo "Local images after build:"
-          docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | sort
+            # Assign JAX_IMAGE to the expected image name produced by the build script
+            JAX_IMAGE="jax-ubu24.rocm$(echo "${ROCM_VERSION_SHORT}" | tr -d '.'):latest"
+            echo "JAX_IMAGE=${JAX_IMAGE}" >> "$GITHUB_ENV"
+            echo "Built JAX Docker image: ${JAX_IMAGE}"
 
       - name: Checkout JAX tests repo (for extended tests)
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -158,8 +160,10 @@ jobs:
         env:
           ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
-          IMAGE_NAME="jax-ubu24.rocm$(echo "${ROCM_VERSION_SHORT}" | tr -d '.')"
-          echo "Running CPU-only tests in image: ${IMAGE_NAME}"
-          python3 build/ci_build test \
-            "${IMAGE_NAME}" \
-            --test-cmd "pytest -c ci/pytest_skips.ini jax_tests/tests/core_test.py"
+            # Run the tests and capture output
+            CORETEST_OUTPUT=$(python3 build/ci_build test \
+            "${JAX_IMAGE}" \
+            --test-cmd "pytest jax_tests/tests/core_test.py" 2>&1)
+            echo "$CORETEST_OUTPUT" > coretest_output.txt
+            cat coretest_output.txt >> $GITHUB_STEP_SUMMARY
+

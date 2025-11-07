@@ -21,6 +21,7 @@ import json
 import sys
 from pathlib import Path
 from typing import List
+from gha_append
 
 def collect_wheel_filenames(directory: Path) -> List[str]:
     if not directory.exists() or not directory.is_dir():

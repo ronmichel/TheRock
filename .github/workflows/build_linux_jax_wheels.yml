@@ -153,6 +153,7 @@ jobs:
         run: |
           export jax_whl_list="$(python3 ./build_tools/mapping_built_jax_wheels.py --dir "${{ env.PACKAGE_DIST_DIR }}")"
           echo "jax_whl_list=${jax_whl_list}" >> "$GITHUB_OUTPUT"
+          echo "${jax_whl_list}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload wheels to S3
         if: ${{ github.repository_owner == 'ROCm' }}
