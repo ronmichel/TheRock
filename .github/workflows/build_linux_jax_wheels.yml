@@ -66,6 +66,9 @@ jobs:
   build_jax_wheels:
     strategy:
       matrix:
+        # TODO: Switch back to rocm-jaxlib-v0.7.1 branch after PR #171 is merged
+        # PR: https://github.com/ROCm/rocm-jax/pull/171
+        # Currently using feature branch for testing retag functionality
         jax_ref: [subodube/the-rock-jax-rocm-retag] #[rocm-jaxlib-v0.7.1]
     name: Build Linux JAX Wheels | ${{ inputs.amdgpu_family }} | Python ${{ inputs.python_version }}
     runs-on: ${{ github.repository_owner == 'ROCm' && 'azure-linux-scale-rocm' || 'ubuntu-24.04' }}
@@ -117,13 +120,6 @@ jobs:
         with:
           aws-region: us-east-2
           role-to-assume: arn:aws:iam::692859939525:role/therock-${{ inputs.release_type }}-releases
-
-      # - name: Retagging JAX wheels with ROCm version
-      #   if: ${{ github.repository_owner == 'ROCm' }}
-      #   run: |
-      #     python3 ./build_tools/update_rocm_tag_wheels.py \
-      #       ${{ env.PACKAGE_DIST_DIR }} \
-      #       ${{ inputs.rocm_version }}
 
       - name: Upload wheels to S3
         if: ${{ github.repository_owner == 'ROCm' }}
