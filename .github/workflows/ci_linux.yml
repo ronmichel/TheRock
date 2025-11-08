@@ -145,9 +145,9 @@ jobs:
     with:
       artifact_run_id: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
       artifact_group: ${{ inputs.artifact_group }}
-      rocm_version: ${{ needs.parse_package_version.outputs.version }}
+      rocm_version: ${{ needs.parse_package_version.outputs.package_version }}
       package_type: 'rpm'
-      package_suffix: ${{ needs.parse_package_version.outputs.suffix }}
+      package_suffix: ${{ needs.parse_package_version.outputs.package_suffix }}
     permissions:
       contents: read
       id-token: write
