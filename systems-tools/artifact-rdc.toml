@@ -3,6 +3,7 @@
 include = [
   "include/**",
   "lib/cmake/**",
+  "lib/rdc/grpc/**", 
 ]
 [components.doc."systems-tools/stage"]
 include = [
@@ -11,7 +12,7 @@ include = [
 [components.lib."systems-tools/stage"]
 include = [
   "lib/*.so*",
-  "lib/rdc/**",
+  "lib/rdc/*.so*",
 ]
 [components.run."systems-tools/stage"]
 include = [
