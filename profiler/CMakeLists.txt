@@ -129,14 +129,14 @@ if(THEROCK_ENABLE_ROCPROFV3)
   ##############################################################################
 
   if(THEROCK_ENABLE_RDC)
-    # Note: RUNTIME_DEPS includes ${THEROCK_BUNDLED_GRPC} which ensures:
+    # RDC depends on gRPC for both runtime (libgrpc++.so) and build-time (protoc, grpc_cpp_plugin).
+    # RUNTIME_DEPS includes ${THEROCK_BUNDLED_GRPC} which ensures:
     # 1. gRPC is built before RDC
     # 2. CMAKE_PREFIX_PATH includes gRPC's stage directory
     # 3. find_package(gRPC) and find_package(protobuf) will find the config files
+    # 4. gRPCConfig.cmake exports tool targets (gRPC::grpc_cpp_plugin, protobuf::protoc)
     #
-    # CMAKE_PROGRAM_PATH is kept temporarily to help find protoc and grpc_cpp_plugin
-    # TODO: Test if this can be removed once gRPCConfig.cmake is verified to export tool paths correctly
-    set(_grpc_build_path "${THEROCK_BINARY_DIR}/third-party/sysdeps/linux/grpc/build/stage/lib/rocm_sysdeps")
+    # No hardcoded paths needed - all dependencies are resolved via CMake's standard mechanisms.
 
     therock_cmake_subproject_declare(rdc
       EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/rdc"
@@ -151,9 +151,6 @@ if(THEROCK_ENABLE_ROCPROFV3)
         -DBUILD_TESTS=ON
         -DHIP_PLATFORM=amd
         -DCMAKE_CXX_STANDARD=17
-        # Help CMake find protoc and grpc_cpp_plugin executables
-        # These are build-time tools needed to generate code from .proto files
-        "-DCMAKE_PROGRAM_PATH=${_grpc_build_path}/bin"
 
       BUILD_DEPS
         amd-llvm
