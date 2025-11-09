@@ -129,9 +129,13 @@ if(THEROCK_ENABLE_ROCPROFV3)
   ##############################################################################
 
   if(THEROCK_ENABLE_RDC)
-    # Point GRPC_ROOT to the actual gRPC build location
-    # RDC's CMakeLists.txt will try to install gRPC from this location,
-    # and TheRock will also merge it via RUNTIME_DEPS
+    # Note: RUNTIME_DEPS includes ${THEROCK_BUNDLED_GRPC} which ensures:
+    # 1. gRPC is built before RDC
+    # 2. CMAKE_PREFIX_PATH includes gRPC's stage directory
+    # 3. find_package(gRPC) and find_package(protobuf) will find the config files
+    #
+    # CMAKE_PROGRAM_PATH is kept temporarily to help find protoc and grpc_cpp_plugin
+    # TODO: Test if this can be removed once gRPCConfig.cmake is verified to export tool paths correctly
     set(_grpc_build_path "${THEROCK_BINARY_DIR}/third-party/sysdeps/linux/grpc/build/stage/lib/rocm_sysdeps")
 
     therock_cmake_subproject_declare(rdc
@@ -147,11 +151,8 @@ if(THEROCK_ENABLE_ROCPROFV3)
         -DBUILD_TESTS=ON
         -DHIP_PLATFORM=amd
         -DCMAKE_CXX_STANDARD=17
-        # Pass gRPC installation directory - point to actual gRPC build location
-        # RDC will install gRPC files, and TheRock will also merge them (duplicates are ok)
-        "-DGRPC_ROOT=${_grpc_build_path}"
-        -DGRPC_DESIRED_VERSION=1.76.0
-        # Add gRPC bin directory to program search path for protoc and grpc_cpp_plugin
+        # Help CMake find protoc and grpc_cpp_plugin executables
+        # These are build-time tools needed to generate code from .proto files
         "-DCMAKE_PROGRAM_PATH=${_grpc_build_path}/bin"
 
       BUILD_DEPS
