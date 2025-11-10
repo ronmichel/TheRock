@@ -32,6 +32,7 @@ on:
       ref:
         description: "Branch, tag or SHA to checkout. Defaults to the reference or SHA that triggered the workflow."
         type: string
+
   workflow_dispatch:
     inputs:
       amdgpu_family:
@@ -74,14 +75,67 @@ on:
         description: "Branch, tag or SHA to checkout. Defaults to the reference or SHA that triggered the workflow."
         type: string
         default: ''
+  # Trigger on a schedule to build nightly release candidates.
+  schedule:
+    # Runs at 04:00 AM UTC, which is 8:00 PM PST (UTC-8)
+    - cron: '0 04 * * *'
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
+  # ============================================================
+  # Resolve frozen PyTorch commits
+  #
+  # This job determines the exact SHAs for torch, audio, and vision
+  # to ensure that all downstream build workflows run deterministically
+  # with the same source versions. These commits are later passed
+  # as inputs to the build_windows_pytorch_wheels.yml workflow.
+  # ============================================================
+  resolve_pytorch_commits:
+    name: Resolve frozen PyTorch commits
+    runs-on: ubuntu-24.04
+    outputs:
+      torch_commit: ${{ steps.resolve.outputs.torch_commit }}
+      audio_commit: ${{ steps.resolve.outputs.audio_commit }}
+      vision_commit: ${{ steps.resolve.outputs.vision_commit }}
+    steps:
+      - name: Resolve current HEAD commits for PyTorch repos
+        id: resolve
+        run: |
+          echo "Resolving latest commit SHAs for PyTorch repositories..."
+
+          TORCH_COMMIT=$(git ls-remote https://github.com/pytorch/pytorch.git HEAD | cut -f1)
+          AUDIO_COMMIT=$(git ls-remote https://github.com/pytorch/audio.git HEAD | cut -f1)
+          VISION_COMMIT=$(git ls-remote https://github.com/pytorch/vision.git HEAD | cut -f1)
+
+          echo "Torch commit:  $TORCH_COMMIT"
+          echo "Audio commit:  $AUDIO_COMMIT"
+          echo "Vision commit: $VISION_COMMIT"
+
+          echo "torch_commit=$TORCH_COMMIT" >> $GITHUB_OUTPUT
+          echo "audio_commit=$AUDIO_COMMIT" >> $GITHUB_OUTPUT
+          echo "vision_commit=$VISION_COMMIT" >> $GITHUB_OUTPUT
+
+      - name: Save frozen commit snapshot
+        run: |
+          echo '{"torch_commit":"'"${{ steps.resolve.outputs.torch_commit }}"'","audio_commit":"'"${{ steps.resolve.outputs.audio_commit }}"'","vision_commit":"'"${{ steps.resolve.outputs.vision_commit }}"'"}' > frozen_commits.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frozen_commits
+          path: frozen_commits.json
+
+  # ============================================================
+  # Matrix build and release for each Python & PyTorch version
+  #
+  # Each matrix entry calls build_windows_pytorch_wheels.yml, passing
+  # the frozen commits from the previous job. This ensures reproducible
+  # and deterministic builds across re-runs.
+  # ============================================================
   release:
     name: Release | ${{ inputs.amdgpu_family }} | py ${{ matrix.python_version }} | torch ${{ matrix.pytorch_version }}
+    needs: [resolve_pytorch_commits]
     strategy:
       fail-fast: false
       matrix:
@@ -106,3 +160,7 @@ jobs:
       pytorch_version: ${{ matrix.pytorch_version }}
       pytorch_patchset: ${{ matrix.pytorch_patchset }}
       ref: ${{ inputs.ref || '' }}
+      # Pass frozen commits downstream for deterministic checkouts
+      torch_commit: ${{ needs.resolve_pytorch_commits.outputs.torch_commit }}
+      audio_commit: ${{ needs.resolve_pytorch_commits.outputs.audio_commit }}
+      vision_commit: ${{ needs.resolve_pytorch_commits.outputs.vision_commit }}

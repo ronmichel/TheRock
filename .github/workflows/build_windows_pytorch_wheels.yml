@@ -46,6 +46,23 @@ on:
       ref:
         description: "Branch, tag or SHA to checkout. Defaults to the reference or SHA that triggered the workflow."
         type: string
+
+      # NEW INPUTS: Frozen commits passed from root workflow
+      # These SHAs are resolved by the root workflow and
+      # ensure reproducible child re-runs with the same source versions.
+      torch_commit:
+        description: Frozen PyTorch commit SHA
+        required: false
+        type: string
+      audio_commit:
+        description: Frozen torchaudio commit SHA
+        required: false
+        type: string
+      vision_commit:
+        description: Frozen torchvision commit SHA
+        required: false
+        type: string
+
   workflow_dispatch:
     inputs:
       amdgpu_family:
@@ -110,6 +127,7 @@ jobs:
     env:
       CHECKOUT_ROOT: B:/src
       OUTPUT_DIR: ${{ github.workspace }}/output
+      # Note the \ here instead of /. This should be used from 'cmd' not 'bash'!
       PACKAGE_DIST_DIR: ${{ github.workspace }}\output\packages\dist
       S3_BUCKET_PY: "therock-${{ inputs.release_type }}-python"
       optional_build_prod_arguments: ""
@@ -121,8 +139,8 @@ jobs:
 
     defaults:
       run:
+        # Note: there are mixed uses of 'bash' (this default) and 'cmd' below
         shell: bash
-
     steps:
       - name: Checkout
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -144,55 +162,51 @@ jobs:
           python build_tools/github_actions/python_to_cp_version.py \
             --python-version ${{ inputs.python_version }}
 
+      # TODO(amd-justchen): share with build_windows_artifacts.yml. Include in VM image? Dockerfile?
       - name: Install requirements
         run: |
           choco install --no-progress -y ninja --version 1.13.1
           choco install --no-progress -y awscli
           echo "$PATH;C:\Program Files\Amazon\AWSCLIV2" >> $GITHUB_PATH
 
+      # After other installs, so MSVC get priority in the PATH.
       - name: Configure MSVC
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
-      # =========================================================================
-      # CHECKOUT LOGIC — USING FROZEN COMMITS FOR REPRODUCIBLE RE-RUNS
+      # -------------------------------------------------------------------------
+      # 🔒 Checkout frozen PyTorch source repos using resolved commit SHAs
       #
-      # This workflow intentionally breaks the dependency link between parent
-      # ("schedule") and child workflows. Instead of following a dynamic branch
-      # (like "main" or "release/X.Y"), we use frozen commit hashes captured
-      # earlier by the scheduler. This allows child workflows to be re-run
-      # independently while preserving the same repository state.
-      #
-      # Each repo is checked out using:
-      #   --repo-hashtag EXACT_COMMIT
-      #   --patchset main
-      #
-      # The torch, torchaudio, and torchvision repos will all sync to the
-      # same frozen commits determined during the scheduling phase.
-      # =========================================================================
+      # This workflow intentionally breaks linkage to the parent/scheduler so
+      # that re-runs remain deterministic. The root workflow passes down
+      # specific SHA values for torch/audio/vision (frozen commits).
+      # -------------------------------------------------------------------------
       - name: Checkout PyTorch source repos (frozen commits)
         run: |
           git config --global core.longpaths true
-          echo "Checking out PyTorch repos using frozen commit hashes..."
+          echo "Checking out PyTorch repos using frozen commit SHAs..."
+          echo "Torch commit:  ${{ inputs.torch_commit }}"
+          echo "Audio commit:  ${{ inputs.audio_commit }}"
+          echo "Vision commit: ${{ inputs.vision_commit }}"
 
           python ./external-builds/pytorch/pytorch_torch_repo.py checkout \
             --checkout-dir ${{ env.CHECKOUT_ROOT }}/torch \
-            --repo-hashtag EXACT_COMMIT \
+            --repo-hashtag ${{ inputs.torch_commit }} \
             --patchset main
 
           python ./external-builds/pytorch/pytorch_audio_repo.py checkout \
             --checkout-dir ${{ env.CHECKOUT_ROOT }}/audio \
-            --repo-hashtag EXACT_COMMIT \
+            --repo-hashtag ${{ inputs.audio_commit }} \
             --patchset main \
             --torch-dir ${{ env.CHECKOUT_ROOT }}/torch \
             --require-related-commit
 
           python ./external-builds/pytorch/pytorch_vision_repo.py checkout \
             --checkout-dir ${{ env.CHECKOUT_ROOT }}/vision \
-            --repo-hashtag EXACT_COMMIT \
+            --repo-hashtag ${{ inputs.vision_commit }} \
             --patchset main \
             --torch-dir ${{ env.CHECKOUT_ROOT }}/torch \
             --require-related-commit
-      # =========================================================================
+      # -------------------------------------------------------------------------
 
       - name: Determine optional arguments passed to `build_prod_wheels.py`
         if: ${{ inputs.rocm_version }}
@@ -203,6 +217,8 @@ jobs:
 
       - name: Build PyTorch Wheels
         id: build-pytorch-wheels
+        # Using 'cmd' here is load bearing! There are configuration issues when
+        # run under 'bash': https://github.com/ROCm/TheRock/issues/827#issuecomment-3025858800
         shell: cmd
         run: |
           echo "Building PyTorch wheels for ${{ inputs.amdgpu_family }}"
@@ -233,6 +249,7 @@ jobs:
 
       - name: Upload wheels to S3 staging
         if: ${{ github.repository_owner == 'ROCm' }}
+        # Using 'cmd' here since PACKAGE_DIST_DIR uses \ in paths instead of /
         shell: cmd
         run: |
           aws s3 cp ${{ env.PACKAGE_DIST_DIR }}/ ^
@@ -242,6 +259,7 @@ jobs:
       - name: (Re-)Generate Python package release index for staging
         if: ${{ github.repository_owner == 'ROCm' }}
         env:
+          # Environment variables to be set for `manage.py`
           CUSTOM_PREFIX: "${{ inputs.s3_staging_subdir }}/${{ inputs.amdgpu_family }}"
         shell: cmd
         run: |
@@ -312,7 +330,7 @@ jobs:
         env:
           BUILD_RESULT: ${{ needs.build_pytorch_wheels.result }}
           TEST_RESULT: ${{ needs.test_pytorch_wheels.result }}
-          TEST_RUNS_ON: ${{ needs.generate_target_to_run.outputs.test_runs-on }}
+          TEST_RUNS_ON: ${{ needs.generate_target_to_run.outputs.test_runs_on }}
           BYPASS_TESTS_FOR_RELEASES: ${{ needs.generate_target_to_run.outputs.bypass_tests_for_releases }}
         run: python ./build_tools/github_actions/promote_wheels_based_on_policy.py
 
@@ -332,6 +350,7 @@ jobs:
       - name: (Re-)Generate Python package release index
         if: ${{ env.upload == 'true' }}
         env:
+          # Environment variables to be set for `manage.py`
           CUSTOM_PREFIX: "${{ inputs.s3_subdir }}/${{ inputs.amdgpu_family }}"
         run: |
           pip install boto3 packaging
