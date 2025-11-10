@@ -96,7 +96,6 @@ jobs:
       - name: Build JAX Wheels
         env:
           ROCM_VERSION: ${{ inputs.rocm_version }}
-          ROCM_TAG: ${{ inputs.rocm_version }}
         run: |
           ls -lah
           pushd jax
@@ -105,7 +104,6 @@ jobs:
             --python-versions="${{ inputs.python_versions }}" \
             --rocm-version="${ROCM_VERSION}" \
             --therock-path="${{ inputs.tar_url }}" \
-            --retag-wheels-from-dir="${{ env.PACKAGE_DIST_DIR }}" \
             dist_wheels
 
       - name: Install AWS CLI
