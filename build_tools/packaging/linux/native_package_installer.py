@@ -19,7 +19,18 @@ class PackageInstaller(PackageManagerBase):
     Handles package installation.
     """
 
-    def __init__(self, package_list: List[PackageInfo], dest_dir: str, run_id: str, rocm_version: str, version_flag: bool, upload: str, artifact_group: str, composite: bool, loader):
+    def __init__(
+        self,
+        package_list: List[PackageInfo],
+        dest_dir: str,
+        run_id: str,
+        rocm_version: str,
+        version_flag: bool,
+        upload: str,
+        artifact_group: str,
+        composite: bool,
+        loader,
+    ):
         super().__init__(package_list)
         self.dest_dir = dest_dir
         self.run_id = run_id
@@ -31,13 +42,11 @@ class PackageInstaller(PackageManagerBase):
         self.upload = upload
         self.loader = loader
 
-
     def execute(self):
         logger.info(f"\n=== INSTALLATION PHASE ===")
         logger.info(f"Destination Directory: {self.dest_dir}")
         logger.info(f"ROCm Version: {self.rocm_version}")
         logger.info(f"Composite Build: {self.composite}")
-
 
         if self.upload == "post":
             self.populate_repo_file(self.run_id)
@@ -48,7 +57,6 @@ class PackageInstaller(PackageManagerBase):
 
         logger.info("Installation complete.")
 
-
     def _run_install_command(self, pkg_name, use_repo):
         """
         Build and run OS-specific install command for a package.
@@ -57,7 +65,6 @@ class PackageInstaller(PackageManagerBase):
         :param pkg_path: Full path for local install (required for local)
         :param use_repo: True if installing from repository, else False
         """
-
 
         try:
             if not pkg_name:
@@ -173,7 +180,6 @@ class PackageInstaller(PackageManagerBase):
             logger.error(f"Error populating repo file: {e}")
             raise
 
-
     def find_packages_for_base(self, dest_dir, derived_name):
         """
         Look up packages in local directory or return derived name for repo installation.
@@ -190,9 +196,7 @@ class PackageInstaller(PackageManagerBase):
             pattern = rf"^{re.escape(derived_name)}[_-]{re.escape(self.rocm_version)}[^\s]*\.(deb|rpm)$"
 
             matched = [
-                os.path.join(dest_dir, f)
-                for f in all_files
-                if re.match(pattern, f)
+                os.path.join(dest_dir, f) for f in all_files if re.match(pattern, f)
             ]
             if matched:
                 return matched
@@ -204,22 +208,23 @@ class PackageInstaller(PackageManagerBase):
         # Handle dependencies
 
         if self.version_flag:
-            derived_name = self.loader.derive_package_names(pkg,True)
+            derived_name = self.loader.derive_package_names(pkg, True)
             derived_pkgs.extend(derived_name)
         else:
-            derived_name = self.loader.derive_package_names(pkg,True)
+            derived_name = self.loader.derive_package_names(pkg, True)
             derived_pkgs.extend(derived_name)
-            derived_name = self.loader.derive_package_names(pkg,False)
+            derived_name = self.loader.derive_package_names(pkg, False)
             derived_pkgs.extend(derived_name)
 
         for pkg_name in derived_pkgs:
             if self.upload == "pre":
-                derived_name = self.find_packages_for_base(self.dest_dir,pkg_name)
+                derived_name = self.find_packages_for_base(self.dest_dir, pkg_name)
                 if derived_name:
                     for derived_pkg in derived_name:
                         self._run_install_command(derived_pkg, True)
             elif self.upload == "post":
                 self._run_install_command(pkg_name, True)
+
 
 def load_packages_from_json(json_path: str) -> List[PackageInfo]:
     """
@@ -240,16 +245,28 @@ def parse_arguments():
     Parses command-line arguments for the installer.
     """
     parser = argparse.ArgumentParser(description="ROCm Package Installer")
-    #parser.add_argument("--dest-dir", required=True, help="Destination directory for installation")
-    parser.add_argument("--version", default="false", help="Enable versioning output (true/false)")
-    parser.add_argument("--package-json", required=True, help="Path to package JSON definition file")
-    parser.add_argument("--composite", default="false", help="Enable composite build mode (true/false)")
-    parser.add_argument("--artifact-group", default="gfx000", help="GPU family identifier")
+    # parser.add_argument("--dest-dir", required=True, help="Destination directory for installation")
+    parser.add_argument(
+        "--version", default="false", help="Enable versioning output (true/false)"
+    )
+    parser.add_argument(
+        "--package-json", required=True, help="Path to package JSON definition file"
+    )
+    parser.add_argument(
+        "--composite", default="false", help="Enable composite build mode (true/false)"
+    )
+    parser.add_argument(
+        "--artifact-group", default="gfx000", help="GPU family identifier"
+    )
     parser.add_argument("--rocm-version", required=True, help="ROCm version to install")
 
     # Add both as optional
-    parser.add_argument("--dest-dir", help="Destination directory for installation (optional)")
-    parser.add_argument("--run-id", help="Unique identifier for this installation run (optional)")
+    parser.add_argument(
+        "--dest-dir", help="Destination directory for installation (optional)"
+    )
+    parser.add_argument(
+        "--run-id", help="Unique identifier for this installation run (optional)"
+    )
 
     return parser.parse_args()
 
@@ -264,17 +281,20 @@ def main():
     if not args.dest_dir and not args.run_id:
         parser.error("You must specify at least one of --dest-dir or --run-id")
 
-
     loader = PackageLoader(args.package_json, args.rocm_version, args.artifact_group)
-    #packages = load_packages_from_json(args.package_json)
-    packages = loader.load_composite_packages() if args.composite.lower() == "true" else loader.load_non_composite_packages()
+    # packages = load_packages_from_json(args.package_json)
+    packages = (
+        loader.load_composite_packages()
+        if args.composite.lower() == "true"
+        else loader.load_non_composite_packages()
+    )
 
     upload = "pre"
     # You can also normalize or auto-assign dest_dir if run_id is given
     if args.run_id and not args.dest_dir:
         upload = "post"
 
-    print("upload=",upload)
+    print("upload=", upload)
     installer = PackageInstaller(
         package_list=packages,
         dest_dir=args.dest_dir,
@@ -284,8 +304,7 @@ def main():
         upload=upload,
         artifact_group=args.artifact_group,
         composite=(args.composite.lower() == "true"),
-        loader = loader
-
+        loader=loader,
     )
 
     installer.execute()
@@ -293,4 +312,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

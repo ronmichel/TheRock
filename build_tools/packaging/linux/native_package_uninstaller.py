@@ -11,19 +11,25 @@ from packaging_utils import *
 import subprocess
 
 
-
 class PackageUninstaller(PackageManagerBase):
     """
     Handles package uninstallation.
     """
-    def __init__(self, package_list: List[PackageInfo], rocm_version: str, composite: bool, run_id: str, loader):
+
+    def __init__(
+        self,
+        package_list: List[PackageInfo],
+        rocm_version: str,
+        composite: bool,
+        run_id: str,
+        loader,
+    ):
         super().__init__(package_list)
         self.rocm_version = rocm_version
         self.composite = composite
         self.run_id = run_id
         self.loader = loader
         self.os_family = get_os_id()
-
 
     def execute(self):
         logger.info(f"\n=== UNINSTALLATION PHASE ===")
@@ -36,7 +42,7 @@ class PackageUninstaller(PackageManagerBase):
             for pkg in reversed(self.packages):
                 logger.info(f"[REMOVE] Uninstalling {pkg.package}")
                 if pkg:
-                    derived_name = self.loader.derive_package_names(pkg,True)
+                    derived_name = self.loader.derive_package_names(pkg, True)
                 if derived_name:
                     for derived_pkg in derived_name:
                         self._run_uninstall_command(derived_pkg)
@@ -48,7 +54,6 @@ class PackageUninstaller(PackageManagerBase):
                     for derived_pkg in derived_name:
                         self._run_uninstall_command(derived_pkg)
         logger.info(" Uninstallation complete.")
-
 
     def _run_uninstall_command(self, pkg_name):
         """
@@ -82,17 +87,30 @@ class PackageUninstaller(PackageManagerBase):
         except Exception as e:
             logger.exception(f"Exception uninstalling {pkg_name}: {e}")
 
+
 def parse_arguments():
     """
     Parses command-line arguments for the uninstaller.
     """
     parser = argparse.ArgumentParser(description="ROCm Package Uninstaller")
-    parser.add_argument("--run-id", required=True, help="Unique identifier for this uninstall run")
-    parser.add_argument("--version", default="false", help="Enable version output (true/false)")
-    parser.add_argument("--package-json", required=True, help="Path to package JSON definition file")
-    parser.add_argument("--composite", default="false", help="Composite build mode (true/false)")
-    parser.add_argument("--artifact-group", default="gfx000", help="GPU family identifier")
-    parser.add_argument("--rocm-version", required=True, help="ROCm version to uninstall")
+    parser.add_argument(
+        "--run-id", required=True, help="Unique identifier for this uninstall run"
+    )
+    parser.add_argument(
+        "--version", default="false", help="Enable version output (true/false)"
+    )
+    parser.add_argument(
+        "--package-json", required=True, help="Path to package JSON definition file"
+    )
+    parser.add_argument(
+        "--composite", default="false", help="Composite build mode (true/false)"
+    )
+    parser.add_argument(
+        "--artifact-group", default="gfx000", help="GPU family identifier"
+    )
+    parser.add_argument(
+        "--rocm-version", required=True, help="ROCm version to uninstall"
+    )
     return parser.parse_args()
 
 
@@ -103,16 +121,19 @@ def main():
     args = parse_arguments()
 
     loader = PackageLoader(args.package_json, args.rocm_version, args.artifact_group)
-    #packages = load_packages_from_json(args.package_json)
-    packages = loader.load_composite_packages() if args.composite.lower() == "true" else loader.load_non_composite_packages()
-
+    # packages = load_packages_from_json(args.package_json)
+    packages = (
+        loader.load_composite_packages()
+        if args.composite.lower() == "true"
+        else loader.load_non_composite_packages()
+    )
 
     uninstaller = PackageUninstaller(
         package_list=packages,
         rocm_version=args.rocm_version,
         composite=(args.composite.lower() == "true"),
         run_id=args.run_id,
-        loader=loader
+        loader=loader,
     )
 
     uninstaller.execute()
@@ -120,4 +141,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

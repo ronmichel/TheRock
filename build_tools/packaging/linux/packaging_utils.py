@@ -56,6 +56,7 @@ def get_os_id(os_release_path="/etc/os-release"):
     else:
         return "unknown"
 
+
 def print_function_name():
     """Print the name of the calling function.
 

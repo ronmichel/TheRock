@@ -13,7 +13,13 @@ class PackageInfo:
     Encapsulates metadata and dependency relationships.
     """
 
-    def __init__(self, data: Dict[str, Any], rocm_version: str = "", artifact_group: str = "" , os_family: str = ""):
+    def __init__(
+        self,
+        data: Dict[str, Any],
+        rocm_version: str = "",
+        artifact_group: str = "",
+        os_family: str = "",
+    ):
         self.package = data.get("Package")
         self.version = data.get("Version", "")
         self.architecture = data.get("Architecture", "amd64")
@@ -51,12 +57,8 @@ class PackageInfo:
         """Check whether the package is composite (bundles multiple artifacts)."""
         return str(self.composite).strip().lower() == "yes"
 
-
-
-
     def summary(self) -> str:
         return f"{self.package} ({self.version}) - {self.description_short}"
-
 
 
 class PackageLoader:
@@ -64,7 +66,9 @@ class PackageLoader:
     Handles loading and classifying packages from JSON files.
     """
 
-    def __init__(self, json_path: str, rocm_version: str = "", artifact_group: str = ""):
+    def __init__(
+        self, json_path: str, rocm_version: str = "", artifact_group: str = ""
+    ):
         self.json_path = Path(json_path)
         if not self.json_path.exists():
             raise FileNotFoundError(f"Package JSON file not found: {json_path}")
@@ -116,7 +120,7 @@ class PackageLoader:
         valid_deps = [dep for dep in deps if dep in all_pkg_names]
 
         # Combine current package + valid deps
-        pkgs_to_process = valid_deps + [pkg.package] 
+        pkgs_to_process = valid_deps + [pkg.package]
 
         sorted_pacakges = []
         derived_packages = []
@@ -128,11 +132,17 @@ class PackageLoader:
                 continue
 
             if base_pkg.os_family == "debian":
-                base = re.sub("-devel$", "-dev", base) 
+                base = re.sub("-devel$", "-dev", base)
             # Determine name with version / gfx suffix
-            if base_pkg.gfxarch and "devel" not in base.lower() and "dev" not in base.lower():
+            if (
+                base_pkg.gfxarch
+                and "devel" not in base.lower()
+                and "dev" not in base.lower()
+            ):
                 if version_flag:
-                    derived_packages.append(f"{base}{base_pkg.rocm_version}-{base_pkg.gfx_suffix}")
+                    derived_packages.append(
+                        f"{base}{base_pkg.rocm_version}-{base_pkg.gfx_suffix}"
+                    )
                 else:
                     derived_packages.append(f"{base}-{base_pkg.gfx_suffix}")
             elif version_flag:
@@ -143,12 +153,13 @@ class PackageLoader:
         import itertools
 
         # Normalize each item to list
-        flattened = list(itertools.chain.from_iterable(
-            sublist if isinstance(sublist, list) else [sublist]
-            for sublist in derived_packages
-        ))
+        flattened = list(
+            itertools.chain.from_iterable(
+                sublist if isinstance(sublist, list) else [sublist]
+                for sublist in derived_packages
+            )
+        )
         return flattened
-
 
 
 if __name__ == "__main__":
@@ -156,11 +167,21 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="ROCm Package Info Loader")
-    parser.add_argument("--package_json", required=True, help="Path to package JSON file")
+    parser.add_argument(
+        "--package_json", required=True, help="Path to package JSON file"
+    )
     parser.add_argument("--rocm-version", default="", help="ROCm version string")
-    parser.add_argument("--artifact-group", default="", help="AMD GPU family (e.g. gfx94X-dcgpu)")
-    parser.add_argument("--composite", default="false", help="Load composite packages only (true/false)")
-    parser.add_argument("--version", default="false", help="Include ROCm version in derived name (true/false)")
+    parser.add_argument(
+        "--artifact-group", default="", help="AMD GPU family (e.g. gfx94X-dcgpu)"
+    )
+    parser.add_argument(
+        "--composite", default="false", help="Load composite packages only (true/false)"
+    )
+    parser.add_argument(
+        "--version",
+        default="false",
+        help="Include ROCm version in derived name (true/false)",
+    )
     args = parser.parse_args()
 
     loader = PackageLoader(
@@ -177,4 +198,3 @@ if __name__ == "__main__":
     else:
         packages = loader.load_non_composite_packages()
         logger.info(f"Loaded {len(packages)} non-composite packages:")
-
