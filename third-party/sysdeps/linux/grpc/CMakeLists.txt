@@ -85,18 +85,38 @@ message(STATUS "  ZLIB_ROOT: ${ZLIB_ROOT}")
 message(STATUS "  ZLIB_INCLUDE_DIR: ${ZLIB_INCLUDE_DIR}")
 message(STATUS "  ZLIB_LIBRARY: ${ZLIB_LIBRARY}")
 
+# Set variables for reused paths to improve code maintainability
+set(_grpc_source_dir "${CMAKE_CURRENT_BINARY_DIR}/s")
+set(_grpc_build_dir "${CMAKE_CURRENT_BINARY_DIR}/b")
+
+# Safety check: Prevent accidental deletion of system directories with 'rm -rf'
+# Two-layer protection:
+#   1. Blacklist: Reject critical system paths (/, /usr, /usr/local)
+#   2. Whitelist: Require path contains "build" (typical build directory pattern)
+# This allows flexibility for developers (e.g., /home/user/project/build) while
+# preventing accidental deletion of system directories or non-build paths.
+if(CMAKE_INSTALL_PREFIX STREQUAL "/" OR 
+   CMAKE_INSTALL_PREFIX STREQUAL "/usr" OR
+   CMAKE_INSTALL_PREFIX STREQUAL "/usr/local" OR
+   NOT CMAKE_INSTALL_PREFIX MATCHES "/build")
+  message(FATAL_ERROR 
+    "grpc: CMAKE_INSTALL_PREFIX appears to be outside a build directory.\n"
+    "  CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}\n"
+    "This is dangerous with 'rm -rf'. Please ensure it's within a build directory.")
+endif()
+
 add_custom_target(
   build ALL
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   COMMAND
-    "${CMAKE_COMMAND}" -E rm -rf -- "${CMAKE_INSTALL_PREFIX}" "${CMAKE_CURRENT_BINARY_DIR}/s" "${CMAKE_CURRENT_BINARY_DIR}/b"
+    "${CMAKE_COMMAND}" -E rm -rf -- "${CMAKE_INSTALL_PREFIX}" "${_grpc_source_dir}" "${_grpc_build_dir}"
   COMMAND
-    "${CMAKE_COMMAND}" -E copy_directory "${SOURCE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/s"
+    "${CMAKE_COMMAND}" -E copy_directory "${SOURCE_DIR}" "${_grpc_source_dir}"
   COMMAND
     "${CMAKE_COMMAND}"
       "-G${CMAKE_GENERATOR}"
-      "-S${CMAKE_CURRENT_BINARY_DIR}/s"
-      "-B${CMAKE_CURRENT_BINARY_DIR}/b"
+      "-S${_grpc_source_dir}"
+      "-B${_grpc_build_dir}"
       "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
       "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
@@ -136,9 +156,9 @@ add_custom_target(
       "-DCMAKE_BUILD_RPATH=${ZLIB_ROOT}/lib"
       "-DCMAKE_SKIP_BUILD_RPATH=OFF"
   COMMAND
-    "${CMAKE_COMMAND}" --build "${CMAKE_CURRENT_BINARY_DIR}/b" -j "${PAR_JOBS}"
+    "${CMAKE_COMMAND}" --build "${_grpc_build_dir}" -j "${PAR_JOBS}"
   COMMAND
-    "${CMAKE_COMMAND}" --install "${CMAKE_CURRENT_BINARY_DIR}/b"
+    "${CMAKE_COMMAND}" --install "${_grpc_build_dir}"
   COMMAND
     "${CMAKE_COMMAND}" -E env
       "PATCHELF=${PATCHELF}"
