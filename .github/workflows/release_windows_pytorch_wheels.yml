@@ -118,10 +118,19 @@ jobs:
         run: |
           echo '{"torch_commit":"'"$torch_commit"'","audio_commit":"'"$audio_commit"'","vision_commit":"'"$vision_commit"'"}' > frozen_commits.json
 
+      - name: Upload frozen commits artifact
+        run: |
+          SAFE_VERSION=$(echo "${{ matrix.pytorch_version }}" | tr '/' '_')
+          echo "Using safe artifact name: frozen_commits-${SAFE_VERSION}"
+          mkdir -p artifacts
+          cp frozen_commits.json artifacts/frozen_commits.json
+          echo "SAFE_VERSION=$SAFE_VERSION" >> $GITHUB_ENV
+        shell: bash
+
       - uses: actions/upload-artifact@v4
         with:
-          name: frozen_commits-${{ matrix.pytorch_version }}
-          path: frozen_commits.json
+          name: frozen_commits-${{ env.SAFE_VERSION }}
+          path: artifacts/frozen_commits.json
 
   # ============================================================
   # 2️⃣ Build Matrix
