@@ -14,8 +14,9 @@ python build_tools/install_rocm_from_artifacts.py
     (--artifact-group ARTIFACT_GROUP | --amdgpu_family AMDGPU_FAMILY)
     [--output-dir OUTPUT_DIR]
     (--run-id RUN_ID | --release RELEASE | --input-dir INPUT_DIR)
-    [--blas | --no-blas] [--fft | --no-fft] [--hipdnn | --no-hipdnn] [--miopen | --no-miopen] [--miopen-plugin | --no-miopen-plugin]
-    [--prim | --no-prim] [--rand | --no-rand] [--rccl | --no-rccl] [--tests | --no-tests] [--base-only]
+    [--blas | --no-blas] [--fft | --no-fft] [--hipdnn | --no-hipdnn] [--hiptensor | --no-hiptensor] [--miopen | --no-miopen]
+    [--miopen-plugin | --no-miopen-plugin] [--prim | --no-prim] [--rand | --no-rand] [--rccl | --no-rccl]
+    [--tests | --no-tests] [--base-only]
 
 Examples:
 - Downloads and unpacks the gfx94X S3 artifacts from GitHub CI workflow run 14474448215
@@ -165,6 +166,7 @@ def retrieve_artifacts_by_run_id(args):
             args.blas,
             args.fft,
             args.hipdnn,
+            args.hiptensor,
             args.miopen,
             args.miopen_plugin,
             args.prim,
@@ -182,6 +184,8 @@ def retrieve_artifacts_by_run_id(args):
             extra_artifacts.append("fftw3")
         if args.hipdnn:
             extra_artifacts.append("hipdnn")
+        if args.hiptensor:
+            extra_artifacts.append("hiptensor")
         if args.miopen:
             extra_artifacts.append("miopen")
             argv.extend("rand_dev")
@@ -336,6 +340,13 @@ def main(argv):
         "--hipdnn",
         default=False,
         help="Include 'hipdnn' artifacts",
+        action=argparse.BooleanOptionalAction,
+    )
+
+    artifacts_group.add_argument(
+        "--hiptensor",
+        default=False,
+        help="Include 'hiptensor' artifacts",
         action=argparse.BooleanOptionalAction,
     )
 
