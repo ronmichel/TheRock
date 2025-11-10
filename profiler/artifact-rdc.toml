@@ -19,8 +19,7 @@ include = [
 ]
 [components.run."profiler/rdc/stage"]
 include = [
-  "lib/*.so*",
-  "lib/rdc/*.so*",
+  "bin/**",
   "libexec/rdc/**",
   "share/rdc/**",
 ]

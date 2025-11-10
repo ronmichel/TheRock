@@ -148,7 +148,7 @@ if(THEROCK_ENABLE_ROCPROFV3)
         -DBUILD_STANDALONE=ON
         -DBUILD_RUNTIME=ON
         -DBUILD_RVS=OFF
-        -DBUILD_TESTS=ON
+        -DBUILD_TESTS=${THEROCK_BUILD_TESTING}
         -DHIP_PLATFORM=amd
         -DCMAKE_CXX_STANDARD=17
 
@@ -175,15 +175,13 @@ if(THEROCK_ENABLE_ROCPROFV3)
 
     therock_cmake_subproject_activate(rdc)
 
-    # RDC: use custom bash script to validate shared libraries
-    foreach(lib_name librdc_rocr.so librdc_rocp.so)
-      add_test(
-        NAME therock-validate-shared-lib-${lib_name}
-        COMMAND
-          "${CMAKE_CURRENT_SOURCE_DIR}/validate_rdc_library.sh"
-            "${CMAKE_CURRENT_BINARY_DIR}/rdc/dist/lib/rdc/${lib_name}"
-      )
-    endforeach()
+    # Validate RDC shared libraries (only independent libraries without complex dependencies)
+    therock_test_validate_shared_lib(
+      PATH stage/lib
+      LIB_NAMES
+        librdc_bootstrap.so
+        librdc_client.so
+    )
 
     # Provide RDC artifact
     therock_provide_artifact(rdc
