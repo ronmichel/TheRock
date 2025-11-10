@@ -7,30 +7,23 @@ on:
         required: true
         type: string
       release_type:
-        description: The type of release to build ("nightly", "prerelease", or "dev")
         type: string
         default: "dev"
       s3_subdir:
-        description: S3 subdirectory, not including the GPU-family
         type: string
         default: "v2"
       s3_staging_subdir:
-        description: Staging subdirectory to push the wheels for test
         type: string
         default: "v2-staging"
       cloudfront_url:
-        description: CloudFront URL pointing to Python index
         type: string
         default: "https://d25kgig7rdsyks.cloudfront.net/v2"
       cloudfront_staging_url:
-        description: CloudFront base URL pointing to staging Python index
-        required: true
         type: string
+        default: "https://d25kgig7rdsyks.cloudfront.net/v2-staging"
       rocm_version:
-        description: ROCm version to pip install
         type: string
       ref:
-        description: "Branch, tag or SHA to checkout. Defaults to the reference or SHA that triggered the workflow."
         type: string
 
   workflow_dispatch:
@@ -49,30 +42,23 @@ on:
           - gfx950-dcgpu
         default: gfx1151
       release_type:
-        description: The type of release to build ("nightly", "prerelease", or "dev")
         type: string
         default: "dev"
       s3_subdir:
-        description: S3 subdirectory, not including the GPU-family
         type: string
         default: "v2"
       s3_staging_subdir:
-        description: "Staging subdirectory to push the wheels for test"
         type: string
         default: "v2-staging"
       cloudfront_url:
-        description: CloudFront URL pointing to Python index
         type: string
         default: "https://d25kgig7rdsyks.cloudfront.net/v2"
       cloudfront_staging_url:
-        description: CloudFront base URL pointing to staging Python index
         type: string
         default: "https://d25kgig7rdsyks.cloudfront.net/v2-staging"
       rocm_version:
-        description: ROCm version to pip install
         type: string
       ref:
-        description: "Branch, tag or SHA to checkout. Defaults to the reference or SHA that triggered the workflow."
         type: string
         default: ''
 
@@ -82,13 +68,10 @@ permissions:
 
 jobs:
   # ============================================================
-  # 1️⃣ Resolve frozen PyTorch commits (per version)
+  # 1️⃣ Resolve frozen PyTorch commits (per pytorch_version)
   #
-  # Resolves branch-specific SHAs for torch/audio/vision for each
-  # pytorch_version in the matrix.
-  # ------------------------------------------------------------
-  # - release/2.9 → ROCm/pytorch@release/2.9
-  # - nightly     → pytorch/pytorch@HEAD
+  # For release/2.9 → ROCm/pytorch@release/2.9
+  # For nightly     → pytorch/pytorch@HEAD
   # ============================================================
   resolve_pytorch_commits:
     name: Resolve commits | ${{ matrix.pytorch_version }}
@@ -97,10 +80,6 @@ jobs:
       fail-fast: false
       matrix:
         pytorch_version: ["release/2.9", "nightly"]
-    outputs:
-      torch_commit_${{ matrix.pytorch_version }}: ${{ steps.resolve.outputs.torch_commit }}
-      audio_commit_${{ matrix.pytorch_version }}: ${{ steps.resolve.outputs.audio_commit }}
-      vision_commit_${{ matrix.pytorch_version }}: ${{ steps.resolve.outputs.vision_commit }}
     steps:
       - name: Resolve current HEAD commits for PyTorch repos
         id: resolve
@@ -108,39 +87,36 @@ jobs:
           set -e
           echo "Resolving commits for pytorch_version=${{ matrix.pytorch_version }}"
 
-          PYTORCH_VERSION="${{ matrix.pytorch_version }}"
-          if [[ "$PYTORCH_VERSION" == "release/2.9" ]]; then
+          if [[ "${{ matrix.pytorch_version }}" == "release/2.9" ]]; then
             echo "Fetching commits from ROCm repos (release/2.9 branches)..."
             TORCH_REPO="https://github.com/ROCm/pytorch.git"
             AUDIO_REPO="https://github.com/ROCm/audio.git"
             VISION_REPO="https://github.com/ROCm/vision.git"
-            BRANCH="release/2.9"
+            TORCH_BRANCH="release/2.9"
+            AUDIO_BRANCH="release/2.9"
+            VISION_BRANCH="release/2.9"
 
-            TORCH_COMMIT=$(git ls-remote "$TORCH_REPO" "refs/heads/$BRANCH" | cut -f1)
-            AUDIO_COMMIT=$(git ls-remote "$AUDIO_REPO" "refs/heads/$BRANCH" | cut -f1)
-            VISION_COMMIT=$(git ls-remote "$VISION_REPO" "refs/heads/$BRANCH" | cut -f1)
-
-          elif [[ "$PYTORCH_VERSION" == "nightly" ]]; then
+            TORCH_COMMIT=$(git ls-remote "$TORCH_REPO" "refs/heads/$TORCH_BRANCH" | cut -f1)
+            AUDIO_COMMIT=$(git ls-remote "$AUDIO_REPO" "refs/heads/$AUDIO_BRANCH" | cut -f1)
+            VISION_COMMIT=$(git ls-remote "$VISION_REPO" "refs/heads/$VISION_BRANCH" | cut -f1)
+          else
             echo "Fetching HEAD commits from upstream pytorch org..."
             TORCH_COMMIT=$(git ls-remote https://github.com/pytorch/pytorch.git HEAD | cut -f1)
             AUDIO_COMMIT=$(git ls-remote https://github.com/pytorch/audio.git HEAD | cut -f1)
             VISION_COMMIT=$(git ls-remote https://github.com/pytorch/vision.git HEAD | cut -f1)
-          else
-            echo "Unsupported pytorch_version: $PYTORCH_VERSION"
-            exit 1
           fi
 
           echo "Torch commit:  $TORCH_COMMIT"
           echo "Audio commit:  $AUDIO_COMMIT"
           echo "Vision commit: $VISION_COMMIT"
 
-          echo "torch_commit=$TORCH_COMMIT" >> $GITHUB_OUTPUT
-          echo "audio_commit=$AUDIO_COMMIT" >> $GITHUB_OUTPUT
-          echo "vision_commit=$VISION_COMMIT" >> $GITHUB_OUTPUT
+          echo "torch_commit=$TORCH_COMMIT" >> $GITHUB_ENV
+          echo "audio_commit=$AUDIO_COMMIT" >> $GITHUB_ENV
+          echo "vision_commit=$VISION_COMMIT" >> $GITHUB_ENV
 
       - name: Save frozen commit snapshot
         run: |
-          echo '{"torch_commit":"'"${{ steps.resolve.outputs.torch_commit }}"'","audio_commit":"'"${{ steps.resolve.outputs.audio_commit }}"'","vision_commit":"'"${{ steps.resolve.outputs.vision_commit }}"'"}' > frozen_commits.json
+          echo '{"torch_commit":"'"$torch_commit"'","audio_commit":"'"$audio_commit"'","vision_commit":"'"$vision_commit"'"}' > frozen_commits.json
 
       - uses: actions/upload-artifact@v4
         with:
@@ -148,13 +124,13 @@ jobs:
           path: frozen_commits.json
 
   # ============================================================
-  # Build and Release Matrix
+  # 2️⃣ Build Matrix
   #
-  # Each matrix entry calls build_windows_pytorch_wheels.yml with
-  # its corresponding resolved SHAs from the step above.
+  # Each build consumes its corresponding commit artifact
   # ============================================================
   release:
     name: Release | ${{ inputs.amdgpu_family }} | py ${{ matrix.python_version }} | torch ${{ matrix.pytorch_version }}
+    runs-on: ubuntu-24.04
     needs: [resolve_pytorch_commits]
     strategy:
       fail-fast: false
@@ -166,21 +142,40 @@ jobs:
             pytorch_patchset: rocm_2.9
           - pytorch_version: nightly
             pytorch_patchset: nightly
+    steps:
+      - name: Download frozen commits
+        uses: actions/download-artifact@v4
+        with:
+          name: frozen_commits-${{ matrix.pytorch_version }}
 
-    uses: ./.github/workflows/build_windows_pytorch_wheels.yml
-    with:
-      amdgpu_family: ${{ inputs.amdgpu_family }}
-      python_version: ${{ matrix.python_version }}
-      release_type: ${{ inputs.release_type }}
-      s3_subdir: ${{ inputs.s3_subdir }}
-      s3_staging_subdir: ${{ inputs.s3_staging_subdir }}
-      cloudfront_url: ${{ inputs.cloudfront_url }}
-      cloudfront_staging_url: ${{ inputs.cloudfront_staging_url }}
-      rocm_version: ${{ inputs.rocm_version }}
-      pytorch_version: ${{ matrix.pytorch_version }}
-      pytorch_patchset: ${{ matrix.pytorch_patchset }}
-      ref: ${{ inputs.ref || '' }}
-      # Pass matching version SHAs to downstream child workflow
-      torch_commit: ${{ needs.resolve_pytorch_commits.outputs['torch_commit_' + matrix.pytorch_version] }}
-      audio_commit: ${{ needs.resolve_pytorch_commits.outputs['audio_commit_' + matrix.pytorch_version] }}
-      vision_commit: ${{ needs.resolve_pytorch_commits.outputs['vision_commit_' + matrix.pytorch_version] }}
+      - name: Parse frozen commits
+        id: parse
+        run: |
+          echo "Parsing frozen commits for ${{ matrix.pytorch_version }}..."
+          TORCH_COMMIT=$(jq -r '.torch_commit' frozen_commits.json)
+          AUDIO_COMMIT=$(jq -r '.audio_commit' frozen_commits.json)
+          VISION_COMMIT=$(jq -r '.vision_commit' frozen_commits.json)
+
+          echo "torch_commit=$TORCH_COMMIT" >> $GITHUB_ENV
+          echo "audio_commit=$AUDIO_COMMIT" >> $GITHUB_ENV
+          echo "vision_commit=$VISION_COMMIT" >> $GITHUB_ENV
+
+      - name: Trigger child workflow
+        uses: ./.github/workflows/build_windows_pytorch_wheels.yml
+        with:
+          amdgpu_family: ${{ inputs.amdgpu_family }}
+          python_version: ${{ matrix.python_version }}
+          release_type: ${{ inputs.release_type }}
+          s3_subdir: ${{ inputs.s3_subdir }}
+          s3_staging_subdir: ${{ inputs.s3_staging_subdir }}
+          cloudfront_url: ${{ inputs.cloudfront_url }}
+          cloudfront_staging_url: ${{ inputs.cloudfront_staging_url }}
+          rocm_version: ${{ inputs.rocm_version }}
+          pytorch_version: ${{ matrix.pytorch_version }}
+          pytorch_patchset: ${{ matrix.pytorch_patchset }}
+          ref: ${{ inputs.ref || '' }}
+
+          # 🔒 Pass per-version commits downstream
+          torch_commit: ${{ env.torch_commit }}
+          audio_commit: ${{ env.audio_commit }}
+          vision_commit: ${{ env.vision_commit }}
