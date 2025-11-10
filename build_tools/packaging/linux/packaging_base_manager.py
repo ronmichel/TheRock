@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import List
-from package_info import PackageInfo
+from native_package_info import PackageInfo
 
 class PackageManagerBase(ABC):
     """

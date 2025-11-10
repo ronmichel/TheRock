@@ -4,11 +4,10 @@ import argparse
 import json
 from pathlib import Path
 from typing import List
-from base_manager import PackageManagerBase
-from package_info import PackageInfo
-from package_info import PackageLoader
-from utils import logger
-from utils import get_os_id
+from packaging_base_manager import PackageManagerBase
+from native_package_info import PackageInfo
+from native_package_info import PackageLoader
+from packaging_utils import *
 import subprocess
 
 

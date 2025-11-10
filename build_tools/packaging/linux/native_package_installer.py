@@ -4,15 +4,14 @@ import argparse
 import json
 from pathlib import Path
 from typing import List
-from base_manager import PackageManagerBase
-from package_info import PackageInfo
-from package_info import PackageLoader
+from packaging_base_manager import PackageManagerBase
+from native_package_info import PackageInfo
+from native_package_info import PackageLoader
 import re
 import os
 import logging
 import subprocess
-from utils import get_os_id
-from utils import logger
+from packaging_utils import *
 
 
 class PackageInstaller(PackageManagerBase):
