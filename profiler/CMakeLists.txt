@@ -140,6 +140,7 @@ if(THEROCK_ENABLE_ROCPROFV3)
 
     therock_cmake_subproject_declare(rdc
       EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/rdc"
+      BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/rdc"
       BACKGROUND_BUILD
 
       CMAKE_ARGS
