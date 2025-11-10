@@ -173,14 +173,9 @@ jobs:
       - name: Configure MSVC
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
-      # -------------------------------------------------------------------------
-      # 🔒 Checkout frozen PyTorch source repos using resolved commit SHAs
-      #
-      # This workflow intentionally breaks linkage to the parent/scheduler so
-      # that re-runs remain deterministic. The root workflow passes down
-      # specific SHA values for torch/audio/vision (frozen commits).
-      # -------------------------------------------------------------------------
-      - name: Checkout PyTorch source repos (frozen commits)
+      # Checkout nightly sources from https://github.com/pytorch/pytorch
+      - name: Checkout PyTorch Source Repos from nightly branch
+        if: ${{ inputs.pytorch_version == 'nightly' }}
         run: |
           git config --global core.longpaths true
           echo "Checking out PyTorch repos using frozen commit SHAs..."
@@ -188,25 +183,19 @@ jobs:
           echo "Audio commit:  ${{ inputs.audio_commit }}"
           echo "Vision commit: ${{ inputs.vision_commit }}"
 
-          python ./external-builds/pytorch/pytorch_torch_repo.py checkout \
-            --checkout-dir ${{ env.CHECKOUT_ROOT }}/torch \
-            --repo-hashtag ${{ inputs.torch_commit }} \
-            --patchset main
+          python ./external-builds/pytorch/pytorch_torch_repo.py checkout --repo-hashtag ${{ inputs.torch_commit }}
+          python ./external-builds/pytorch/pytorch_audio_repo.py checkout --repo-hashtag ${{ inputs.audio_commit }}
+          python ./external-builds/pytorch/pytorch_vision_repo.py checkout --repo-hashtag ${{ inputs.vision_commit }}
+          python ./external-builds/pytorch/pytorch_triton_repo.py checkout --patch --patchset nightly
 
-          python ./external-builds/pytorch/pytorch_audio_repo.py checkout \
-            --checkout-dir ${{ env.CHECKOUT_ROOT }}/audio \
-            --repo-hashtag ${{ inputs.audio_commit }} \
-            --patchset main \
-            --torch-dir ${{ env.CHECKOUT_ROOT }}/torch \
-            --require-related-commit
-
-          python ./external-builds/pytorch/pytorch_vision_repo.py checkout \
-            --checkout-dir ${{ env.CHECKOUT_ROOT }}/vision \
-            --repo-hashtag ${{ inputs.vision_commit }} \
-            --patchset main \
-            --torch-dir ${{ env.CHECKOUT_ROOT }}/torch \
-            --require-related-commit
-      # -------------------------------------------------------------------------
+      # Checkout stable sources from https://github.com/ROCm/pytorch
+      - name: Checkout PyTorch Source Repos from stable branch
+        if: ${{ inputs.pytorch_version != 'nightly' }}
+        run: |
+          ./external-builds/pytorch/pytorch_torch_repo.py checkout --gitrepo-origin https://github.com/ROCm/pytorch.git --repo-hashtag ${{ inputs.pytorch_version }} --patchset ${{ inputs.pytorch_patchset }}
+          ./external-builds/pytorch/pytorch_audio_repo.py checkout --require-related-commit
+          ./external-builds/pytorch/pytorch_vision_repo.py checkout --require-related-commit
+          ./external-builds/pytorch/pytorch_triton_repo.py checkout
 
       - name: Determine optional arguments passed to `build_prod_wheels.py`
         if: ${{ inputs.rocm_version }}
