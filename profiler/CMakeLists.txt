@@ -178,7 +178,7 @@ if(THEROCK_ENABLE_ROCPROFV3)
 
     # Validate RDC shared libraries (only independent libraries without complex dependencies)
     therock_test_validate_shared_lib(
-      PATH stage/lib
+      PATH rdc/stage/lib
       LIB_NAMES
         librdc_bootstrap.so
         librdc_client.so
