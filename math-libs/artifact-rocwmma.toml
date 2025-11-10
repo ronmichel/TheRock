@@ -8,17 +8,15 @@ include = [
 [components.lib."math-libs/rocWMMA/stage"]
 optional = true
 [components.test."math-libs/rocWMMA/stage"]
+optional = true
 include = [
   # Samples
   "bin/simple_*",
   "bin/perf_*",
-  "bin/hipRTC_gemm",
-  "bin/hipRTC_gemm.exe", # Windows
+  "bin/hipRTC_gemm*",
   # Tests
-  "bin/*_test",
-  "bin/*-validate",
-  "bin/*_test.exe", # Windows
-  "bin/*-validate.exe", # Windows
+  "bin/*_test*",
+  "bin/*-validate*",
   "bin/rocwmma/CTestTestfile.cmake",
   "bin/rocwmma/*/CTestTestfile.cmake",
 ]
