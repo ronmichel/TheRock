@@ -88,7 +88,7 @@ jobs:
           echo "Resolving commits for pytorch_version=${{ matrix.pytorch_version }}"
 
           if [[ "${{ matrix.pytorch_version }}" == "release/2.9" ]]; then
-            echo "Fetching commits from ROCm repos (release/2.9 branches)..."
+            echo "Fetching commits from ROCm repos (release/2.9 branches, fallback to main)..."
             TORCH_REPO="https://github.com/ROCm/pytorch.git"
             AUDIO_REPO="https://github.com/ROCm/audio.git"
             VISION_REPO="https://github.com/ROCm/vision.git"
@@ -97,8 +97,17 @@ jobs:
             VISION_BRANCH="release/2.9"
 
             TORCH_COMMIT=$(git ls-remote "$TORCH_REPO" "refs/heads/$TORCH_BRANCH" | cut -f1)
-            AUDIO_COMMIT=$(git ls-remote "$AUDIO_REPO" "refs/heads/$AUDIO_BRANCH" | cut -f1)
-            VISION_COMMIT=$(git ls-remote "$VISION_REPO" "refs/heads/$VISION_BRANCH" | cut -f1)
+            AUDIO_COMMIT=$(git ls-remote "$AUDIO_REPO" "refs/heads/$AUDIO_BRANCH" | cut -f1 || true)
+            VISION_COMMIT=$(git ls-remote "$VISION_REPO" "refs/heads/$VISION_BRANCH" | cut -f1 || true)
+
+            # Fallback if empty
+            if [[ -z "$AUDIO_COMMIT" ]]; then
+              AUDIO_COMMIT=$(git ls-remote "$AUDIO_REPO" "refs/heads/main" | cut -f1)
+            fi
+            if [[ -z "$VISION_COMMIT" ]]; then
+              VISION_COMMIT=$(git ls-remote "$VISION_REPO" "refs/heads/main" | cut -f1)
+            fi
+
           else
             echo "Fetching HEAD commits from upstream pytorch org..."
             TORCH_COMMIT=$(git ls-remote https://github.com/pytorch/pytorch.git HEAD | cut -f1)
@@ -113,7 +122,7 @@ jobs:
           echo "torch_commit=$TORCH_COMMIT" >> $GITHUB_ENV
           echo "audio_commit=$AUDIO_COMMIT" >> $GITHUB_ENV
           echo "vision_commit=$VISION_COMMIT" >> $GITHUB_ENV
-
+          
       - name: Save frozen commit snapshot
         run: |
           echo '{"torch_commit":"'"$torch_commit"'","audio_commit":"'"$audio_commit"'","vision_commit":"'"$vision_commit"'"}' > frozen_commits.json
@@ -133,7 +142,7 @@ jobs:
           path: artifacts/frozen_commits.json
 
   # ============================================================
-  # 2️⃣ Build Matrix
+  # Build Matrix
   #
   # Each build consumes its corresponding commit artifact
   # ============================================================
@@ -155,7 +164,7 @@ jobs:
       - name: Download frozen commits
         uses: actions/download-artifact@v4
         with:
-          name: frozen_commits-${{ matrix.pytorch_version }}
+          name: ${{ matrix.pytorch_version == 'release/2.9' && 'frozen_commits-release_2.9' || 'frozen_commits-nightly' }}
 
       - name: Parse frozen commits
         id: parse
