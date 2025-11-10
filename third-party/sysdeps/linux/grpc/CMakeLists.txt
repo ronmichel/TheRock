@@ -85,8 +85,7 @@ message(STATUS "  ZLIB_ROOT: ${ZLIB_ROOT}")
 message(STATUS "  ZLIB_INCLUDE_DIR: ${ZLIB_INCLUDE_DIR}")
 message(STATUS "  ZLIB_LIBRARY: ${ZLIB_LIBRARY}")
 
-# Set variables for reused paths to improve code maintainability
-set(_grpc_source_dir "${CMAKE_CURRENT_BINARY_DIR}/s")
+# Set variable for reused path to improve code maintainability
 set(_grpc_build_dir "${CMAKE_CURRENT_BINARY_DIR}/b")
 
 # Safety check: Prevent accidental deletion of system directories with 'rm -rf'
@@ -109,13 +108,11 @@ add_custom_target(
   build ALL
   WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
   COMMAND
-    "${CMAKE_COMMAND}" -E rm -rf -- "${CMAKE_INSTALL_PREFIX}" "${_grpc_source_dir}" "${_grpc_build_dir}"
-  COMMAND
-    "${CMAKE_COMMAND}" -E copy_directory "${SOURCE_DIR}" "${_grpc_source_dir}"
+    "${CMAKE_COMMAND}" -E rm -rf -- "${CMAKE_INSTALL_PREFIX}" "${_grpc_build_dir}"
   COMMAND
     "${CMAKE_COMMAND}"
       "-G${CMAKE_GENERATOR}"
-      "-S${_grpc_source_dir}"
+      "-S${SOURCE_DIR}"
       "-B${_grpc_build_dir}"
       "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
       "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
