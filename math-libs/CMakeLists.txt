@@ -279,10 +279,10 @@ if(THEROCK_ENABLE_ROCWMMA)
   # Configure optional dependencies
   set(_rocwmma_optional_deps)
   if(THEROCK_ENABLE_BLAS)
-    list(append _rocwmma_optional_deps rocBLAS)
+    list(APPEND _rocwmma_optional_deps rocBLAS)
   endif()
   if(THEROCK_ROCWMMA_ENABLE_BENCHMARKS)
-    list(append _rocwmma_optional_deps rocm_smi_lib)
+    list(APPEND _rocwmma_optional_deps rocm_smi_lib)
   endif()
 
   therock_cmake_subproject_declare(rocWMMA
