@@ -31,9 +31,7 @@ import logging
 from pathlib import Path
 from urllib.parse import quote, urljoin
 import shutil
-
 import requests
-
 from github_actions.github_actions_utils import gha_append_step_summary
 
 LOG = logging.getLogger(__name__)
