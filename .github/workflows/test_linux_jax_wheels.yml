@@ -160,10 +160,6 @@ jobs:
         env:
           ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
-            # Run the tests and capture output
-            CORETEST_OUTPUT=$(python3 build/ci_build test \
-            "${JAX_IMAGE}" \
-            --test-cmd "pytest jax_tests/tests/core_test.py" 2>&1)
-            echo "$CORETEST_OUTPUT" > coretest_output.txt
-            cat coretest_output.txt >> $GITHUB_STEP_SUMMARY
-
+            python3 build/ci_build test \
+              "${JAX_IMAGE}" \
+              --test-cmd "pytest jax_tests/tests/core_test.py"
