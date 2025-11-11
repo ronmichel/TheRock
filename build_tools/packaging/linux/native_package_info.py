@@ -4,7 +4,6 @@ import json
 import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional
-from utils import get_os_id
 from packaging_utils import *
 
 
