@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 from utils import get_os_id
-from utils import logger
+from packaging_utils import *
 
 
 class PackageInfo:
