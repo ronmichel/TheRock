@@ -278,7 +278,7 @@ if(THEROCK_ENABLE_ROCWMMA)
 
   # Configure optional dependencies
   set(_rocwmma_optional_deps)
-  if(THEROCK_ENABLE_BLAS)
+  if(THEROCK_ROCWMMA_USE_ROCBLAS)
     list(APPEND _rocwmma_optional_deps rocBLAS)
   endif()
   if(THEROCK_ROCWMMA_ENABLE_BENCHMARKS)
@@ -294,8 +294,8 @@ if(THEROCK_ENABLE_ROCWMMA)
       -DROCM_PATH=
       -DROCM_DIR=
       "-DROCWMMA_BUILD_TESTS=$<BOOL:${THEROCK_BUILD_TESTING}>"
-      "-DROCWMMA_VALIDATE_WITH_ROCBLAS=$<BOOL:${THEROCK_ENABLE_BLAS}>"
-      "-DROCWMMA_BENCHMARK_WITH_ROCBLAS=$<AND:$<BOOL:${THEROCK_ENABLE_BLAS}>,$<BOOL:${THEROCK_ROCWMMA_ENABLE_BENCHMARKS}>>"
+      "-DROCWMMA_VALIDATE_WITH_ROCBLAS=$<BOOL:${THEROCK_ROCWMMA_USE_ROCBLAS}>"
+      "-DROCWMMA_BENCHMARK_WITH_ROCBLAS=$<AND:$<BOOL:${THEROCK_ROCWMMA_USE_ROCBLAS}>,$<BOOL:${THEROCK_ROCWMMA_ENABLE_BENCHMARKS}>>"
       "-DROCWMMA_BUILD_BENCHMARK_TESTS=$<BOOL:${THEROCK_ROCWMMA_ENABLE_BENCHMARKS}>"
       -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON # Needed for Ninja build
       -DROCWMMA_USE_SYSTEM_GOOGLETEST=ON # Use therock-googletest
@@ -315,6 +315,7 @@ if(THEROCK_ENABLE_ROCWMMA)
     SUBDIRS
       .
   )
+  therock_cmake_subproject_provide_package(rocWMMA rocwmma lib/cmake/rocwmma)
   therock_cmake_subproject_activate(rocWMMA)
 
   therock_provide_artifact(rocwmma
