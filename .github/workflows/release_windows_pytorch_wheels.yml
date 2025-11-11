@@ -79,6 +79,13 @@ jobs:
       fail-fast: false
       matrix:
         pytorch_version: ["release/2.9", "nightly"]
+    outputs:
+      torch_commit_release_2_9: ${{ steps.export.outputs.torch_commit_release_2_9 }}
+      audio_commit_release_2_9: ${{ steps.export.outputs.audio_commit_release_2_9 }}
+      vision_commit_release_2_9: ${{ steps.export.outputs.vision_commit_release_2_9 }}
+      torch_commit_nightly: ${{ steps.export.outputs.torch_commit_nightly }}
+      audio_commit_nightly: ${{ steps.export.outputs.audio_commit_nightly }}
+      vision_commit_nightly: ${{ steps.export.outputs.vision_commit_nightly }}
     steps:
       - name: Resolve current HEAD commits for PyTorch repos
         id: resolve
@@ -163,4 +170,7 @@ jobs:
       rocm_version: ${{ inputs.rocm_version }}
       pytorch_version: ${{ matrix.pytorch_version }}
       pytorch_patchset: ${{ matrix.pytorch_patchset }}
+      torch_commit: ${{ matrix.pytorch_version == 'release/2.9' && needs.resolve_pytorch_commits.outputs.torch_commit_release_2_9 || needs.resolve_pytorch_commits.outputs.torch_commit_nightly }}
+      audio_commit: ${{ matrix.pytorch_version == 'release/2.9' && needs.resolve_pytorch_commits.outputs.audio_commit_release_2_9 || needs.resolve_pytorch_commits.outputs.audio_commit_nightly }}
+      vision_commit: ${{ matrix.pytorch_version == 'release/2.9' && needs.resolve_pytorch_commits.outputs.vision_commit_release_2_9 || needs.resolve_pytorch_commits.outputs.vision_commit_nightly }}
       ref: ${{ inputs.ref || '' }}

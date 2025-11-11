@@ -46,7 +46,6 @@ on:
       ref:
         description: "Branch, tag or SHA to checkout. Defaults to the reference or SHA that triggered the workflow."
         type: string
-
       # NEW INPUTS: Frozen commits passed from root workflow
       # These SHAs are resolved by the root workflow and
       # ensure reproducible child re-runs with the same source versions.
@@ -115,6 +114,18 @@ on:
         required: true
         type: string
         default: "rocm_2.7"
+      torch_commit:
+        description: Frozen PyTorch commit SHA
+        required: false
+        type: string
+      audio_commit:
+        description: Frozen torchaudio commit SHA
+        required: false
+        type: string
+      vision_commit:
+        description: Frozen torchvision commit SHA
+        required: false
+        type: string
 
 permissions:
   id-token: write
