@@ -114,18 +114,6 @@ on:
         required: true
         type: string
         default: "rocm_2.7"
-      torch_commit:
-        description: Frozen PyTorch commit SHA
-        required: false
-        type: string
-      audio_commit:
-        description: Frozen torchaudio commit SHA
-        required: false
-        type: string
-      vision_commit:
-        description: Frozen torchvision commit SHA
-        required: false
-        type: string
 
 permissions:
   id-token: write
