@@ -1,4 +1,5 @@
 if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  # gRPC (static library) - used by RDC for RPC communication
   # When included in TheRock, we download sources and set up the sub-project.
   set(_source_dir "${CMAKE_CURRENT_BINARY_DIR}/source")
   set(_download_stamp "${_source_dir}/download.stamp")
@@ -20,9 +21,7 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     OUTPUT_ON_FAILURE
   CMAKE_ARGS
     "-DSOURCE_DIR=${_source_dir}"
-    "-DPATCHELF=${PATCHELF}"
     "-DTHEROCK_SOURCE_DIR=${THEROCK_SOURCE_DIR}"
-    "-DPython3_EXECUTABLE=${Python3_EXECUTABLE}"
     RUNTIME_DEPS
       therock-zlib
     INSTALL_DESTINATION
@@ -60,10 +59,6 @@ project(GRPC_BUILD)
 
 include(ProcessorCount)
 ProcessorCount(PAR_JOBS)
-
-if(NOT PATCHELF)
-  message(FATAL_ERROR "Missing PATCHELF from super-project")
-endif()
 
 # Use find_package to locate zlib (provided by therock-zlib via RUNTIME_DEPS)
 # CMAKE_PREFIX_PATH is automatically set by TheRock to include zlib's stage directory
@@ -145,8 +140,8 @@ add_custom_target(
       # Set RPATH for installed libraries and executables
       # $ORIGIN for libs, $ORIGIN/../lib for bins (protoc, grpc_cpp_plugin)
       # Also add path to zlib for executables that need it at runtime
-      # From bin/ directory: ../../../../../../../.. gets to linux/, then ../../zlib
-      "-DCMAKE_INSTALL_RPATH=\$ORIGIN:\$ORIGIN/../lib:\$ORIGIN/../../../../../../zlib/build/stage/lib/rocm_sysdeps/lib"
+      # From bin/ (third-party/grpc/.../bin) to sysdeps/linux/zlib/.../lib
+      "-DCMAKE_INSTALL_RPATH=\$ORIGIN:\$ORIGIN/../lib:\$ORIGIN/../../../../../../sysdeps/linux/zlib/build/stage/lib/rocm_sysdeps/lib"
       "-DCMAKE_BUILD_RPATH_USE_ORIGIN=ON"
       # Add build-time RPATH to find zlib during gRPC build/test phase
       # This is separate from install RPATH and only used during build
@@ -158,9 +153,7 @@ add_custom_target(
     "${CMAKE_COMMAND}" --install "${_grpc_build_dir}"
   COMMAND
     "${CMAKE_COMMAND}" -E env
-      "PATCHELF=${PATCHELF}"
-      "THEROCK_SOURCE_DIR=${THEROCK_SOURCE_DIR}"
-      "Python3_EXECUTABLE=${Python3_EXECUTABLE}" --
+      "THEROCK_SOURCE_DIR=${THEROCK_SOURCE_DIR}" --
     bash "${CMAKE_CURRENT_SOURCE_DIR}/patch_install.sh" ${CMAKE_INSTALL_PREFIX}
   VERBATIM
 )
