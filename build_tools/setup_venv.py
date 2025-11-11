@@ -53,8 +53,8 @@ GFX_TARGET_REGEX = r'(gfx(?:\d{2,3}X|\d{3,4})(?:-[^<"/]*)?)</a>'
 is_windows = platform.system() == "Windows"
 
 INDEX_URLS_MAP = {
-    "nightly": "https://rocm.nightlies.amd.com/v2",
-    "dev": "https://d25kgig7rdsyks.cloudfront.net/v2",
+    "nightly": "https://rocm.nightlies.amd.com/whl",
+    "dev": "https://d25kgig7rdsyks.cloudfront.net/whl",
 }
 
 

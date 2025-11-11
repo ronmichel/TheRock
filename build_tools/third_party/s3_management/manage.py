@@ -36,18 +36,18 @@ INDEX_BUCKETS = {BUCKET} #, BUCKET_CDN}
 
 ACCEPTED_FILE_EXTENSIONS = ("whl", "zip", "tar.gz")
 PREFIXES = [
-    # Note: v2-staging first, in case issues are observed while the script runs
+    # Note: whl-staging first, in case issues are observed while the script runs
     # and the developer wants to more safely cancel the script.
-    "v2-staging/gfx110X-dgpu",
-    "v2-staging/gfx1151",
-    "v2-staging/gfx120X-all",
-    "v2-staging/gfx94X-dcgpu",
-    "v2-staging/gfx950-dcgpu",
-    "v2/gfx110X-dgpu",
-    "v2/gfx1151",
-    "v2/gfx120X-all",
-    "v2/gfx94X-dcgpu",
-    "v2/gfx950-dcgpu",
+    "whl-staging/gfx110X-dgpu",
+    "whl-staging/gfx1151",
+    "whl-staging/gfx120X-all",
+    "whl-staging/gfx94X-dcgpu",
+    "whl-staging/gfx950-dcgpu",
+    "whl/gfx110X-dgpu",
+    "whl/gfx1151",
+    "whl/gfx120X-all",
+    "whl/gfx94X-dcgpu",
+    "whl/gfx950-dcgpu",
 ]
 
 CUSTOM_PREFIX = getenv('CUSTOM_PREFIX')

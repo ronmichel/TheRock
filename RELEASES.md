@@ -112,7 +112,7 @@ Install instructions:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx94X-dcgpu/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx94X-dcgpu/ \
   "rocm[libraries,devel]"
 ```
 
@@ -128,7 +128,7 @@ Install instructions:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx950-dcgpu/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx950-dcgpu/ \
   "rocm[libraries,devel]"
 ```
 
@@ -146,7 +146,7 @@ Install instructions:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx110X-dgpu/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx110X-dgpu/ \
   "rocm[libraries,devel]"
 ```
 
@@ -162,7 +162,7 @@ Install instructions:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx1151/ \
   "rocm[libraries,devel]"
 ```
 
@@ -179,7 +179,7 @@ Install instructions:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx120X-all/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx120X-all/ \
   "rocm[libraries,devel]"
 ```
 
@@ -293,7 +293,7 @@ Supported devices in this family:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx94X-dcgpu/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx94X-dcgpu/ \
   --pre torch torchaudio torchvision
 ```
 
@@ -307,7 +307,7 @@ Supported devices in this family:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx950-dcgpu/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx950-dcgpu/ \
   --pre torch torchaudio torchvision
 ```
 
@@ -323,7 +323,7 @@ Supported devices in this family:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx110X-dgpu/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx110X-dgpu/ \
   --pre torch torchaudio torchvision
 ```
 
@@ -337,7 +337,7 @@ Supported devices in this family:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx1151/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx1151/ \
   --pre torch torchaudio torchvision
 ```
 
@@ -352,7 +352,7 @@ Supported devices in this family:
 
 ```bash
 python -m pip install \
-  --index-url https://rocm.nightlies.amd.com/v2/gfx120X-all/ \
+  --index-url https://rocm.nightlies.amd.com/whl/gfx120X-all/ \
   --pre torch torchaudio torchvision
 ```
 
