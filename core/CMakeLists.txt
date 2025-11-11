@@ -217,11 +217,11 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
       USE_DIST_AMDGPU_TARGETS
       EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/hip-tests/catch"
       BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/hip-tests"
+      BACKGROUND_BUILD
       COMPILER_TOOLCHAIN
         amd-hip
       CMAKE_ARGS
         -DHIP_PLATFORM="amd"
-        -DTHEROCK_BUILD_MODE=ON
       BUILD_DEPS
         rocm-cmake
         therock-boost
