@@ -7,6 +7,7 @@ class TestRocTracer:
     def test_roctracer(self, orch, therock_path, result):
         """A Test case to verify RocTracer tests"""
         result.verdict = orch.runBinary(
-            "./run_tests.sh", cwd=f"{therock_path}/share/roctracer"
-		)
+            "./run_tests.sh",
+            cwd=f"{therock_path}/share/roctracer",
+        )
         assert result.verdict

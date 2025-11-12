@@ -9,6 +9,6 @@ class TestHipBlas:
         result.verdict = orch.runGtest(
             "./hipblas-test",
             env=ompEnv,
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

@@ -9,6 +9,6 @@ class TestMIOpen:
         result.verdict = orch.runGtest(
             "./miopen_gtest",
             gfilter="-DBSync:DeepBench:MIOpenTestConv",
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

@@ -7,6 +7,7 @@ class TestRCCL:
     def test_rccl(self, orch, therock_path, result):
         """A Test case to verify RCCL tests"""
         result.verdict = orch.runGtest(
-            "./rccl-UnitTests", cwd=f"{therock_path}/bin"
+            "./rccl-UnitTests",
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

@@ -11,6 +11,6 @@ class TestRocFFT:
             gfilter="*single_gpu*",
             # *multi_gpu* => tdb when multigpu setup is available
             env=ompEnv,
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

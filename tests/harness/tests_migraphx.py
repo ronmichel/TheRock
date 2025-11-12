@@ -11,6 +11,6 @@ class TestMIGraphx:
             env={
                 "LD_LIBRARY_PATH": f"{therock_path}/lib:$LD_LIBRARY_PATH",
             },
-            cwd=f"{therock_path}/libexec/installed-tests/migraphx"
+            cwd=f"{therock_path}/libexec/installed-tests/migraphx",
         )
         assert result.verdict

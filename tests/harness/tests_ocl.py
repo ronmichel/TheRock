@@ -7,11 +7,11 @@ class TestOCL:
     def test_ocl(self, orch, therock_path, result):
         """A Test case to verify ocl tests"""
         result.verdict, result.failed, out = orch.runBinary(
-			"./ocltst",
-			"-m",
+            "./ocltst",
+            "-m",
             "liboclruntime.so",
-			"-A",
+            "-A",
             "oclruntime.exclude",
-			cwd=f"{therock_path}/share/opencl/ocltst"
-		)
+            cwd=f"{therock_path}/share/opencl/ocltst",
+        )
         assert result.verdict

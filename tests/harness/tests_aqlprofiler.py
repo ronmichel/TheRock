@@ -8,6 +8,6 @@ class TestAQLProfiler:
         """A Test case to verify AQLProfiler tests"""
         result.verdict = orch.runBinary(
             "./run_tests.sh",
-            cwd=f"{therock_path}/share/hsa-amd-aqlprofile"
-		)
+            cwd=f"{therock_path}/share/hsa-amd-aqlprofile",
+        )
         assert result.verdict

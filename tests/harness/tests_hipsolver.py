@@ -10,6 +10,6 @@ class TestHipSolver:
             "./hipsolver-test",
             gfilter="-*known_bug*",
             env=ompEnv,
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

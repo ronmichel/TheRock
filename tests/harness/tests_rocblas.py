@@ -12,6 +12,6 @@ class TestRocBlas:
             # *multi_gpu*:-*known_bugs* => tdb when multigpu node is available
             trackSuites=True,
             env=ompEnv,
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

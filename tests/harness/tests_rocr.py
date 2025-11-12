@@ -12,6 +12,6 @@ class TestRocr:
             env={
                 "LD_LIBRARY_PATH": f"{rocm}/lib/rocrtst/lib:{rocm}/lib:$LD_LIBRARY_PATH",
             },
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

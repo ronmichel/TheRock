@@ -26,7 +26,7 @@ class TestCLInfo:
                 *[
                     re.search(expr, out) or log(f"Expr Not Match: {expr}")
                     for expr in exprList
-                ]
-            )
+                ],
+            ),
         )
         assert result.verdict

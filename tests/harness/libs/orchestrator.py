@@ -15,7 +15,6 @@ class Orchestrator(object):
         self.gpus = node.getGpus()
         log.info(f"Total GPUs: {len(self.gpus)}")
 
-
     def runBinary(self, *args, retries=3, reqOut=False, **kwargs):
         for i in range(retries):
             i and log.info(f"[{self.node.host}][{i+1}]: Rerunning Failed Tests")
@@ -28,7 +27,6 @@ class Orchestrator(object):
             else:
                 failed.add(f"Unknown tests failed with ret: {ret}")
         return (not failed and ret == 0), failed, out
-
 
     # ctests - https://cmake.org/cmake/help/latest/manual/ctest.1.html
     def runCtest(self, *args, retries=3, **kwargs):
@@ -64,7 +62,6 @@ class Orchestrator(object):
             result &= bool(ret == 0)
         assert result
         return result
-
 
     # gtests - https://google.github.io/googletest/
     def runGtest(self, binary, *args, gfilter=None, retries=3, **kwargs):

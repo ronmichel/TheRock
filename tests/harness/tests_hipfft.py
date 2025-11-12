@@ -12,6 +12,6 @@ class TestHipFFT:
                 **ldpathEnv,
                 **ompEnv,
             },
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

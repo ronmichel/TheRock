@@ -9,6 +9,6 @@ class TestRocAlution:
         result.verdict = orch.runGtest(
             "./rocalution-test",
             env=ompEnv,
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

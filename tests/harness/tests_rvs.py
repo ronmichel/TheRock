@@ -15,11 +15,11 @@ class TestRVS:
     def test_rvs(self, suite, orch, therock_path, result):
         """A Test case to verify RVS tests"""
         result.verdict, result.failed, out = orch.runBinary(
-			"./rvs",
+            "./rvs",
             "-c",
             f"{therock_path}/share/rocm-validation-suite/conf/{suite}_single.conf",
-			"-d",
+            "-d",
             "3",
-            cwd=f"{therock_path}/bin"
-		)
+            cwd=f"{therock_path}/bin",
+        )
         assert result.verdict
