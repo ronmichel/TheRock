@@ -7,10 +7,10 @@ class TestMIGraphx:
     def test_migraphx(self, orch, therock_path, result):
         """A Test case to verify MIGraphx tests"""
         result.verdict = orch.runCtest(
-            '-DONNX_USE_PROTOBUF_SHARED_LIBS=ON',
+            "-DONNX_USE_PROTOBUF_SHARED_LIBS=ON",
             env={
-                'LD_LIBRARY_PATH': f'{therock_path}/lib:$LD_LIBRARY_PATH',
+                "LD_LIBRARY_PATH": f"{therock_path}/lib:$LD_LIBRARY_PATH",
             },
-            cwd=f'{therock_path}/libexec/installed-tests/migraphx'
+            cwd=f"{therock_path}/libexec/installed-tests/migraphx"
         )
         assert result.verdict

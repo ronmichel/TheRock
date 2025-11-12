@@ -4,7 +4,9 @@
 class TestRocSparse:
     """This is an Pytest Test Suite Class to test RocSparse component of TheRock"""
 
-    def test_rocsparse(self, orch, ompEnv, rocsparseMatricesDir, rocsparseTestDir, result):
+    def test_rocsparse(
+        self, orch, ompEnv, rocsparseMatricesDir, rocsparseTestDir, result
+    ):
         """A Test case to verify RocSparse tests"""
         result.verdict = orch.runGtest(
             "./rocsparse-test",

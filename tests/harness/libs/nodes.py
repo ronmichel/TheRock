@@ -39,7 +39,7 @@ class Node(object):
     @utils._callOnce
     def getCpuCount(self):
         """Gets the CPU count of the node"""
-        ret, out = self.runCmd('nproc', reqOut=True)
+        ret, out = self.runCmd("nproc", reqOut=True)
         return int(out)
 
     @utils._callOnce

@@ -7,8 +7,6 @@ class TestRocSolver:
     def test_rocsolver(self, orch, ompEnv, rocsolverTestDir, result):
         """A Test case to verify RocSolver tests"""
         result.verdict = orch.runGtest(
-            "./rocsolver-test",
-            env=ompEnv,
-            cwd=f"{therock_path}/bin"
+            "./rocsolver-test", env=ompEnv, cwd=f"{therock_path}/bin"
         )
         assert result.verdict

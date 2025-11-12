@@ -9,7 +9,7 @@ class TestRocBlas:
         result.verdict = orch.runGtest(
             "./rocblas-test",
             gfilter="*single_gpu*:-*known_bugs*",
-            #*multi_gpu*:-*known_bugs* => tdb when multigpu node is available
+            # *multi_gpu*:-*known_bugs* => tdb when multigpu node is available
             trackSuites=True,
             env=ompEnv,
             cwd=f"{therock_path}/bin"

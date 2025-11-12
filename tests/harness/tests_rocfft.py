@@ -9,7 +9,7 @@ class TestRocFFT:
         result.verdict = orch.runGtest(
             "./rocfft-test",
             gfilter="*single_gpu*",
-            #*multi_gpu* => tdb when multigpu setup is available
+            # *multi_gpu* => tdb when multigpu setup is available
             env=ompEnv,
             cwd=f"{therock_path}/bin"
         )

@@ -7,7 +7,7 @@ class TestAQLProfiler:
     def test_aqlprofiler(self, orch, therock_path, result):
         """A Test case to verify AQLProfiler tests"""
         result.verdict = orch.runBinary(
-			'./run_tests.sh',
-            cwd=f'{therock_path}/share/hsa-amd-aqlprofile'
+            "./run_tests.sh",
+            cwd=f"{therock_path}/share/hsa-amd-aqlprofile"
 		)
         assert result.verdict

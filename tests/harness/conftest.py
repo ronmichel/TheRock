@@ -58,11 +58,11 @@ def result(pytestconfig, request, report, table):
     table.addRow(testName, verdictStr, execTime)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def ldpathEnv(therock_path):
-    return {'LD_LIBRARY_PATH': f'{therock_path}/lib:$LD_LIBRARY_PATH'}
+    return {"LD_LIBRARY_PATH": f"{therock_path}/lib:$LD_LIBRARY_PATH"}
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def ompEnv(orch):
-	return {'OMP_NUM_THREADS': int(orch.node.getCpuCount()/2) or 1}
+	return {"OMP_NUM_THREADS": int(orch.node.getCpuCount()/2) or 1}

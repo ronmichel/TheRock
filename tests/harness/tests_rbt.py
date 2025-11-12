@@ -7,7 +7,6 @@ class TestRBT:
     def test_rbt(self, orch, therock_path, result):
         """A Test case to verify Rocm Bandwidth Tests"""
         result.verdict = orch.runBinary(
-            "./rocm-bandwidth-test",
-            cwd=f"{therock_path}/bin"
+            "./rocm-bandwidth-test", cwd=f"{therock_path}/bin"
         )
         assert result.verdict
