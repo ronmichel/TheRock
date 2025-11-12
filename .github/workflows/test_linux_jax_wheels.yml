@@ -128,9 +128,9 @@ jobs:
             ROCM_VERSION: ${{ inputs.rocm_version }}
         run: |
             # Extract major.minor.patch from ROCM_VERSION
+            # sed command captures first three numeric components separated by dots and reconstructs them as major.minor.patch
             ROCM_VERSION_SHORT="$(echo "${ROCM_VERSION}" | sed -E 's/^([0-9]+)\.([0-9]+)\.([0-9]+).*/\1.\2.\3/')"
             echo "ROCM_VERSION_SHORT=${ROCM_VERSION_SHORT}" >> "$GITHUB_ENV"
-            echo "Full ROCm version: ${ROCM_VERSION}"
             echo "Using semantic ROCm version: ${ROCM_VERSION_SHORT}"
 
       - name: Build JAX Docker image
