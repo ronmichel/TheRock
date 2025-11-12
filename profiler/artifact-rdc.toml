@@ -6,7 +6,7 @@
 include = [
   "include/**",
   "lib/cmake/**",
-  "lib/rdc/grpc/**",
+  # Note: lib/rdc/grpc/** removed - gRPC is statically linked, no separate installation
 ]
 [components.doc."profiler/rdc/stage"]
 include = [

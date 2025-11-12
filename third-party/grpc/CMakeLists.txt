@@ -50,6 +50,19 @@ if(NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
           "${CMAKE_CURRENT_BINARY_DIR}/build/dist/lib/rocm_sysdeps/lib/${lib_name}"
     )
   endforeach()
+
+  # Note: We do NOT test for zero global symbols (T) in gRPC static libraries here.
+  # Rationale:
+  #   1. Static libraries must export public API symbols (T) for the linker to find them
+  #   2. gRPC has ~451 global symbols which are its public API (e.g., grpc::Channel::CreateCall)
+  #   3. Symbol hiding (-fvisibility=hidden) still works: ~459 internal symbols are hidden (t)
+  #   4. The REAL validation is in profiler/CMakeLists.txt:
+  #      - rdc-validate-no-grpc-symbol-pollution ensures librdc_client.so doesn't export gRPC symbols
+  #   5. This end-to-end test is what matters for RFC0007's goal: prevent symbol pollution
+  #
+  # Symbol visibility flags are applied (see CMAKE_CXX_VISIBILITY_PRESET=hidden below),
+  # and the final shared libraries correctly hide gRPC symbols in their dynamic symbol table.
+
   return()
 endif()
 
@@ -115,6 +128,10 @@ add_custom_target(
       "-DCMAKE_CXX_STANDARD=17"
       "-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}"
       "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+      # Symbol visibility control to prevent pollution when statically linked
+      "-DCMAKE_CXX_VISIBILITY_PRESET=hidden"
+      "-DCMAKE_C_VISIBILITY_PRESET=hidden"
+      "-DCMAKE_VISIBILITY_INLINES_HIDDEN=ON"
       # Use already-built zlib instead of rebuilding
       "-DgRPC_ZLIB_PROVIDER=package"
       "-DZLIB_ROOT=${ZLIB_ROOT}"

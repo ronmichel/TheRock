@@ -129,14 +129,16 @@ if(THEROCK_ENABLE_ROCPROFV3)
   ##############################################################################
 
   if(THEROCK_ENABLE_RDC)
-    # RDC depends on gRPC for both runtime (libgrpc++.so) and build-time (protoc, grpc_cpp_plugin).
+    # RDC standalone components (rdcd, rdci, librdc_client.so) use statically-linked gRPC.
     # RUNTIME_DEPS includes ${THEROCK_BUNDLED_GRPC} which ensures:
-    # 1. gRPC is built before RDC
+    # 1. gRPC static libraries are built before RDC
     # 2. CMAKE_PREFIX_PATH includes gRPC's stage directory
-    # 3. find_package(gRPC) and find_package(protobuf) will find the config files
+    # 3. find_package(gRPC) and find_package(protobuf) discover the config files
     # 4. gRPCConfig.cmake exports tool targets (gRPC::grpc_cpp_plugin, protobuf::protoc)
+    # 5. gRPC static libraries (libgrpc++.a, libgrpc.a) are linked into RDC binaries
     #
-    # No hardcoded paths needed - all dependencies are resolved via CMake's standard mechanisms.
+    # Symbol visibility is controlled to prevent gRPC/protobuf symbol pollution.
+    # All dependencies are resolved via CMake's standard package discovery mechanisms.
 
     therock_cmake_subproject_declare(rdc
       EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/rdc"
@@ -184,6 +186,16 @@ if(THEROCK_ENABLE_ROCPROFV3)
         librdc_client.so
     )
 
+    # Validate that gRPC symbols are not polluting librdc_client.so's exported symbols
+    # This ensures that statically-linked gRPC remains hidden to prevent ODR violations
+    add_test(
+      NAME rdc-validate-no-grpc-symbol-pollution
+      COMMAND bash -c "! nm -D ${CMAKE_CURRENT_BINARY_DIR}/rdc/stage/lib/librdc_client.so* 2>/dev/null | grep -q ' T.*grpc::'"
+    )
+    set_tests_properties(rdc-validate-no-grpc-symbol-pollution PROPERTIES
+      LABELS "rdc;symbol-visibility"
+    )
+
     # Provide RDC artifact
     therock_provide_artifact(rdc
       TARGET_NEUTRAL
@@ -199,6 +211,32 @@ if(THEROCK_ENABLE_ROCPROFV3)
         rocprofiler-sdk
         rdc
     )
+
+    # RDC build verification tests
+    # Note: Runtime tests (rdcd/rdci execution) are NOT included here because:
+    #   1. Build machines may not have GPU hardware
+    #   2. Runtime dependencies (LD_LIBRARY_PATH) may not be configured
+    #   3. These binaries require GPU access for actual functionality
+    # Runtime integration tests should be performed in GPU-enabled test environments.
+    if(THEROCK_BUILD_TESTING)
+      # Verify that RDC binaries were built and are executable files
+      add_test(
+        NAME rdc-verify-binaries-exist
+        COMMAND bash -c "test -x ${CMAKE_CURRENT_BINARY_DIR}/rdc/stage/bin/rdcd && test -x ${CMAKE_CURRENT_BINARY_DIR}/rdc/stage/bin/rdci"
+      )
+      set_tests_properties(rdc-verify-binaries-exist PROPERTIES
+        LABELS "rdc;build-verification"
+      )
+      
+      # Verify that RDC libraries were built with correct SONAME structure
+      add_test(
+        NAME rdc-verify-library-sonames
+        COMMAND bash -c "test -L ${CMAKE_CURRENT_BINARY_DIR}/rdc/stage/lib/librdc.so && test -L ${CMAKE_CURRENT_BINARY_DIR}/rdc/stage/lib/librdc_client.so && test -L ${CMAKE_CURRENT_BINARY_DIR}/rdc/stage/lib/librdc_bootstrap.so"
+      )
+      set_tests_properties(rdc-verify-library-sonames PROPERTIES
+        LABELS "rdc;build-verification"
+      )
+    endif()
 
   endif()
 

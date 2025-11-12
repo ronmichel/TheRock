@@ -26,6 +26,8 @@ project wide:
   bundling is not enabled or supported for the target OS):
   - `THEROCK_BUNDLED_BZIP2`
   - `THEROCK_BUNDLED_ELFUTILS`
+  - `THEROCK_BUNDLED_GRPC`
+  - `THEROCK_BUNDLED_LIBCAP`
   - `THEROCK_BUNDLED_LIBDRM`
   - `THEROCK_BUNDLED_LIBLZMA`
   - `THEROCK_BUNDLED_NUMACTL`
@@ -67,6 +69,49 @@ Supported sub-libraries: `libelf`, `libdw`.
 - Canonical method: `find_package(libdw)`
 - Import library: `libdw::libdw`
 - Alternatives: `pkg_check_modules(DW libdw)`
+
+## gRPC
+
+gRPC is a high-performance RPC framework used exclusively by RDC (ROCm Data 
+Center Tool) for its standalone mode components (rdcd daemon and rdci CLI).
+
+**Note:** gRPC is built as **static libraries** and linked into RDC binaries.
+It is integrated as a third-party dependency, not a traditional sysdep, but
+follows similar bundling patterns.
+
+- **Integration:** Third-party static libraries under `third-party/grpc/`
+- **Version:** v1.76.0 (RFC0007 specifies v1.67.1+, upgraded for compatibility)
+- **SSL Provider:** BoringSSL (built from gRPC submodule, statically linked)
+- **Linking:** Static linking into RDC binaries (rdcd, rdci, librdc_client.so)
+- **Canonical method:** `find_package(gRPC CONFIG REQUIRED)`
+- **Import libraries:** 
+  - `gRPC::grpc++` - C++ gRPC library
+  - `gRPC::grpc` - Core gRPC C library
+  - `protobuf::libprotobuf` - Protocol buffers runtime
+  - `gRPC::grpc_cpp_plugin` - Code generator tool
+  - `protobuf::protoc` - Protocol buffers compiler
+- **Bundled variable:** `THEROCK_BUNDLED_GRPC` (Linux only)
+- **Alternatives:** None (required for RDC standalone mode only)
+
+**Important:** gRPC symbols are hidden via visibility controls to prevent ODR
+violations. Do not use gRPC in other TheRock projects without coordination, as
+it may conflict with the statically-linked instance in RDC.
+
+**Dependencies:** gRPC bundles and statically links the following:
+- Abseil (abseil-cpp) - C++ common libraries
+- Protocol Buffers (protobuf) - Serialization
+- RE2 - Regular expression library
+- c-ares - Asynchronous DNS resolver
+- BoringSSL - SSL/TLS library (Google's OpenSSL fork)
+
+## libcap
+
+Linux capabilities library, used by RDC for privilege management.
+
+- **Canonical method:** `find_library(LIB_CAP NAMES cap REQUIRED)`
+- **Import library:** Not provided (use ${LIB_CAP} variable)
+- **Bundled variable:** `THEROCK_BUNDLED_LIBCAP` (Linux only)
+- **Alternatives:** System installation via libcap-dev/libcap-devel packages
 
 ## libdrm
 
