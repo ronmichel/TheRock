@@ -22,7 +22,8 @@ class TestCK:
     def test_ck(self, tensor, orch, therock_path, result):
         """A Test case to verify Composable kernel tests"""
         result.verdict = orch.runBinary(
-            "./ckProfiler", tensor,
+            "./ckProfiler",
+            tensor,
             cwd=f"{therock_path}/bin",
         )
         assert result.verdict

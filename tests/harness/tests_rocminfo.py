@@ -27,4 +27,3 @@ class TestRocmInfo:
             ),
         )
         assert result.verdict
-
