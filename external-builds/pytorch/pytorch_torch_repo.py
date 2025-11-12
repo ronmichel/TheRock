@@ -88,6 +88,11 @@ def main(cl_args: list[str]):
         default=DEFAULT_ORIGIN,
         help="git repository url",
     )
+    checkout_p.add_argument(
+        "--use-rocm-torch",
+        action="store_true",
+        help="Clone ROCm/pytorch at 'develop' (disables patch stack)."
+    )
     checkout_p.add_argument("--depth", type=int, help="Fetch depth")
     checkout_p.add_argument("--jobs", default=10, type=int, help="Number of fetch jobs")
     checkout_p.add_argument(
@@ -115,8 +120,13 @@ def main(cl_args: list[str]):
     save_patches_p.set_defaults(func=repo_management.do_save_patches)
 
     args = p.parse_args(cl_args)
+    if getattr(args, "use_rocm_torch", False):
+       args.gitrepo_origin = "https://github.com/ROCm/pytorch.git"
+       args.repo_hashtag = "develop"
+       if hasattr(args, "patch"):
+           args.patch = False
+       print("Using ROCm/pytorch@develop (patches disabled).")
     args.func(args)
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])

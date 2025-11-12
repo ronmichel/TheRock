@@ -57,7 +57,7 @@ def do_checkout(args: argparse.Namespace):
         print("Applying local modifications...")
         with open(repo_dir / "build_env.json", "w") as f:
             json.dump(build_env, f, indent=2)
-
+if getattr(args, "use_upstream_triton", False):
     repo_management.do_checkout(args, custom_hipify=_do_hipify)
 
 
@@ -134,6 +134,14 @@ def main(cl_args: list[str]):
     save_patches_p.set_defaults(func=repo_management.do_save_patches)
 
     args = p.parse_args(cl_args)
+    if getattr(args, "use_upstream_triton", False):
+        args.gitrepo_origin = "https://github.com/triton-lang/triton.git"
+        args.repo_hashtag = "main"
+        if hasattr(args, "patch"):
+            args.patch = False
+        if hasattr(args, "patchset"):
+            args.patchset = None
+        print("⚙️  --use-upstream-triton: using triton-lang/triton@main with no patchset")
     args.func(args)
 
 
