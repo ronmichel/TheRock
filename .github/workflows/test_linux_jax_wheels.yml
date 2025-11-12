@@ -116,6 +116,8 @@ jobs:
         shell: bash
         working-directory: jax
         run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install requests
           python3 ../build_tools/fetch_wheels.py \
             --cloudfront_url ${{ inputs.package_index_url }} \
             --amdgpu_family ${{ inputs.amdgpu_family }} \
