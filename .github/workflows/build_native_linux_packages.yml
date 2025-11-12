@@ -44,7 +44,8 @@ on:
         default: "rpm"
       package_suffix:
         description: The suffix to be added to package name(build_no or master or rc or combiantion).
-        type: false
+        type: string
+        required: false
         default: "test"
 
 permissions:
