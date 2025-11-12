@@ -16,7 +16,7 @@ class TestRsmi:
         )
         result.verdict = orch.runGtest(
             "./rsmitst",
-            gfilter=f"-{":".join(skipTests)}",
+            gfilter=f"-{':'.join(skipTests)}",
             env={
                 "LD_LIBRARY_PATH": ".:$LD_LIBRARY_PATH",
             },
