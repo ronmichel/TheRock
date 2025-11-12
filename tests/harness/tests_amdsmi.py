@@ -10,6 +10,6 @@ class TestAmdSMI:
             "./amdsmitst",
             srcFile="amdsmitst.exclude",
             gfilter="-${BLACKLIST_ALL_ASICS}",
-            cwd=f"{therock_path}/share/amd_smi/tests"
+            cwd=f"{therock_path}/share/amd_smi/tests",
         )
         assert result.verdict

@@ -65,4 +65,4 @@ def ldpathEnv(therock_path):
 
 @pytest.fixture(scope="session")
 def ompEnv(orch):
-	return {"OMP_NUM_THREADS": int(orch.node.getCpuCount()/2) or 1}
+    return {"OMP_NUM_THREADS": int(orch.node.getCpuCount()/2) or 1}

@@ -23,6 +23,6 @@ class TestCK:
         """A Test case to verify Composable kernel tests"""
         result.verdict = orch.runBinary(
             "./ckProfiler", tensor,
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict

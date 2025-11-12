@@ -14,7 +14,8 @@ class TestRocmInfo:
             r"L2:\s+.*? KB",
         )
         result.verdict, result.failed, out = orch.runBinary(
-            "./rocminfo", cwd=f"{therock_path}/bin",
+            "./rocminfo",
+            cwd=f"{therock_path}/bin",
         )
         result.verdict = all(
             (

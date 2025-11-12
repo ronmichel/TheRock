@@ -13,6 +13,6 @@ class TestRocSparse:
                 "ROCSPARSE_CLIENTS_MATRICES_DIR": f"{therock_path}/clients/matrices",
                 **ompEnv,
             },
-            cwd=f"{therock_path}/bin"
+            cwd=f"{therock_path}/bin",
         )
         assert result.verdict
