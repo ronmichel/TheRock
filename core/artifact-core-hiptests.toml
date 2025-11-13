@@ -1,5 +1,5 @@
 # hip-tests
-[components.run."core/hip-tests"]
+[components.test."core/hip-tests"]
 include = [
   "build/hip-catch-amd*",
 ]
