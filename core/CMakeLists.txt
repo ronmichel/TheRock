@@ -206,11 +206,7 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
 
   if(THEROCK_BUILD_TESTING)
     set(HIP_TESTS_CMAKE_ARGS)
-    set(HIP_TESTS_RUNTIME_DEPS)
     set(_hip_tests_subproject_names)
-    list(APPEND HIP_TESTS_RUNTIME_DEPS
-      hip-clr
-    )
     therock_cmake_subproject_declare(hip-tests
       USE_DIST_AMDGPU_TARGETS
       EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/hip-tests/catch"
@@ -225,7 +221,6 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
         therock-boost
         therock-catch2
       RUNTIME_DEPS
-        # rocm-cmake
         hip-clr
         ${THEROCK_BUNDLED_NUMACTL}
       INTERFACE_LINK_DIRS
