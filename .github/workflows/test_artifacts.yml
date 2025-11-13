@@ -30,9 +30,8 @@ jobs:
       - name: Checkout Python repo from other org
         uses: actions/checkout@v4
         with:
-          repository: AMD-ROCm-Internal/release-automations        
-          ref: rock-branching         
-          token: ${{ secrets.EMU_GITHUB_TOKEN }}
+          repository: ROCm/TheRock        
+          ref: srayasam/branching_code
           path: rock-branching  
           
       - name: Set up Python
@@ -42,7 +41,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r rock-branching/rock-branching/requirements.txt
+          pip install -r rock-branching/release-automations/requirements.txt
 
       - name: Run release script
         run: |
@@ -66,7 +65,7 @@ jobs:
           fi
 
           # Run the external Python script
-          python rock-branching/rock-branching/rock-release-branching.py \
+          python rock-branching/release-automations/rock-release-branching.py \
             -A "$API_TOKEN" \
             -B "$BRANCH" \
             $ENV_FLAG \
