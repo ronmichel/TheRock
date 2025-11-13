@@ -21,7 +21,7 @@ Options:
     --apitoken              API token for authentication with upstream repositories.
     --staging               Use staging environment.
     --prod                  Use production environment.
-    --mailing_list                List of email addresses to notify.
+    --mailing_list          List of email addresses to notify.
 
 Note:
     - This script assumes a specific repository structure and the presence of .gitmodules.
@@ -38,6 +38,8 @@ import pandas as pd
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 
 class rockbrachingAutomation():
 
@@ -66,7 +68,7 @@ class rockbrachingAutomation():
             self.environment = "Unknown"
         
         if args.prod and args.staging:
-            print("you cannot pass both --staging(-S) and --prod(-P) choose any one")
+            logging.error("You cannot pass both --staging(-S) and --prod(-P); choose one")
             exit(1)
         if args.mailing_list:
             self.mailing_list = args.mailing_list
@@ -103,12 +105,15 @@ class rockbrachingAutomation():
             the_rock_url = f"https://{self.gh_hostname}/{self.org}/TheRock.git"
         the_rock_dir_path = os.path.join(os.getcwd(), "TheRock")
         if os.path.isdir(the_rock_dir_path):
+            logging.info("Removing existing TheRock directory for fresh clone")
             shutil.rmtree(the_rock_dir_path)
+        logging.info("Cloning TheRock repository from %s", the_rock_url.replace(self.apitoken or '', '***'))
         self.run(f"git clone {the_rock_url}")
         cwd= os.getcwd()
         # Move into TheRock directory
         the_rock_dir = os.path.join(cwd, "TheRock")
         if not os.path.isdir(the_rock_dir):
+            logging.error("TheRock directory not found after clone")
             raise RuntimeError("TheRock directory not found after clone")
 
         # Gather submodule info
@@ -152,7 +157,7 @@ class rockbrachingAutomation():
     # This is a helper function for checkout_source.
     # Note that this returns a dict of project names to their key/value pairs from gitmodules.
     def determine_projects(self,  working_dir):
-        print(working_dir)
+        logging.debug("Determining projects from gitmodules in %s", working_dir)
         gitmodules_path = os.path.join(working_dir, ".gitmodules")
         config = configparser.ConfigParser()
         config.read(gitmodules_path)
@@ -196,7 +201,6 @@ class rockbrachingAutomation():
 
     # Update every yml file in the .github/workflows directory to replace source_branch with target_branch.
     def update_github_workflows(self, repo_path, source_branch, target_branch):
-        print(repo_path)
         workflow_dir = os.path.join(repo_path, ".github", "workflows")
         if not os.path.isdir(workflow_dir):
             return "No workflows found"
@@ -220,7 +224,7 @@ class rockbrachingAutomation():
                             f.write(new_content)
                         updated_count += 1
             except Exception as e:
-                print(f"Failed updating {yml_file}: {e}")
+                logging.warning("Failed updating %s: %s", yml_file, e)
         # Also update .gitmodules to set branch to target_branch for each submodule
         gitmodules_path = os.path.join(repo_path, ".gitmodules")
         if os.path.isfile(gitmodules_path):
@@ -247,7 +251,7 @@ class rockbrachingAutomation():
     # Execute the plan: clone each repo, create branch at commit, push to remote 'rocm-github'
     def execute_plan(self, plan, release_branch):
         temp_dir = tempfile.mkdtemp(prefix="rock-branching-")
-        print(f"Temporary working directory: {temp_dir}")
+        logging.info("Temporary working directory: %s", temp_dir)
         successful_components = {}
         failed_components = {}
         validation_components = {}
@@ -256,7 +260,7 @@ class rockbrachingAutomation():
             commit = meta.get('commit')
             if not url or not commit:
                 msg = f"Skipping {path_key}: missing url or commit"
-                print(msg)
+                logging.warning(msg)
                 failed_components[path_key] = {"error": msg}
                 validation_components[path_key] = {
                     "status": "Failure",
@@ -267,12 +271,12 @@ class rockbrachingAutomation():
             token_url = self.tokenize_url(url)
             repo_name = os.path.splitext(os.path.basename(url))[0]
             clone_dir = os.path.join(temp_dir, repo_name)
-            print(f"Cloning {url} -> {clone_dir}")
+            logging.info("Cloning %s -> %s", url, clone_dir)
             try:
                 self.run(f"git clone {token_url} {clone_dir}")
             except subprocess.CalledProcessError as e:
                 err = f"Clone failed for {url}: {e}"
-                print(err)
+                logging.error(err)
                 failed_components[path_key] = {"error": err}
                 validation_components[path_key] = {
                     "status": "Failure",
@@ -287,7 +291,7 @@ class rockbrachingAutomation():
                 self.run(f"git checkout -b {release_branch} {commit}", cwd=clone_dir)
             except subprocess.CalledProcessError as e:
                 err = f"Branch creation failed for {repo_name} at {commit}: {e}"
-                print(err)
+                logging.error(err)
                 failed_components[path_key] = {"error": err}
                 validation_components[path_key] = {
                     "status": "Failure",
@@ -298,7 +302,7 @@ class rockbrachingAutomation():
             # Push branch to rocm-github remote
             try:
                 self.run(f"git push rocm-github {release_branch}", cwd=clone_dir)
-                print(f"Pushed {release_branch} for {repo_name}")
+                logging.info("Pushed %s for %s", release_branch, repo_name)
                 successful_components[path_key] = {
                     "url": url,
                     "commit": commit,
@@ -326,17 +330,16 @@ class rockbrachingAutomation():
                     }
             except subprocess.CalledProcessError as e:
                 err = f"Push failed for {repo_name}: {e}"
-                print(err)
+                logging.error(err)
                 failed_components[path_key] = {"error": err}
                 validation_components[path_key] = {
                     "status": "Failure",
                     "plan_commit": commit,
                     "branch_commit": "N/A",
                 }
-
-        print("Successful components:", successful_components)
-        print("Failed components:", failed_components)
-        print("Validation components:", validation_components)
+        logging.info("Successful components: %s", successful_components)
+        logging.info("Failed components: %s", failed_components)
+        logging.info("Validation components: %s", validation_components)
         return successful_components, failed_components, validation_components
 
     def highlightCells(self, column):
@@ -405,7 +408,7 @@ class rockbrachingAutomation():
             s.send_message(msg)
             s.quit()
         except Exception as e:
-            print(f"Failed to send email: {e}")
+            logging.error("Failed to send email: %s", e)
 
     def prepare_plan(self, projects, gitmodule_projects):
         """Compare two dictionaries:
