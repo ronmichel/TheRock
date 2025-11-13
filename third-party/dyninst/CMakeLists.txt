@@ -20,6 +20,9 @@ therock_cmake_subproject_declare(therock-dyninst
     -DBoost_ROOT_DIR="${CMAKE_CURRENT_BINARY_DIR}/../boost/source"
     -DTBB_ROOT_DIR="${CMAKE_CURRENT_BINARY_DIR}/../tbb/stage"
     -DElfUtils_ROOT_DIR="${CMAKE_CURRENT_BINARY_DIR}/../sysdeps/linux/elfutils/build/stage/lib/rocm_sysdeps"
+    # TODO: This is assuming we run yum install gcc-toolset-13-binutils-devel
+    # Replace with different path if we go an alternative route
+    -DLibIberty_ROOT_DIR="/opt/rh/gcc-toolset-13/root/usr"
 )
 therock_cmake_subproject_provide_package(therock-dyninst dyninst lib/cmake)
 therock_cmake_subproject_activate(therock-dyninst)
