@@ -215,7 +215,7 @@ jobs:
           ls
 
       - name: Upload build artifacts as github artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           # This will help the build artifacts to be available for other workflow to use
           name: output-files
