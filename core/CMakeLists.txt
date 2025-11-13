@@ -237,7 +237,7 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
       TARGETS USE_DIST_AMDGPU_TARGETS
       DESCRIPTOR artifact-core-hiptests.toml
       COMPONENTS
-        run
+        test
       SUBPROJECT_DEPS
         hip-tests
     )

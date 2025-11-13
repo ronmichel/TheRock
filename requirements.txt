@@ -13,6 +13,3 @@ msgpack>=1.1.0
 
 # AWS Redshift connector
 redshift_connector==2.1.8
-
-# hip-tests
-rpm
