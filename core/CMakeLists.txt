@@ -208,13 +208,9 @@ if(THEROCK_ENABLE_HIP_RUNTIME)
     set(HIP_TESTS_CMAKE_ARGS)
     set(HIP_TESTS_RUNTIME_DEPS)
     set(_hip_tests_subproject_names)
-    if(WIN32)
-    else()
-      # Non-Windows CLR options.
-      list(APPEND HIP_TESTS_RUNTIME_DEPS
-        hip-clr
-      )
-    endif()
+    list(APPEND HIP_TESTS_RUNTIME_DEPS
+      hip-clr
+    )
     therock_cmake_subproject_declare(hip-tests
       USE_DIST_AMDGPU_TARGETS
       EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_SYSTEMS_SOURCE_DIR}/projects/hip-tests/catch"
