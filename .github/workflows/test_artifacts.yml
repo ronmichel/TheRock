@@ -65,7 +65,7 @@ jobs:
           fi
 
           # Run the external Python script
-          python rock-branching/release-automations/rock-release-branching.py \
+          python rock-branching/release-automations/create_release_branch.py \
             -A "$API_TOKEN" \
             -B "$BRANCH" \
             $ENV_FLAG \
