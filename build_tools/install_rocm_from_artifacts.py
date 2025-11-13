@@ -14,9 +14,18 @@ python build_tools/install_rocm_from_artifacts.py
     (--artifact-group ARTIFACT_GROUP | --amdgpu_family AMDGPU_FAMILY)
     [--output-dir OUTPUT_DIR]
     (--run-id RUN_ID | --release RELEASE | --input-dir INPUT_DIR)
-    [--blas | --no-blas] [--fft | --no-fft] [--hipdnn | --no-hipdnn] [--hiptensor | --no-hiptensor] [--miopen | --no-miopen]
-    [--miopen-plugin | --no-miopen-plugin] [--prim | --no-prim] [--rand | --no-rand] [--rccl | --no-rccl]
-    [--tests | --no-tests] [--base-only]
+    [--blas | --no-blas]
+    [--fft | --no-fft]
+    [--hipdnn | --no-hipdnn]
+    [--miopen | --no-miopen]
+    [--miopen-plugin | --no-miopen-plugin]
+    [--prim | --no-prim]
+    [--rand | --no-rand]
+    [--rccl | --no-rccl]
+    [--rocwmma | --no-rocwmma]
+    [--hiptensor | --no-hiptensor]
+    [--tests | --no-tests]
+    [--base-only]
 
 Examples:
 - Downloads and unpacks the gfx94X S3 artifacts from GitHub CI workflow run 14474448215
@@ -172,6 +181,7 @@ def retrieve_artifacts_by_run_id(args):
             args.prim,
             args.rand,
             args.rccl,
+            args.rocwmma,
         ]
     ):
         argv.extend(base_artifact_patterns)
@@ -188,6 +198,9 @@ def retrieve_artifacts_by_run_id(args):
             extra_artifacts.append("hiptensor")
         if args.miopen:
             extra_artifacts.append("miopen")
+            # We need bin/MIOpenDriver executable for tests.
+            argv.extend("miopen_run")
+            # Also need these for runtime kernel compilation (rocrand includes).
             argv.extend("rand_dev")
         if args.miopen_plugin:
             extra_artifacts.append("miopen-plugin")
@@ -197,6 +210,8 @@ def retrieve_artifacts_by_run_id(args):
             extra_artifacts.append("rand")
         if args.rccl:
             extra_artifacts.append("rccl")
+        if args.rocwmma:
+            extra_artifacts.append("rocwmma")
 
         extra_artifact_patterns = [f"{a}_lib" for a in extra_artifacts]
         if args.tests:
@@ -382,6 +397,13 @@ def main(argv):
         "--rccl",
         default=False,
         help="Include 'rccl' artifacts",
+        action=argparse.BooleanOptionalAction,
+    )
+
+    artifacts_group.add_argument(
+        "--rocwmma",
+        default=False,
+        help="Include 'rocwmma' artifacts",
         action=argparse.BooleanOptionalAction,
     )
 
