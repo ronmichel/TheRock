@@ -19,6 +19,10 @@ base version used for packages, while subprojects may have their own independent
 library versions (for example `HIPBLASLT_PROJECT_VERSION` in
 [`rocm-libraries/projects/hipblaslt/CMakeLists.txt`](/rocm-libraries/projects/hipblaslt/CMakeLists.txt)).
 
+<!-- TODO: touch on ABI versions in libraries (.so/.dll) -->
+
+<!-- TODO: mention manifest files? (data about subproject commits used in builds) -->
+
 ## Constraints and design guidelines
 
 We are limited by what each packaging system accepts as valid versions.
@@ -58,6 +62,10 @@ users who want early previews of upcoming releases, and QA/test team members.
 
 <!-- TODO: mention wheelnext / wheel variants, link to tracking issue once filed -->
 
+<!-- TODO: mention how versions compare to one another (stable > rc > a > dev) -->
+
+<!--       stable takes precedence, exact versions always work, add `--pre` to allow rc/a/dev -->
+
 ## External project versions
 
 When we build external projects like
@@ -95,3 +103,7 @@ When working with versions please use these tools and avoid custom parsing
   - [`build_tools/compute_rocm_package_version.py`](/build_tools/compute_rocm_package_version.py)
   - [`build_tools/github_actions/determine_version.py`](build_tools/github_actions/determine_version.py)
   - [`build_tools/github_actions/write_torch_versions.py`](build_tools/github_actions/write_torch_versions.py)
+
+<!-- TODO: code samples (e.g. how to compare python package versions) -->
+
+<!-- TODO: how to check the version for each package/tool (`--version` commands, `pip show`) -->
