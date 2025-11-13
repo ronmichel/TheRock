@@ -228,12 +228,10 @@ jobs:
 
   build_native_package:
     name : Build Native Packages
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60 # 1 hour timeout
-    needs: [setup_metadata, portable_linux_packages]
     uses: ./.github/workflows/build_native_linux_packages.yml
     with:
       artifact_group: ${{ matrix.target_bundle.amdgpu_family }}
       rocm_version: ${{ needs.setup_metadata.outputs.version }}
       artifact_location: "./build/artifacts"
       package_type: 'rpm'
+    needs: [setup_metadata, portable_linux_packages]

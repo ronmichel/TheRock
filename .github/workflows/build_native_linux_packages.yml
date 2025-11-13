@@ -97,7 +97,7 @@ jobs:
           path: ${{ env.ARTIFACTS_DIR }}
 
       - name: Fetch Artifacts
-        if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.artifact_location || '') != '' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && (github.event.inputs.artifact_location || '') == '' }}
         run: |
           echo "artifact_location is not paased fetching artifact using run_id"
           echo "Fetching artifacts for build ${{ inputs.artifact_run_id }}"
