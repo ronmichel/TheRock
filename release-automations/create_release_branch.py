@@ -99,10 +99,7 @@ class rockbrachingAutomation():
 
     # Check out source code and returns a path to where theRock is checked out, projects dict, and
     def checkout_source(self):
-        if self.is_staging and self.apitoken:
-            the_rock_url = f"https://{self.apitoken}@{self.gh_hostname}/{self.org}/TheRock.git"
-        else:
-            the_rock_url = f"https://{self.gh_hostname}/{self.org}/TheRock.git"
+        the_rock_url = f"https://{self.apitoken}@{self.gh_hostname}/{self.org}/TheRock.git"
         the_rock_dir_path = os.path.join(os.getcwd(), "TheRock")
         if os.path.isdir(the_rock_dir_path):
             logging.info("Removing existing TheRock directory for fresh clone")
@@ -205,24 +202,39 @@ class rockbrachingAutomation():
         if not os.path.isdir(workflow_dir):
             return "No workflows found"
 
-        yml_files = glob.glob(os.path.join(workflow_dir, "**"), recursive=True)
-        updated_count = 0
+        # Only target specific workflow files
+        candidate_files = [
+            os.path.join(workflow_dir, "pre-commit.yml"),
+            os.path.join(workflow_dir, "ci.yml"),
+        ]
+        yml_files = [f for f in candidate_files if os.path.isfile(f)]
+        updated_files = []
         for yml_file in yml_files:
             if not yml_file.endswith((".yml", ".yaml")):
                 continue
             try:
                 with open(yml_file, "r", encoding="utf-8") as f:
                     content = f.read()
-                pattern = f"- {source_branch}"
-                replacement = f"- {target_branch}"
-                if pattern in content:
-                    # Replace only exact list item occurrences. This naive replace is acceptable
-                    # because pattern includes leading dash+space. Avoid sed to handle slashes safely.
-                    new_content = content.replace(pattern, replacement)
-                    if new_content != content:
-                        with open(yml_file, "w", encoding="utf-8") as f:
-                            f.write(new_content)
-                        updated_count += 1
+                original_content = content
+                # Patterns to replace for branches referencing source_branch
+                # 1. List item: - main / - 'main' / - "main"
+                # 2. Bracket list: [main] / ['main'] / ["main"] possibly with spaces
+                # 3. matrix or on: push branches definitions
+                import re
+                patterns = [
+                    (re.compile(rf"(^\s*-\s*)['\"]?{re.escape(source_branch)}['\"]?(\s*(#.*)?$)", re.MULTILINE), rf"\1{target_branch}\2"),
+                    (re.compile(rf"([\[,]\s*)['\"]?{re.escape(source_branch)}['\"]?(\s*[\],])"), rf"\1{target_branch}\2"),
+                    (re.compile(rf"(branches:\s*\[)([^\]]*?)\b{re.escape(source_branch)}\b"), lambda m: m.group(1)+m.group(2).replace(source_branch, target_branch)),
+                ]
+                for regex, repl in patterns:
+                    try:
+                        content = regex.sub(repl, content)
+                    except Exception as e:
+                        logging.debug("Regex substitution failed for %s: %s", yml_file, e)
+                if content != original_content:
+                    with open(yml_file, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    updated_files.append(os.path.relpath(yml_file, repo_path))
             except Exception as e:
                 logging.warning("Failed updating %s: %s", yml_file, e)
         # Also update .gitmodules to set branch to target_branch for each submodule
@@ -238,11 +250,43 @@ class rockbrachingAutomation():
             if changed:
                 with open(gitmodules_path, "w") as cfg:
                     config.write(cfg)
-        return f"Updated {updated_count} workflow files and .gitmodules branches"
+        return {
+            "updated_workflow_files": updated_files,
+            "gitmodules_updated": os.path.isfile(gitmodules_path),
+            "target_branch": target_branch
+        }
+
+    def commit_and_push_changes(self, repo_path, branch_name):
+        """Commit and push modified workflow/.gitmodules files to origin on given branch (creates branch if missing)."""
+        try:
+            # Ensure branch exists (create from current HEAD if absent)
+            code, _ = self.run(f"git -C {repo_path} rev-parse --verify {branch_name}", capture_output=False, check=False)
+            if code != 0:
+                self.run(f"git -C {repo_path} checkout -b {branch_name}")
+            else:
+                self.run(f"git -C {repo_path} checkout {branch_name}")
+            # Stage changes
+            # Stage only targeted workflow files and .gitmodules
+            self.run(f"git -C {repo_path} add .gitmodules", check=False)
+            for wf in ["pre-commit.yml", "ci.yml"]:
+                path = os.path.join(repo_path, ".github", "workflows", wf)
+                if os.path.isfile(path):
+                    self.run(f"git -C {repo_path} add {path}", check=False)
+            # Commit if there is a diff
+            code, diff_out = self.run(f"git -C {repo_path} diff --cached --name-only", capture_output=True, check=False)
+            if diff_out.strip():
+                self.run(f"git -C {repo_path} commit -m 'Update workflows to {branch_name}'", check=False)
+                self.run(f"git -C {repo_path} push origin {branch_name}", check=False)
+                logging.info("Pushed workflow changes to branch %s", branch_name)
+            else:
+                logging.info("No staged changes to commit for workflows")
+        except subprocess.CalledProcessError as e:
+            logging.error("Commit/push failed: %s", e)
+            raise
 
     def tokenize_url(self, url):
         """Embed token into https URL if token available."""
-        if self.is_staging and self.apitoken and url.startswith('https://'):
+        if self.apitoken and url.startswith('https://'):
             # Avoid double insertion
             if f'https://{self.apitoken}@' not in url:
                 return url.replace('https://', f'https://{self.apitoken}@')
@@ -435,7 +479,6 @@ class rockbrachingAutomation():
     
     def main(self):
         working_dir, projects = self.checkout_source()
-        self.update_github_workflows(working_dir, "main", self.release_branch)
         gitmodule_projects = self.determine_projects(working_dir)
         plan = self.prepare_plan(projects, gitmodule_projects)
         # Add TheRock itself using tip of its default/upstream branch
@@ -447,13 +490,16 @@ class rockbrachingAutomation():
         except Exception:
             # Fallback to current HEAD if upstream parsing fails
             _, root_commit = self.run("git rev-parse HEAD", cwd=working_dir, capture_output=True, check=True)
-        if self.is_staging and self.apitoken:
-            root_url = f"https://{self.apitoken}@{self.gh_hostname}/{self.org}/TheRock.git"
-        else:
-            root_url = f"https://{self.gh_hostname}/{self.org}/TheRock.git"
+        root_url = f"https://{self.apitoken}@{self.gh_hostname}/{self.org}/TheRock.git"
         plan['TheRock'] = { 'url': root_url, 'commit': root_commit }
-
         successfull_components, failed_components, validation_components = self.execute_plan(plan, self.release_branch)
+        result = self.update_github_workflows(working_dir, "main", self.release_branch)
+        logging.info("Workflow update result: %s", result)
+        # Commit and push changes on the new release branch
+        try:
+            self.commit_and_push_changes(working_dir, self.release_branch)
+        except Exception:
+            logging.error("Failed to commit/push workflow changes")
         if self.mailing_list:
             logging.info(f"Branching completed. Sending notifications to: {self.mailing_list}")
             self.send_notifications(successful_components=successfull_components, failed_components=failed_components, validation_components=validation_components, mailing_list=self.mailing_list)
