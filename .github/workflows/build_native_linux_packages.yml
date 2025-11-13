@@ -89,7 +89,7 @@ jobs:
 
 
       - name: Download artifact if called by another workflow
-        if: ${{ github.event_name == 'workflow_call' && inputs.source_path != '' }}
+        if: ${{ github.event_name == 'workflow_call' && (inputs.artifact_location || '') != '' }}
         uses: actions/download-artifact@v4
         with:
           # This is the artifact generated from another build workflow passed through
@@ -98,7 +98,7 @@ jobs:
 
       - name: Fetch Artifacts
         run: |
-          if: ${{  inputs.artifact_location }}
+          if: ${{ (inputs.artifact_location || '') == '' }}
           echo "artifact_location is not paased fetching artifact using run_id"
           echo "Fetching artifacts for build ${{ inputs.artifact_run_id }}"
           python ./build_tools/fetch_artifacts.py \
