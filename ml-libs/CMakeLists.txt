@@ -277,7 +277,7 @@ if(THEROCK_ENABLE_HIPTENSOR)
     BUILD_DEPS
       rocm-cmake
       therock-googletest
-      #composable_kernel
+      composable_kernel
     RUNTIME_DEPS
       hip-clr
   )
