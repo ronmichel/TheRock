@@ -226,7 +226,7 @@ jobs:
         with:
           python-version: 3.12
 
-  build_native_package
+  build_native_package:
     name : Build Native Packages
     runs-on: ubuntu-24.04
     timeout-minutes: 60 # 1 hour timeout
