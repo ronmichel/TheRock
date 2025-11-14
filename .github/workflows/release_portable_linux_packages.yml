@@ -233,5 +233,5 @@ jobs:
       artifact_group: ${{ matrix.target_bundle.amdgpu_family }}
       rocm_version: ${{ needs.setup_metadata.outputs.version }}
       artifact_location: "./build/artifacts"
-      package_type: 'rpm'
+      native_package_type: 'rpm'
     needs: [setup_metadata, portable_linux_packages]
