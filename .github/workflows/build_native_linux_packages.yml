@@ -50,7 +50,6 @@ on:
         description: The suffix to be added to package name(asan or static).
         type: string
         required: false
-        default: "test"
 
 permissions:
   id-token: write
