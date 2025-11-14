@@ -80,7 +80,7 @@ jobs:
       build_variant_suffix: ${{ matrix.variant.build_variant_suffix }}
       build_variant_cmake_preset: ${{ matrix.variant.build_variant_cmake_preset }}
       test_labels: ${{ needs.setup.outputs.linux_test_labels }}
-      test_harness: ${{ needs.setup.outputs.linux_test_harness }}
+      test_harness: ${{ inputs.linux_test_harness }}
       artifact_run_id: ${{ inputs.artifact_run_id }}
       expect_failure: ${{ matrix.variant.expect_failure == true }}
       use_prebuilt_artifacts: ${{ inputs.linux_use_prebuilt_artifacts == true && 'true' || 'false' }}
