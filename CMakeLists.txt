@@ -358,7 +358,7 @@ endif()
 # Windows support issue tracked at: https://github.com/ROCm/TheRock/issues/2068
 if(NOT WIN32)
   therock_add_feature(HIPTENSOR
-    GROUP ML_LIBS
+    GROUP MATH_LIBS
     DESCRIPTION "Enables the hipTensor project"
     REQUIRES COMPILER COMPOSABLE_KERNEL
   )

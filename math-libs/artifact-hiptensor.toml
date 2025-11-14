@@ -1,17 +1,17 @@
 # hipTensor
-[components.dbg."ml-libs/hipTensor/stage"]
+[components.dbg."math-libs/hipTensor/stage"]
 optional = true
 
-[components.dev."ml-libs/hipTensor/stage"]
+[components.dev."math-libs/hipTensor/stage"]
 optional = true
 include = [
   "include/hipTensor/*",
 ]
 
-[components.lib."ml-libs/hipTensor/stage"]
+[components.lib."math-libs/hipTensor/stage"]
 optional = true
 
-[components.test."ml-libs/hipTensor/stage"]
+[components.test."math-libs/hipTensor/stage"]
 optional = true
 include = [
   # Samples
