@@ -56,7 +56,6 @@ jobs:
     name: Release Native Linux Package
     strategy:
       fail-fast: false
-
     uses: ./.github/workflows/build_native_linux_packages.yml
     with:
       artifact_group: ${{ inputs.amdgpu_family }}

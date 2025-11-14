@@ -228,6 +228,9 @@ jobs:
 
   build_native_package:
     name : Build Native Packages
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/build_native_linux_packages.yml
     with:
       artifact_group: ${{ matrix.target_bundle.amdgpu_family }}
