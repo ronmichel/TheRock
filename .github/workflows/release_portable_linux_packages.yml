@@ -147,7 +147,7 @@ jobs:
       matrix:
         #target_bundle: ${{ fromJSON(needs.setup_metadata.outputs.package_targets) }}
         target_bundle: 
-          - amdgpu_family: gfx1030
+          - amdgpu_family: gfx94X-dcgpu
     env:
       TEATIME_LABEL_GH_GROUP: 1
       OUTPUT_DIR: ${{ github.workspace }}/output
