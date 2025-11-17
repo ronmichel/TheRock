@@ -38,7 +38,7 @@ jobs:
 
       - name: Run release script
         run: |
-          BRANCH=${{ github.event.inputs.release_branch }}
+          BRANCH=${{ inputs.release_branch }}
           API_TOKEN="${{ secrets.PROD_API_TOKEN }}"
 
           # Run the external Python script
