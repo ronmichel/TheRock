@@ -5,7 +5,7 @@ on:
     inputs:
       release_branch:
         type: string
-        default: srayasam/therock-test
+        default: release/therock-7.x
         
   workflow_dispatch:
     inputs:
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout Python repo from other org
         uses: actions/checkout@v4
         with:
-          repository: ROCm/TheRock        
+          repository: ROCm/TheRock   
           ref: srayasam/branching_code 
           
       - name: Set up Python
