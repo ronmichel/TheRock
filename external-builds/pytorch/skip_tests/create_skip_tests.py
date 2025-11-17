@@ -41,10 +41,14 @@ Command-line usage:
 
 """
 
+from pathlib import Path
+
+
 import argparse
 import glob
 import importlib.util
 import os
+import pathlib
 import sys
 from typing import Dict, List
 
@@ -68,19 +72,19 @@ def import_skip_tests(pytorch_version: str = "") -> Dict[str, Dict]:
         Format: {"generic": {...}, "pytorch_2.7": {...}}
 
     """
-    this_script_dir = os.path.dirname(os.path.abspath(__file__))
+    this_script_dir = pathlib.Path(os.path.abspath(__file__)).parent
 
     files = [os.path.join(this_script_dir, "generic.py")]
     if pytorch_version == "all":
-        files += glob.glob(os.path.join(this_script_dir, "pytorch_*.py"))
+        files += list(this_script_dir.glob("pytorch_*.py"))
     elif pytorch_version:
-        files += [os.path.join(this_script_dir, f"pytorch_{pytorch_version}.py")]
+        files += [this_script_dir / f"pytorch_{pytorch_version}.py"]
 
     dict_skip_tests = {}
 
     for full_path in files:
         # Get filename without .py extension
-        module_name = os.path.basename(full_path)[:-3]
+        module_name = pathlib.Path(full_path).stem
 
         try:
             spec = importlib.util.spec_from_file_location(module_name, full_path)
