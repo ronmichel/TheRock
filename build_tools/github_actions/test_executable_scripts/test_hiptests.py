@@ -15,9 +15,9 @@ if os.name == 'nt':
     ]
 else:
     cmd = [
-        f"ctest",
+        f"ls ${THEROCK_BIN_DIR} && ls ${THEROCK_BIN_DIR}/.. && ctest", # For debug, need to remove it
         f"--test-dir",
-        f"{THEROCK_BIN_DIR}/../share/hip/catch_tests"
+        f"{THEROCK_BIN_DIR}/catch_tests"
     ]
 
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")
