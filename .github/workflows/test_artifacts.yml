@@ -1,116 +1,51 @@
-name: Test Artifacts
+name: Run Rock Release Branching
 
 on:
-  workflow_dispatch:
-    inputs:
-      artifact_group:
-        type: string
-      artifact_run_id:
-        type: string
-        default: ""
-      amdgpu_families:
-        type: string
-      test_runs_on:
-        type: string
-      sanity_check_only_for_family:
-        type: boolean
-        default: false
-      test_type:
-        type: string
-      test_labels:
-        type: string
   workflow_call:
     inputs:
-      artifact_group:
+      release_branch:
         type: string
-      artifact_run_id:
-        type: string
-        default: ""
-      amdgpu_families:
-        type: string
-      test_runs_on:
-        type: string
-      sanity_check_only_for_family:
-        type: boolean
-        default: false
-      test_type:
-        type: string
-      test_labels:
-        type: string
-  push:
-    branches:
-      - ADHOCBUILD
-
-permissions:
-  contents: read
-
+        default: srayasam/therock-test
+        
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: "Name of branch to create (e.g., release/v1.2.3)"
+        required: true
 jobs:
-  configure_test_matrix:
-    name: "Configure test matrix"
-    # if there is a test machine available
-    if: ${{ inputs.test_runs_on != '' }}
-    runs-on: ${{ inputs.test_runs_on }}
-    outputs:
-      components: ${{ steps.configure.outputs.components }}
-      platform: ${{ steps.configure.outputs.platform }}
-      shard_arr: ${{ steps.configure.outputs.shard_arr }}
+  run-script:
+    runs-on: azure-linux-scale-rocm
+
     steps:
-      - name: "Fetch 'build_tools' from repository"
-        if: ${{ runner.os == 'Windows' }}
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+        
+      - name: Checkout Python repo from other org
+        uses: actions/checkout@v4
         with:
-          sparse-checkout: build_tools
-          path: "prejob"
-
-      # Checkout failure is possible on Windows, as it's the first job on a GPU test runner.
-      # Post-job cleanup isn't necessary since no executables are launched in this job.
-      - name: Pre-job cleanup processes on Windows
-        if: ${{ runner.os == 'Windows' }}
-        shell: powershell
-        run: . '${{ github.workspace }}\prejob\build_tools\github_actions\cleanup_processes.ps1'
-
-      - name: "Checking out repository"
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      - name: Setting up Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+          repository: ROCm/TheRock        
+          ref: srayasam/branching_code
+          path: build_tools/release_automations 
+          
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: "3.11"
 
-      - name: "Configuring CI options"
-        id: configure
-        env:
-          ARTIFACT_GROUP: ${{ inputs.artifact_group }}
-          AMDGPU_FAMILIES: ${{ inputs.amdgpu_families }}
-          TEST_TYPE: ${{ inputs.test_type }}
-          TEST_LABELS: ${{ inputs.test_labels }}
-        run: python ./build_tools/github_actions/fetch_test_configurations.py
+      - name: Install dependencies
+        run: |
+          pip install -r build_tools/release_automations/requirements.txt
 
-  test_sanity_check:
-    name: 'Test Sanity Check'
-    needs: configure_test_matrix
-    uses: './.github/workflows/test_sanity_check.yml'
-    with:
-      artifact_group: ${{ inputs.artifact_group }}
-      artifact_run_id: ${{ inputs.artifact_run_id }}
-      amdgpu_families: ${{ inputs.amdgpu_families }}
-      test_runs_on: ${{ inputs.test_runs_on }}
-      platform: ${{ needs.configure_test_matrix.outputs.platform }}
+      - name: Run release script
+        run: |
+          BRANCH=${{ inputs.release_branch }}
+          API_TOKEN="${{ secrets.PROD_API_TOKEN }}"
 
-  test_components:
-    name: 'Test ${{ matrix.components.job_name }}'
-    needs: [test_sanity_check, configure_test_matrix]
-    # skip tests if no test matrix to run and sanity check only requested
-    if: ${{ needs.configure_test_matrix.outputs.components != '[]' && !inputs.sanity_check_only_for_family }}
-    strategy:
-      fail-fast: false
-      matrix:
-        components: ${{ fromJSON(needs.configure_test_matrix.outputs.components) }}
-    uses: './.github/workflows/test_component.yml'
-    with:
-      artifact_run_id: ${{ inputs.artifact_run_id }}
-      artifact_group: ${{ inputs.artifact_group }}
-      amdgpu_families: ${{ inputs.amdgpu_families }}
-      test_runs_on: ${{ inputs.test_runs_on }}
-      platform: ${{ needs.configure_test_matrix.outputs.platform }}
-      component: ${{ toJSON(matrix.components) }}
+          # Run the external Python script
+          ls -lart
+          pwd
+          ls -R build_tools
+          python build_tools/release_automations/create_release_branch.py \
+            -A "$API_TOKEN" \
+            -B "$BRANCH" \
+            --dry_run
