@@ -2,8 +2,8 @@ name: Release portable Linux packages
 
 on:
   push:
-  branches:
-    - rponnuru_linux_installation
+    branches:
+      - rponnuru_linux_installation
 
   # Trigger from another workflow (typically to build dev packages and then test them)
   workflow_call:
