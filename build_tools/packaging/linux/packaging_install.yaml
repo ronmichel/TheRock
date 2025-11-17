@@ -1,0 +1,31 @@
+debian:
+    wheel_installation_method: pip
+    package_type: deb
+    test:
+        s3: https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}
+    daily:
+        s3:
+    nightly:
+        s3:
+    release:
+        s3:
+    bi-weekly:
+        s3:
+    rc:
+        s3:
+redhat:
+    wheel_installation_method: pip
+    package_type: rpm
+    test:
+        s3: https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}/deb/pool/main/index.html
+    daily:
+        s3:
+    nightly:
+        s3:
+    release:
+        s3:
+    bi-weekly:
+        s3:
+    rc:
+        s3:
+

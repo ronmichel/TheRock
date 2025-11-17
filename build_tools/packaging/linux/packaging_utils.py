@@ -12,6 +12,9 @@ currentFuncName = lambda n=0: sys._getframe(n + 1).f_code.co_name
 
 import re
 import logging
+import yaml
+import copy
+
 
 # Create a common logger
 logger = logging.getLogger("rocm_installer")
@@ -29,6 +32,34 @@ ch.setFormatter(formatter)
 if not logger.hasHandlers():
     logger.addHandler(ch)
 
+
+def load_yaml_config(yaml_path: str, variables: dict = None) -> dict:
+    """
+    Load a YAML configuration file and replace placeholders dynamically.
+
+    :param yaml_path: Path to the YAML file.
+    :param variables: Dictionary of dynamic variables to substitute (e.g., artifact_group, run_id)
+    :return: Dictionary with all placeholders substituted.
+    """
+    if variables is None:
+        variables = {}
+
+    with open(yaml_path, "r") as f:
+        raw_config = yaml.safe_load(f)
+
+    pattern = re.compile(r"\{\{\s*(\w+)\s*\}\}")
+
+    def replace_placeholders(obj):
+        if isinstance(obj, dict):
+            return {k: replace_placeholders(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [replace_placeholders(v) for v in obj]
+        elif isinstance(obj, str):
+            return pattern.sub(lambda m: variables.get(m.group(1), m.group(0)), obj)
+        else:
+            return obj
+
+    return replace_placeholders(copy.deepcopy(raw_config))
 
 def get_os_id(os_release_path="/etc/os-release"):
     """

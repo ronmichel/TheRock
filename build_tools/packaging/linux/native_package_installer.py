@@ -69,6 +69,10 @@ class PackageInstaller(PackageManagerBase):
         self.artifact_group = artifact_group
         self.upload = upload
         self.loader = loader
+        self.s3_config = load_yaml_config(
+                "build_tools/packaging/linux/packaging_install.yaml",
+                variables={"artifact_group": self.artifact_group, "run_id": self.run_id}
+            )
 
     def execute(self):
         """
@@ -175,7 +179,9 @@ class PackageInstaller(PackageManagerBase):
         logger.info(f"Populating repo file for OS: {self.os_family}")
 
         try:
-            base_url = f"https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{self.artifact_group}_{run_id}"
+            base_url = self.s3_config.get("debian", {}).get("test", {}).get("s3")
+            if base_url:
+                logger.info(f"Using S3 URL: {base_url}")
 
             if self.os_family == "debian":
                 repo_file_path = "/etc/apt/sources.list.d/rocm.list"
