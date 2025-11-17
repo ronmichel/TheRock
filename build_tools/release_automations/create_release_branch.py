@@ -71,7 +71,7 @@ class RockBranchingAutomation:
         if the_rock_dir_path.is_dir():
             logging.info("Removing existing directory for fresh clone")
             shutil.rmtree(the_rock_dir_path)
-        self.exec(["git", "clone", the_rock_url], cwd=Path.cwd())
+        self.exec(["git", "clone", the_rock_url, str(the_rock_dir_path)], cwd=Path.cwd())
         the_rock_dir = the_rock_dir_path
         if not the_rock_dir.is_dir():
             logging.error("TheRock directory not found after clone")
