@@ -34,7 +34,7 @@ test_matrix = {
         "fetch_artifact_args": "--tests",
         "timeout_minutes": 120, # Guess at the moment, lets run it figure it out
         "test_script": f"python {_get_script_path('test_hiptests.py')}",
-        "platform": ["linux"], # TODO add windows
+        "platform": ["linux", "windows"],
         "total_shards": 1, # TODO ramp it later, this should help to lower the timeout minutes as well
     },
     # BLAS tests
