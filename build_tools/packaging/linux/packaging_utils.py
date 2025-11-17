@@ -31,7 +31,22 @@ if not logger.hasHandlers():
 
 
 def get_os_id(os_release_path="/etc/os-release"):
-    """Detect OS family (debian/redhat/suse/unknown)."""
+    """
+    Detect the OS family of the current system.
+
+    Reads the OS release information from `/etc/os-release` to determine
+    whether the system belongs to Debian, RedHat, or SUSE family.
+    Falls back to generic Linux detection if `/etc/os-release` is not found.
+
+    Parameters:
+    os_release_path : str, optional
+        Path to the OS release file (default is "/etc/os-release").
+
+    Returns: 
+    str :
+        OS family as one of: "debian", "redhat", "suse", "linux", or "unknown"
+
+    """
     os_release = {}
     try:
         with open("/etc/os-release", "r") as f:

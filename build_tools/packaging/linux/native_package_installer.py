@@ -40,7 +40,11 @@ from packaging_utils import *
 
 class PackageInstaller(PackageManagerBase):
     """
-    Handles package installation.
+    Handles installation of ROCm packages.
+
+    Depending on mode:
+    - Pre-upload: installs local .deb/.rpm packages from a directory
+    - Post-upload: installs from a repository (using run-id)
     """
 
     def __init__(
@@ -67,6 +71,12 @@ class PackageInstaller(PackageManagerBase):
         self.loader = loader
 
     def execute(self):
+        """
+        Perform installation of all packages.
+
+        Logs the installation phase and iterates through each package,
+        calling _install_package().
+        """
         logger.info(f"\n=== INSTALLATION PHASE ===")
         logger.info(f"Destination Directory: {self.dest_dir}")
         logger.info(f"ROCm Version: {self.rocm_version}")
@@ -83,11 +93,13 @@ class PackageInstaller(PackageManagerBase):
 
     def _run_install_command(self, pkg_name, use_repo):
         """
-        Build and run OS-specific install command for a package.
+        Execute OS-specific installation command for a package.
 
-        :param pkg_name: Name of the package (base name or full path)
-        :param pkg_path: Full path for local install (required for local)
-        :param use_repo: True if installing from repository, else False
+        Parameters:
+        pkg_name : str
+            Package name or full path
+        use_repo : bool
+            True if installing from repository, False if local files
         """
 
         try:
@@ -155,9 +167,10 @@ class PackageInstaller(PackageManagerBase):
     # ---------------------------------------------------------------------
     def populate_repo_file(self, run_id: str):
         """
-        Populate a repo file for post-upload installation.
-        - Debian: creates /etc/apt/sources.list.d/rocm.list
-        - RPM-based: placeholder (to be implemented)
+        Create a repository file for post-upload installation.
+
+        - For Debian: writes /etc/apt/sources.list.d/rocm.list
+        - For RPM: writes /etc/yum.repos.d/rocm.repo (placeholder)
         """
         logger.info(f"Populating repo file for OS: {self.os_family}")
 
@@ -206,7 +219,16 @@ class PackageInstaller(PackageManagerBase):
 
     def find_packages_for_base(self, dest_dir, derived_name):
         """
-        Look up packages in local directory or return derived name for repo installation.
+        Locate package files in local directory matching the derived name.
+
+        Parameters:
+        dest_dir : str
+            Directory containing package files 
+        derived_name : str
+            Derived package name of Base package
+
+        Returns:
+        list of matched files or derived name (for repo)
         """
 
         if self.upload == "post":
@@ -228,6 +250,13 @@ class PackageInstaller(PackageManagerBase):
                 logger.error(f"No matching package found for: {derived_name}")
 
     def _install_package(self, pkg: PackageInfo):
+        """
+        Install a single package including dependencies.
+
+        Parameters:
+        pkg : PackageInfo
+            Package metadata object
+        """
         derived_pkgs = []
         # Handle dependencies
 
@@ -248,20 +277,6 @@ class PackageInstaller(PackageManagerBase):
                         self._run_install_command(derived_pkg, True)
             elif self.upload == "post":
                 self._run_install_command(pkg_name, True)
-
-
-def load_packages_from_json(json_path: str) -> List[PackageInfo]:
-    """
-    Utility function to load package info list from a JSON file.
-    """
-    path = Path(json_path)
-    if not path.exists():
-        raise FileNotFoundError(f"JSON file not found: {json_path}")
-
-    with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    return [PackageInfo(entry) for entry in data]
 
 
 def parse_arguments():
@@ -297,7 +312,12 @@ def parse_arguments():
 
 def main():
     """
-    Entry point when called directly.
+    Main entry point for installer script.
+
+    - Parses command-line arguments
+    - Loads packages from JSON
+    - Initializes PackageInstaller
+    - Executes installation
     """
     args = parse_arguments()
 
@@ -306,7 +326,6 @@ def main():
         parser.error("You must specify at least one of --dest-dir or --run-id")
 
     loader = PackageLoader(args.package_json, args.rocm_version, args.artifact_group)
-    # packages = load_packages_from_json(args.package_json)
     packages = (
         loader.load_composite_packages()
         if args.composite.lower() == "true"

@@ -38,7 +38,10 @@ import subprocess
 
 class PackageUninstaller(PackageManagerBase):
     """
-    Handles package uninstallation.
+    Handles ROCm package uninstallation on the local system.
+
+    Depending on the mode, either removes all composite packages
+    in reverse order or just the core package.
     """
 
     def __init__(
@@ -57,6 +60,16 @@ class PackageUninstaller(PackageManagerBase):
         self.os_family = get_os_id()
 
     def execute(self):
+        """
+        Perform the uninstallation.
+
+        Composite mode:
+            - Uninstall all packages in reverse dependency order.
+        Non-composite mode:
+            - Only uninstall 'rocm-core' and its derived packages.
+
+        Logs the progress and errors.
+        """
         logger.info(f"\n=== UNINSTALLATION PHASE ===")
         logger.info(f"Run ID: {self.run_id}")
         logger.info(f"ROCm Version: {self.rocm_version}")
@@ -82,11 +95,17 @@ class PackageUninstaller(PackageManagerBase):
 
     def _run_uninstall_command(self, pkg_name):
         """
-        Build and run OS-specific install command for a package.
+        Execute OS-specific uninstall command for a single package.
 
-        :param pkg_name: Name of the package (base name)
-        :param pkg_path: Full path for local install (required for local)
-        :param source_type: 'local' or 'repo'
+        Parameters:
+        pkg_name : str
+            The base name of the package to uninstall.
+
+        Notes:
+        - Debian uses 'apt-get autoremove'
+        - RedHat uses 'yum remove'
+        - SUSE uses 'zypper remove'
+        - Unsupported OS will log an error
         """
         cmd = None
 
@@ -138,7 +157,12 @@ def parse_arguments():
 
 def main():
     """
-    Entry point when executed directly.
+    Main entry point for the uninstaller script.
+
+    - Parses command-line arguments
+    - Loads packages using PackageLoader
+    - Initializes the PackageUninstaller
+    - Executes uninstallation
     """
     args = parse_arguments()
 
