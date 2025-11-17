@@ -6,19 +6,6 @@ on:
       release_branch:
         description: "Name of branch to create (e.g., release/v1.2.3)"
         required: true
-      environment:
-        description: "Choose environment: staging (-S) or prod (-P)"
-        required: true
-        default: "staging"
-        type: choice
-        options:
-          - staging
-          - prod
-      mailing_list:
-        description: "Comma-separated list of mail IDs for notifications"
-        required: false
-        default: ""
-
 jobs:
   run-script:
     runs-on: azure-linux-scale-rocm
@@ -32,7 +19,7 @@ jobs:
         with:
           repository: ROCm/TheRock        
           ref: srayasam/branching_code
-          path: rock-branching  
+          path: build_tools/release_automations 
           
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -41,32 +28,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r rock-branching/release-automations/requirements.txt
+          pip install -r build_tools/release_automations/requirements.txt
 
       - name: Run release script
         run: |
           BRANCH=${{ github.event.inputs.release_branch }}
-          ENVIRONMENT=${{ github.event.inputs.environment }}
-          MAILS=${{ github.event.inputs.mailing_list }}
-
-          echo "Release branch: $BRANCH"
-          echo "Environment: $ENVIRONMENT"
-          echo "Mailing list: $MAILS"
-
-          # Choose environment flag and secret dynamically
-          if [ "$ENVIRONMENT" = "prod" ]; then
-            ENV_FLAG="-P"
-            API_TOKEN="${{ secrets.PROD_API_TOKEN }}"
-            echo "Running in PRODUCTION mode"
-          else
-            ENV_FLAG="-S"
-            API_TOKEN="${{ secrets.STAGING_API_TOKEN }}"
-            echo "Running in STAGING mode"
-          fi
+          API_TOKEN="${{ secrets.PROD_API_TOKEN }}"
 
           # Run the external Python script
-          python rock-branching/release-automations/create_release_branch.py \
+          python rock-build_tools/release-automations/create_release_branch.py \
             -A "$API_TOKEN" \
-            -B "$BRANCH" \
-            $ENV_FLAG \
-            -M "$MAILS"
+            -B "$BRANCH"
