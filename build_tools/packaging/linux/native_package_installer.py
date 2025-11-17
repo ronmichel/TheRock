@@ -1,4 +1,28 @@
-# rocm_package_manager/installer.py
+#!/usr/bin/env python3
+
+# Copyright Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+""" Installs ROCm packages either from local package files or from a remote repository.
+Local installation (uses .deb/.rpm files from a directory):
+```
+./native_package_installer.py --dest-dir ./PKG_DIR \
+    --package-json ./packages.json \
+    --rocm-version 6.2.0 \
+    --artifact-group gfx94X-dcgpu \
+    --version true/false \
+    --composite true/false
+```
+Repository installation (uses run-id to fetch from remote repo):
+```
+./native_package_installer.py --run-id 123456 \
+    --package-json ./packages.json \
+    --rocm-version 6.2.0 \
+    --artifact-group gfx94X-dcgpu \
+    --version true/false \
+    --composite true/false
+```
+"""
 
 import argparse
 import json
