@@ -136,4 +136,4 @@ jobs:
         if: "contains(inputs.test_runs_on, 'linux')"
         # pytorch version is auto-detected
         run: |
-          python3 ./external-builds/pytorch/run_linux_pytorch_tests.py
+          python3 ./external-builds/pytorch/run_linux_pytorch_tests.py --amdgpu-family ${AMDGPU_FAMILY}
