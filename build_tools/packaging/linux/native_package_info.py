@@ -1,4 +1,15 @@
-# build_tools/packaging/linux/package_info.py
+#!/usr/bin/env python3
+
+# Copyright Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+""" Provides utilities to load and manage ROCm package metadata from JSON files. 
+This file is imported by other scripts (installer, uninstaller) and is not executed directly.
+
+Load all packages from a JSON file:
+
+"""
+
 
 import json
 import re
