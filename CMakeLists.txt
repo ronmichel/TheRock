@@ -260,6 +260,12 @@ if(THEROCK_FLAG_INCLUDE_DEBUG_TOOLS)
     DESCRIPTION "Enables the ROCm debug API library"
     REQUIRES COMPILER ${_hip_runtime_platform_requirements}
   )
+
+  therock_add_feature(DEBUG_TOOLS_ROCR_DEBUG_AGENT
+    GROUP DEBUG_TOOLS
+    DESCRIPTION "Enables the ROCR debug agent library"
+    REQUIRES COMPILER DEBUG_TOOLS_ROCDBGAPI HIP_RUNTIME
+  )
 endif()
 
 # Profiler Features.

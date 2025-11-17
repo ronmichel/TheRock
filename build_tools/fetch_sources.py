@@ -383,6 +383,7 @@ def main(argv):
         type=str,
         default=[
             "amd-dbgapi",
+            "rocr-debug-agent",
         ],
     )
     args = parser.parse_args(argv)
