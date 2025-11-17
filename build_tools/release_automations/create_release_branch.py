@@ -288,10 +288,19 @@ class RockBranchingAutomation:
                     cwd=repo_path,
                 )
                 if self.dry_run:
-                    self.log(f"[DRY RUN] Skipping git push rocm-github {branch_name}")
+                    self.log(
+                        f"[DRY RUN] Skipping git push rocm-github {branch_name}"
+                    )
                 else:
                     self.exec(
-                        ["git", "-C", str(repo_path), "push", "rocm-github", branch_name],
+                        [
+                            "git",
+                            "-C",
+                            str(repo_path),
+                            "push",
+                            "rocm-github",
+                            branch_name,
+                        ],
                         cwd=repo_path,
                     )
                 logging.info("Pushed workflow changes to branch %s", branch_name)
@@ -376,7 +385,9 @@ class RockBranchingAutomation:
                 continue
             try:
                 if self.dry_run:
-                    self.log(f"[DRY RUN] Skipping git push rocm-github {release_branch}")
+                    self.log(
+                        f"[DRY RUN] Skipping git push rocm-github {release_branch}"
+                    )
                 else:
                     self.exec(
                         ["git", "push", "rocm-github", release_branch], cwd=clone_dir
