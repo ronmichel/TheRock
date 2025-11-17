@@ -38,8 +38,9 @@ from typing import Dict, Tuple, Any
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
+
 class RockBranchingAutomation:
-    """ Class for rock branching automation """
+    """Class for rock branching automation"""
 
     def __init__(self, cli_args):
         self.release_branch = cli_args.release_branch
@@ -71,7 +72,9 @@ class RockBranchingAutomation:
         if the_rock_dir_path.is_dir():
             logging.info("Removing existing directory for fresh clone")
             shutil.rmtree(the_rock_dir_path)
-        self.exec(["git", "clone", the_rock_url, str(the_rock_dir_path)], cwd=Path.cwd())
+        self.exec(
+            ["git", "clone", the_rock_url, str(the_rock_dir_path)], cwd=Path.cwd()
+        )
         the_rock_dir = the_rock_dir_path
         if not the_rock_dir.is_dir():
             logging.error("TheRock directory not found after clone")
@@ -88,7 +91,9 @@ class RockBranchingAutomation:
         """
         # exec does not capture output; keep legacy behavior by falling back to subprocess
         try:
-            output = subprocess.check_output(["git","submodule","status"], cwd=repo_path, text=True)
+            output = subprocess.check_output(
+                ["git", "submodule", "status"], cwd=repo_path, text=True
+            )
         except subprocess.CalledProcessError:
             return {}
         submodule_dict: Dict[str, str] = {}
@@ -106,8 +111,6 @@ class RockBranchingAutomation:
             submodule_dict[path] = commit
         return submodule_dict
 
-
-
     # Determine projects to branch based on .gitmodules and user input.
     # This is a helper function for checkout_source.
     # Note that this returns a dict of project names to their key/value pairs from gitmodules.
@@ -122,7 +125,7 @@ class RockBranchingAutomation:
         projects: Dict[str, Dict[str, str]] = {}
         for section in config.sections():
             if section.startswith("submodule "):
-                raw_name = section[len("submodule "):]
+                raw_name = section[len("submodule ") :]
                 name = raw_name.strip('"')
             else:
                 name = section
@@ -148,16 +151,20 @@ class RockBranchingAutomation:
         # Simple fallbacks
         for branch in ("main", "master"):
             try:
-                subprocess.check_call(["git","rev-parse","--verify",
-                                       f"origin/{branch}"], cwd=repo_path,
-                                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                subprocess.check_call(
+                    ["git", "rev-parse", "--verify", f"origin/{branch}"],
+                    cwd=repo_path,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
                 return branch
             except subprocess.CalledProcessError:
                 continue
         raise RuntimeError("Cannot determine upstream branch")
 
-    def update_github_workflows(self, repo_path: Path, source_branch: str,
-                                target_branch: str) -> Any:
+    def update_github_workflows(
+        self, repo_path: Path, source_branch: str, target_branch: str
+    ) -> Any:
         """
         Update GitHub workflow YAML files to replace source_branch with target_branch.
         """
@@ -201,7 +208,9 @@ class RockBranchingAutomation:
                     try:
                         content = regex.sub(repl, content)
                     except re.error as e:  # type: ignore[name-defined]
-                        logging.debug("Regex substitution failed for %s: %s", yml_file, e)
+                        logging.debug(
+                            "Regex substitution failed for %s: %s", yml_file, e
+                        )
                 if content != original_content:
                     with yml_file.open("w", encoding="utf-8") as f:
                         f.write(content)
@@ -231,35 +240,60 @@ class RockBranchingAutomation:
 
     def commit_and_push_changes(self, repo_path: Path, branch_name: str) -> None:
         """
-        Commit and push modified workflow/.gitmodules files to origin on 
+        Commit and push modified workflow/.gitmodules files to origin on
         given branch (creates branch if missing).
         """
         try:
             try:
-                subprocess.check_call(["git","-C", str(repo_path), "rev-parse",
-                                       "--verify", branch_name], stdout=subprocess.DEVNULL,
-                                       stderr=subprocess.DEVNULL)
-                self.exec(["git","-C", str(repo_path), "checkout", branch_name], cwd=repo_path)
+                subprocess.check_call(
+                    ["git", "-C", str(repo_path), "rev-parse", "--verify", branch_name],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                self.exec(
+                    ["git", "-C", str(repo_path), "checkout", branch_name],
+                    cwd=repo_path,
+                )
             except subprocess.CalledProcessError:
-                self.exec(["git","-C", str(repo_path), "checkout","-b", branch_name], cwd=repo_path)
+                self.exec(
+                    ["git", "-C", str(repo_path), "checkout", "-b", branch_name],
+                    cwd=repo_path,
+                )
             # Stage changes
             # Stage only targeted workflow files and .gitmodules
-            self.exec(["git","-C", str(repo_path), "add", ".gitmodules"], cwd=repo_path)
+            self.exec(
+                ["git", "-C", str(repo_path), "add", ".gitmodules"], cwd=repo_path
+            )
             for wf in ["pre-commit.yml", "ci.yml"]:
                 path = repo_path / ".github" / "workflows" / wf
                 if path.is_file():
-                    self.exec(["git","-C", str(repo_path), "add", str(path)], cwd=repo_path)
+                    self.exec(
+                        ["git", "-C", str(repo_path), "add", str(path)], cwd=repo_path
+                    )
             # Commit if there is a diff
-            diff_out = subprocess.check_output(["git","-C", str(repo_path),
-                                                "diff","--cached","--name-only"], text=True)
+            diff_out = subprocess.check_output(
+                ["git", "-C", str(repo_path), "diff", "--cached", "--name-only"],
+                text=True,
+            )
             if diff_out.strip():
-                self.exec(["git","-C", str(repo_path), "commit","-m",
-                           f"Update workflows to {branch_name}"], cwd=repo_path)
+                self.exec(
+                    [
+                        "git",
+                        "-C",
+                        str(repo_path),
+                        "commit",
+                        "-m",
+                        f"Update workflows to {branch_name}",
+                    ],
+                    cwd=repo_path,
+                )
                 if self.dry_run:
                     self.log(f"[DRY RUN] Skipping git push origin {branch_name}")
                 else:
-                    self.exec(["git","-C", str(repo_path), "push","origin", branch_name],
-                            cwd=repo_path)
+                    self.exec(
+                        ["git", "-C", str(repo_path), "push", "origin", branch_name],
+                        cwd=repo_path,
+                    )
                 logging.info("Pushed workflow changes to branch %s", branch_name)
             else:
                 logging.info("No staged changes to commit for workflows")
@@ -269,13 +303,15 @@ class RockBranchingAutomation:
 
     def tokenize_url(self, url: str) -> str:
         """Embed token into https URL if token available."""
-        if self.apitoken and url.startswith('https://'):
+        if self.apitoken and url.startswith("https://"):
             # Avoid double insertion
-            if f'https://{self.apitoken}@' not in url:
-                return url.replace('https://', f'https://{self.apitoken}@')
+            if f"https://{self.apitoken}@" not in url:
+                return url.replace("https://", f"https://{self.apitoken}@")
         return url
 
-    def execute_plan(self, plan: Dict[str, Dict[str, str]], release_branch: str) -> None:
+    def execute_plan(
+        self, plan: Dict[str, Dict[str, str]], release_branch: str
+    ) -> None:
         """
         Execute the branching plan.
         """
@@ -304,7 +340,7 @@ class RockBranchingAutomation:
             clone_dir = temp_dir / repo_name
             logging.info("Cloning %s -> %s", url, clone_dir)
             try:
-                self.exec(["git","clone", token_url, str(clone_dir)], cwd=Path.cwd())
+                self.exec(["git", "clone", token_url, str(clone_dir)], cwd=Path.cwd())
             except subprocess.CalledProcessError as e:
                 err = f"Clone failed for {url}: {e}"
                 logging.error(err)
@@ -316,13 +352,18 @@ class RockBranchingAutomation:
                 }
                 continue
             try:
-                subprocess.check_call(["git","remote","add","rocm-github",
-                                       token_url], cwd=clone_dir, stdout=subprocess.DEVNULL,
-                                       stderr=subprocess.DEVNULL)
+                subprocess.check_call(
+                    ["git", "remote", "add", "rocm-github", token_url],
+                    cwd=clone_dir,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
             except subprocess.CalledProcessError:
                 pass
             try:
-                self.exec(["git","checkout","-b", release_branch, commit], cwd=clone_dir)
+                self.exec(
+                    ["git", "checkout", "-b", release_branch, commit], cwd=clone_dir
+                )
             except subprocess.CalledProcessError as e:
                 err = f"Branch creation failed for {repo_name} at {commit}: {e}"
                 logging.error(err)
@@ -337,7 +378,9 @@ class RockBranchingAutomation:
                 if self.dry_run:
                     self.log(f"[DRY RUN] Skipping git push origin {release_branch}")
                 else:
-                    self.exec(["git","push","rocm-github", release_branch], cwd=clone_dir)
+                    self.exec(
+                        ["git", "push", "rocm-github", release_branch], cwd=clone_dir
+                    )
                 logging.info("Pushed %s for %s", release_branch, repo_name)
                 successfull_components[path_key] = {
                     "url": url,
@@ -345,9 +388,9 @@ class RockBranchingAutomation:
                     "branch": release_branch,
                 }
                 try:
-                    branch_head = subprocess.check_output(["git","rev-parse",
-                                                           release_branch], cwd=clone_dir,
-                                                           text=True).strip()
+                    branch_head = subprocess.check_output(
+                        ["git", "rev-parse", release_branch], cwd=clone_dir, text=True
+                    ).strip()
                     status = "Success" if branch_head.strip() == commit else "Failure"
                     validation_components[path_key] = {
                         "status": status,
@@ -373,28 +416,29 @@ class RockBranchingAutomation:
         logging.info("Failed components: %s", failed_components)
         logging.info("Validation components: %s", validation_components)
 
-    def prepare_plan(self, projects: Dict[str, str],
-                     gitmodule_projects: Dict[str, Dict[str, str]]) -> Dict[str, Dict[str, str]]:
+    def prepare_plan(
+        self, projects: Dict[str, str], gitmodule_projects: Dict[str, Dict[str, str]]
+    ) -> Dict[str, Dict[str, str]]:
         """Compare two dictionaries:
         - projects: submodule dict mapping submodule path -> commit hash
-        - gitmodule_projects: dict from .gitmodules with keys (project name) and 
+        - gitmodule_projects: dict from .gitmodules with keys (project name) and
         values containing 'path' and 'url'
-        Build a new dictionary where keys are matching submodule paths and 
+         Build a new dictionary where keys are matching submodule paths and
         values are dicts with URL and commit.
         """
         # Build quick lookup from path to url based on gitmodule_projects
         path_to_meta = {}
         for _unused_name, meta in gitmodule_projects.items():
-            path_val = meta.get('path')
+            path_val = meta.get("path")
             if path_val:  # ensure path key exists
-                path_to_meta[path_val] = meta.get('url')
+                path_to_meta[path_val] = meta.get("url")
 
         matched = {}
         for submodule_path, commit in projects.items():
             if submodule_path in path_to_meta:
                 matched[submodule_path] = {
-                    'url': path_to_meta[submodule_path],
-                    'commit': commit,
+                    "url": path_to_meta[submodule_path],
+                    "commit": commit,
                 }
         return matched
 
@@ -408,20 +452,27 @@ class RockBranchingAutomation:
         try:
             default_branch = self.get_upstream_branch(working_dir)
             try:
-                subprocess.check_call(["git","fetch","origin"], cwd=working_dir)
+                subprocess.check_call(["git", "fetch", "origin"], cwd=working_dir)
             except subprocess.CalledProcessError:
                 pass
-            root_commit = subprocess.check_output(["git","rev-parse",
-                                                   f"origin/{default_branch}"], cwd=working_dir,
-                                                   text=True).strip()
+            root_commit = subprocess.check_output(
+                ["git", "rev-parse", f"origin/{default_branch}"],
+                cwd=working_dir,
+                text=True,
+            ).strip()
         except (subprocess.CalledProcessError, RuntimeError):
-            root_commit = subprocess.check_output(["git","rev-parse","HEAD"],
-                                                  cwd=working_dir, text=True).strip()
+            root_commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=working_dir,
+                text=True,
+            ).strip()
         root_url = "https://github.com/ROCm/TheRock.git"
         plan["TheRock"] = {"url": root_url, "commit": root_commit}
         self.execute_plan(plan, self.release_branch)
         result = self.update_github_workflows(
-            repo_path=working_dir, source_branch="main", target_branch=self.release_branch
+            repo_path=working_dir,
+            source_branch="main",
+            target_branch=self.release_branch,
         )
         logging.info("Workflow update result: %s", result)
         try:
@@ -429,16 +480,22 @@ class RockBranchingAutomation:
         except subprocess.CalledProcessError:
             logging.error("Failed to commit/push workflow changes")
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Script for branching automation')
-    parser.add_argument('-A', '--apitoken',
-                        help='enter the api key to be used with the upstream repositories',
-                        )
-    parser.add_argument('-B', "--release_branch", required=True, help="Name of branch to create")
-    parser.add_argument("--dry_run",
-                        action="store_true",
-                        help="Run all steps but skip any git push operations."
-                        )
+    parser = argparse.ArgumentParser(description="Scripts for branching automation")
+    parser.add_argument(
+        "-A",
+        "--apitoken",
+        help="enter the api key to be used with the upstream repositories",
+    )
+    parser.add_argument(
+        "-B", "--release_branch", required=True, help="Name of branch to create"
+    )
+    parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        help="Run all steps but skip any git push operations.",
+    )
     args = parser.parse_args()
     automation = RockBranchingAutomation(args)
     automation.main()
