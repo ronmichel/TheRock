@@ -1,4 +1,29 @@
-# rocm_package_manager/uninstaller.py
+#!/usr/bin/env python3
+
+# Copyright Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+"""Uninstalls ROCm packages from the system using OS package managers.
+Composite uninstall (removes all composite packages in reverse order):
+
+```
+./uninstall_package.py --run-id 123456 \
+    --package-json ./packages.json \
+    --rocm-version 6.2.0 \
+    --artifact-group gfx94X-dcgpu \
+    --composite true 
+```
+Non-composite uninstall (removes only rocm-core and its versioned package):
+
+```
+./uninstall_package.py --run-id 123456 \
+    --package-json ./packages.json \
+    --rocm-version 6.2.0 \
+    --artifact-group gfx94X-dcgpu \
+    --composite false 
+```
+ 
+"""
 
 import argparse
 import json
@@ -88,7 +113,6 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description="ROCm Package Uninstaller")
     parser.add_argument("--run-id", required=True, help="Unique identifier for this uninstall run")
-    parser.add_argument("--version", default="false", help="Enable version output (true/false)")
     parser.add_argument("--package-json", required=True, help="Path to package JSON definition file")
     parser.add_argument("--composite", default="false", help="Composite build mode (true/false)")
     parser.add_argument("--artifact-group", default="gfx000", help="GPU family identifier")
