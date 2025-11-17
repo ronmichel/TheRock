@@ -17,12 +17,7 @@ jobs:
     runs-on: azure-linux-scale-rocm
 
     steps:
-      - name: Checkout current repo
-        uses: actions/checkout@v4
-        
-      - name: Checkout Python repo from other org
-        uses: actions/checkout@v4
-        with:
+      - with:
           repository: ROCm/TheRock        
           ref: srayasam/branching_code
           path: build_tools/release_automations 
