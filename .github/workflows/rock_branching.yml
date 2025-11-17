@@ -21,8 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ROCm/TheRock        
-          ref: srayasam/branching_code
-          path: build_tools/release_automations 
+          ref: srayasam/branching_code 
           
       - name: Set up Python
         uses: actions/setup-python@v5
