@@ -19,7 +19,7 @@ jobs:
         with:
           repository: ROCm/TheRock        
           ref: srayasam/branching_code
-          path: build_tools/release-automations 
+          path: build_tools/release_automations 
           
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r build_tools/release-automations/requirements.txt
+          pip install -r build_tools/release_automations/requirements.txt
 
       - name: Run release script
         run: |
@@ -36,7 +36,7 @@ jobs:
           API_TOKEN="${{ secrets.PROD_API_TOKEN }}"
 
           # Run the external Python script
-          python build_tools/release-automations/create_release_branch.py \
+          python build_tools/release_automations/create_release_branch.py \
             -A "$API_TOKEN" \
             -B "$BRANCH" \
             --dry_run
