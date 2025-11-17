@@ -19,7 +19,10 @@ jobs:
     steps:
       - name: Checkout current repo
         uses: actions/checkout@v4
-        
+      - name: Set up Git identity
+        run: |
+            git config --global user.name "rocm-ci"
+            git config --global user.email "rocm-ci@amd.com"
       - name: Checkout Python repo from other org
         uses: actions/checkout@v4
         with:
