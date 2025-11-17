@@ -20,7 +20,7 @@ AMDGPU_FAMILY :     str, optional
                     Target AMDGPU family for testing (e.g., "gfx942", "gfx94X").
                     Names should match those in "TheRock/cmake/therock_amdgpu_targets.cmake".
                     Supports wildcards (e.g., "gfx94X" matches any gfx94* architecture).
-                    If not set, auto-detects from available hardware using amdgpu-arch.
+                    If not set, auto-detects from available hardware using offload-arch.
 PYTORCH_VERSION :   str, optional
                     PyTorch version for version-specific test filtering (e.g., "2.10").
                     Format: "major.minor" as string.
@@ -165,9 +165,9 @@ By default TheRock root dir is determined based on this script's location.""",
 
 
 def detect_amdgpu_family(amdgpu_family: str = "") -> list[str]:
-    """Detect and configure AMDGPU family using amdgpu-arch command.
+    """Detect and configure AMDGPU family using offload-arch command.
 
-    This function always queries amdgpu-arch to get available GPUs and sets
+    This function always queries offload-arch to get available GPUs and sets
     HIP_VISIBLE_DEVICES to select the appropriate GPU(s) for testing.
 
     Args:
@@ -183,26 +183,9 @@ def detect_amdgpu_family(amdgpu_family: str = "") -> list[str]:
         Sets HIP_VISIBLE_DEVICES environment variable to comma-separated GPU indices.
     """
     try:
-        # Find amdgpu-arch executable in current python environment
-        print(
-            f"Searching for amdgpu-arch in subdirectories of {Path(sys.executable).parent.parent}"
-        )
-        proc = subprocess.run(
-            ["find", Path(sys.executable).parent.parent, "-name", "amdgpu-arch"],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        # There might be 2 matches: rocm_sdk_core and rocm_sdk_devel, so just take the first one
-        amdgpu_arch_cmd = proc.stdout.split("\n")[0].strip()
-
-        if not amdgpu_arch_cmd:
-            print("[ERROR] amdgpu-arch command not found in Python environment")
-            sys.exit(1)
-
         # Query available GPUs
         proc = subprocess.run(
-            [amdgpu_arch_cmd], capture_output=True, text=True, check=False
+            ["offload-arch"], capture_output=True, text=True, check=False
         )
 
         if proc.returncode != 0 or proc.stderr:  # or proc.stdout == "\n":
@@ -214,7 +197,7 @@ def detect_amdgpu_family(amdgpu_family: str = "") -> list[str]:
         ]
 
         if not available_gpus:
-            print("[ERROR] No AMD GPUs detected by amdgpu-arch")
+            print("[ERROR] No AMD GPUs detected by offload-arch")
             sys.exit(1)
 
         print(f"Available AMD GPUs: {available_gpus}")
