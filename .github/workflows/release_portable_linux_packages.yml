@@ -145,7 +145,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target_bundle: ${{ fromJSON(needs.setup_metadata.outputs.package_targets) }}
+        #target_bundle: ${{ fromJSON(needs.setup_metadata.outputs.package_targets) }}
+        target_bundle: 
+          - amdgpu_family: gfx1030
     env:
       TEATIME_LABEL_GH_GROUP: 1
       OUTPUT_DIR: ${{ github.workspace }}/output
