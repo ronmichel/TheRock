@@ -67,6 +67,16 @@ jobs:
   setup:
     uses: ./.github/workflows/setup.yml
 
+  rock-branching:
+    name: rock-branching
+    needs: setup
+    uses: ./.github/workflows/rock_branching.yml
+    with:
+      release_branch: srayasam/therock-test
+    permissions:
+      contents: read
+      id-token: write
+  
   linux_build_and_test:
     name: Linux::${{ matrix.variant.family }}::${{ matrix.variant.build_variant_label }}
     needs: setup
