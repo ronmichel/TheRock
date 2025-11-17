@@ -288,9 +288,7 @@ class RockBranchingAutomation:
                     cwd=repo_path,
                 )
                 if self.dry_run:
-                    self.log(
-                        f"[DRY RUN] Skipping git push rocm-github {branch_name}"
-                    )
+                    self.log(f"[DRY RUN] Skipping git push rocm-github {branch_name}")
                 else:
                     self.exec(
                         [
