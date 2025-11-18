@@ -21,14 +21,18 @@ on:
         type: string
   workflow_call:
     inputs:
-      artifact_group:
-        type: string
       artifact_run_id:
         type: string
         default: ""
+      artifact_group:
+        type: string
       amdgpu_families:
         type: string
       test_runs_on:
+        type: string
+      platform:
+        type: string
+      component:
         type: string
       sanity_check_only_for_family:
         type: boolean
