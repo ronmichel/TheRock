@@ -106,14 +106,67 @@ This will reduce the number of packages visible via the package manager.
 
 ### Meta Packages
 
+Using `yum` ROCm Core SDK runtime components and ROCm Core SDK runtime + development components can be installed.
+
+```
+yum install rocm
+yum install rocm-core
+yum install rocm-core-<ver>
+yum install rocm-core-devel
+yum install rocm-core-devel-<ver>
+```
+The following table shows the meta packages that will be available:
+
+| Name | Content | Descripion |
+| :------------- | :------------- | :------------- |
+| rocm & rocm-core | runtime & libraries, components, runtime compiler, amd-smi, rocminfo | Needed to run software built with ROCm Core |
+| rocm-core-devel | rocm-core + compiler cmake, static library files, and headers | Needed to build software with ROCm Core |
+| rocm-devel-tools | Profiler, debugger, and related tools | Independent set of tools to debug and profile any application built with ROCm |
+| rocm-fortran |  | Fortran compiler and related components |
+| rocm-opencl |  | Components needed to run OpenCL |
+| rocm-openmp |  | Components needed to build OpenMP |
+| rocm-core-sdk |  | Everything |
+
 ### Package Naming
+
+The four possible naming strategies for packages were analyzed:
+
+1. Prefix `amd-`
+2. Prefix `amdi-`: Legally the safest option as no one can claim to AMD incorporated
+3. Suffix `-amd`
+4. Do nothing: Manage through versioning
+
+Note that `amd-smi` isn't very applicable to the first three proposed naming strategies and would possibly have to be an exception to this standardization.
+
+TheRock must adopt `amdi-<package>` for Linus distro-native package disambiguation unless Legal or Branding teams choose an alternative.
+This avoids namespace sonflicts with distro-provided packages.
 
 ### Device-Specific Architecture Packages
 
+Local GPUs must have an autodetection mechanism via the package manager. Possible options for device-specific architecture packages can be seen in the table as shown:
+
+| Component | Meta package for all device packages |
+| :------------- | :------------- |
+| component-host | Host only package |
+| component-$device | $device is the llvm gfx architecture each device package must have no conflict with other devices |
+
+Example: 
+
+```
+yum install miopen-gfx906 miopen-gfx908
+apt intall rocm-gfx906 rocm-gfx-908 # Host + two device architectures
+apt install rocm # Every architecture
+```
+
+All device-specific packages must:
+
+- Not conflict with each other
+- Be independently installable
+- Support meta-packages
+- Allow autodetection of local GPUs
+
+TheRock must provide a GPU detection interface for package managers.
+
+## Package Granularity 
+
 ## Python Packaging Requirements
-
-
-This will reduce the number of packages visibile via the package manager.
-
-### Meta Packages
-
