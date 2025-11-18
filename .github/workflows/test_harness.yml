@@ -88,6 +88,6 @@ jobs:
         run: |
           set -x 
           pip install -r requirements-test.txt
-          python3 -m pytest -s -v --tb=short --therock-path=./therock-build tests/harness/tests*.py -k "${{ join(inputs.test_labels, ' or ') }}"
+          python3 -m pytest -s -v --tb=short --therock-path=./therock-build tests/harness/tests*.py -k "${{ join(fromJSON(inputs.test_labels), ' or ') }}"
 
 # TODO: Add windows tests
