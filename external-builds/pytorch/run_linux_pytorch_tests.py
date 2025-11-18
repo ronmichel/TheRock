@@ -20,7 +20,7 @@ AMDGPU_FAMILY :     str, optional
                     Target AMDGPU family for testing (e.g., "gfx942", "gfx94X").
                     Names should match those in "TheRock/cmake/therock_amdgpu_targets.cmake".
                     Supports wildcards (e.g., "gfx94X" matches any gfx94* architecture).
-                    If not set, auto-detects from available hardware using offload-arch.
+                    If not set, auto-detects from available hardware using PyTorch.
 PYTORCH_VERSION :   str, optional
                     PyTorch version for version-specific test filtering (e.g., "2.10").
                     Format: "major.minor" as string.
@@ -65,6 +65,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 import pytest
+import torch
 
 
 def setup_env(pytorch_dir: str) -> None:
@@ -165,9 +166,9 @@ By default TheRock root dir is determined based on this script's location.""",
 
 
 def detect_amdgpu_family(amdgpu_family: str = "") -> list[str]:
-    """Detect and configure AMDGPU family using offload-arch command.
+    """Detect and configure AMDGPU family using PyTorch.
 
-    This function always queries offload-arch to get available GPUs and sets
+    This function always queries PyTorch to get available GPUs and sets
     HIP_VISIBLE_DEVICES to select the appropriate GPU(s) for testing.
 
     Args:
@@ -184,20 +185,14 @@ def detect_amdgpu_family(amdgpu_family: str = "") -> list[str]:
     """
     try:
         # Query available GPUs
-        proc = subprocess.run(
-            ["offload-arch"], capture_output=True, text=True, check=False
-        )
-
-        if proc.returncode != 0 or proc.stderr:  # or proc.stdout == "\n":
-            print(f"[ERROR] AMDGPU arch detection FAILED: {proc.stderr}")
+        if not torch.cuda.is_available():
+            print("[ERROR] ROCm is not available or not detected by PyTorch")
             sys.exit(1)
 
-        available_gpus = [
-            line.strip() for line in proc.stdout.split("\n") if line.strip()
-        ]
+        available_gpus = torch.cuda.get_arch_list()
 
-        if not available_gpus:
-            print("[ERROR] No AMD GPUs detected by offload-arch")
+        if len(available_gpus) == 0:
+            print("[ERROR] No AMD GPUs detected by PyTorch")
             sys.exit(1)
 
         print(f"Available AMD GPUs: {available_gpus}")
