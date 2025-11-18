@@ -17,7 +17,7 @@ on:
         default: false
       test_type:
         type: string
-      test_labels:
+      linux_test_labels:
         type: string
   workflow_call:
     inputs:
@@ -37,7 +37,7 @@ on:
         default: false
       test_type:
         type: string
-      test_labels:
+      linux_test_labels:
         type: string
   push:
     branches:
@@ -86,7 +86,8 @@ jobs:
 
       - name: Test
         run: |
+          set +x 
           pip install -r requirements-test.txt
-          python3 -m pytest -s -v --tb=short --therock-path=./therock-build tests/harness/tests*.py -k ${{ inputs.test_labels }}
+          python3 -m pytest -s -v --tb=short --therock-path=./therock-build tests/harness/tests*.py -k ${{ inputs.linux_test_labels }}
 
 # TODO: Add windows tests
