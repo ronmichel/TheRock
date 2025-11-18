@@ -86,7 +86,7 @@ jobs:
 
       - name: Test
         run: |
-          set +x 
+          set -x 
           pip install -r requirements-test.txt
           python3 -m pytest -s -v --tb=short --therock-path=./therock-build tests/harness/tests*.py -k "${{ join(inputs.test_labels, ' or ') }}"
 
