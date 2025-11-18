@@ -169,4 +169,34 @@ TheRock must provide a GPU detection interface for package managers.
 
 ## Package Granularity 
 
+Package granularity will be increased with ROCm 8.0. Developmentt packages are the set of files required to build software against the current ROCm Core SDK. Source packages for all of rocm-libraries provides all the files to build the libraries from source in addition to the rocm-rock source package.
+
+| Name | Dev package components only | Runtime packages | Source package inclusion only |
+| :------------- | :------------- | :------------- | :------------- |
+| rocm-llvm |  | amdclang++ (flang and openmp here if not separable) |  |
+| rocm-flang |  | flang |  |
+| rocm-runtimes |  | HIP, ROCR, CLR, runtime compilation, SPIR-V |  |
+| rocm-fft |  | rocFFT, hipFFT, hipFFTW |  |
+| rocm-math |  | Temporary catch all if libraries cannot fix circular dependencies by ROCm 8.0 |  |
+| rocm-blas | hipBLAS-common | rocBLAS, hipBLAS, hipBLASLt, hipSPARSELt |  |
+| rocm-sparse |  | rocSPARSE, hipSPARSE |  |
+| rocm-solver |  | rocSOLVER, hipSOLVER |  |
+| rocm-dnn |  | hipDNN, MIOpen |  |
+| rocm-rand |  | rocRAND, hipRAND |  |
+| rocm-ccl | rocPRIM, rocThrust, hipCUB | libhipcxx |  |
+| rocm-profiler |  | rocm-systems, rocm-compute, rocprofiler-sdk, tracer |  |
+| rocm-profiler-base |  | rocprofiler-sdk, tracer |  |
+| rocm-base |  | AMD-SMI, rocminfo, version (rocm-core) |  |
+| rocm-CK |  |  | CK |
+| rocm-debugger |  | rocgdb |  |
+| rocm-math-comon or rocm-math-dev |  |  | CK, rocWMMA, rocRoller, Tensile, Origami |
+| rocm-hipify |  | HIPIFY |  |
+| rocm-opencl |  | OpenCL |  |
+| rocm-openmp |  | OpenMP |  |
+| rocm-decode |  | rocDecode |  |
+| rocm-jpeg |  | rocJPEG |  |
+| rocm-file |  | hipFile, rocFile (future addition) |  |
+| rocm-mesa |  |  |  |
+| rocm-sysdeps |  | Bundled 3rd party dependencies (e.g. libdrm, libelf, numa) |  |
+
 ## Python Packaging Requirements
