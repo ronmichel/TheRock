@@ -406,6 +406,9 @@ class PopulatedDistPackage:
             ):
                 # We only materialize the default target family for devel packages.
                 return False
+            # Exclude test components - they contain test binaries that may fail patchelf
+            if an.component == "test":
+                return False
             return True
 
         artifacts = self.params.filter_artifacts(_devel_artifact_filter)
