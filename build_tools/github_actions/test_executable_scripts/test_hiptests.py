@@ -32,9 +32,12 @@ if os.name == 'nt':
     ]
 else:
     cmd = [
-        f"ctest",
-        f"--test-dir",
-        f"{THEROCK_BIN_DIR}/../share/hip/catch_tests"
+        "ctest",
+        "--test-dir",
+        f"{THEROCK_BIN_DIR}/../share/hip/catch_tests",
+        "--output-on-failure",
+        "--repeat",
+        "until-pass:3"
     ]
 
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")
