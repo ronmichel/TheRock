@@ -150,7 +150,33 @@ jobs:
           python3 build_tools/github_actions/build_configure.py
 
       - name: Build therock-archives and therock-dist
-        run: cmake --build "${{ env.BUILD_DIR }}" --target therock-archives therock-dist -- -k 0
+        run: |
+          # Start telemetry loop in the background
+          $telemetryJob = Start-Job -ScriptBlock {
+              while ($true) {
+                  Write-Output ("--- {0} ---" -f (Get-Date))
+
+                  # Memory info (similar to "free -h")
+                  Get-CimInstance Win32_OperatingSystem |
+                      Select-Object `
+                          @{Name="Total Memory"; Expression={[math]::Round($_.TotalVisibleMemorySize/1MB,2)}},
+                          @{Name="Free Memory"; Expression={[math]::Round($_.FreePhysicalMemory/1MB,2)}}
+
+                  # Top processes (similar to "top -b -n1 | head -20")
+                  Get-Process |
+                      Sort-Object CPU -Descending |
+                      Select-Object -First 20 `
+                          Name, Id, CPU, WorkingSet, StartTime
+
+                  Start-Sleep -Seconds 10
+              }
+          }
+
+          cmake --build "${{ env.BUILD_DIR }}" --target therock-archives therock-dist -- -k 0
+
+          # Stop the telemetry job
+          Stop-Job $telemetryJob.Id
+          Remove-Job $telemetryJob.Id
 
       - name: Report
         if: ${{ !cancelled() }}
