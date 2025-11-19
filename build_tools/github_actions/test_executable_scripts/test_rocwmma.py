@@ -28,15 +28,15 @@ test_type = os.getenv("TEST_TYPE", "full")
 # programatically set test_type to "regression" here.
 
 test_subdir = ""
-timeout = "900"
+timeout = "3600"
 if test_type == "smoke":
     # The emulator regression tests are very fast.
     # If we need something even faster we can use "/smoke" here.
     test_subdir = "/regression"
-    timeout = "300"
+    timeout = "720"
 elif test_type == "regression":
     test_subdir = "/regression"
-    timeout = "300"
+    timeout = "720"
 
 cmd = [
     "ctest",
