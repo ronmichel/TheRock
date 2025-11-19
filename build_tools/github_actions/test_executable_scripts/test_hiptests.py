@@ -9,6 +9,7 @@ import shutil
 THEROCK_BIN_DIR = os.getenv("THEROCK_BIN_DIR")
 SCRIPT_DIR = Path(__file__).resolve().parent
 THEROCK_DIR = SCRIPT_DIR.parent.parent.parent
+env = os.environ.copy()
 if os.name == 'nt':
     # hip and comgr dlls need to be copied to the same folder as exectuable
     dlls_pattern = ["amdhip64*.dll", "amd_comgr*.dll", "hiprtc*.dll"]
@@ -34,8 +35,13 @@ if os.name == 'nt':
         "600"
     ]
 else:
+    hip_library_path = "${THEROCK_BIN_DIR}/../lib"
+    if "LD_LIBRARY_PATH" in env:
+        env["LD_LIBRARY_PATH"] = f"{hip_library_path}:{env['LD_LIBRARY_PATH']}"
+    else:
+        env["LD_LIBRARY_PATH"] = hip_library_path
     cmd = [
-        f"LD_LIBRARY_PATH=${THEROCK_BIN_DIR}/../lib ctest",
+        f"ctest",
         "--test-dir",
         f"{THEROCK_BIN_DIR}/../share/hip/catch_tests",
         "--output-on-failure",
@@ -46,4 +52,4 @@ else:
     ]
 
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")
-subprocess.run(cmd, cwd=THEROCK_DIR, check=True)
+subprocess.run(cmd, cwd=THEROCK_DIR, check=True, env=env)
