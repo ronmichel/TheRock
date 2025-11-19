@@ -307,9 +307,8 @@ def run(args):
     run_id = args.run_id or os.getenv("GITHUB_RUN_ID")
     job_id = os.getenv("GITHUB_JOB")
     rocm_version = os.getenv("ROCM_VERSION")
-    plat = (os.getenv("RUNNER_OS")
+    plat = os.getenv("RUNNER_OS")
 
-    log("[INFO] Manifest build_context (as seen by post_build_upload.py):")
     log(f"       run_id               = {run_id}")
     log(f"       platform             = {plat}")
     log(f"       args_artifact_group  = {args_artifact_group}")
