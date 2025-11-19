@@ -164,6 +164,32 @@ By default TheRock root dir is determined based on this script's location.""",
     args = parser.parse_args(argv)
     return args
 
+def get_visible_gpu_list():
+    """Get a list of GPUs that are visible for the torch.
+
+       Note that the current torch build does not neccessarily have
+       a support for all of the GPU's that are visible.
+
+       The list of GPU's that are supported by the current torch build
+       can be queried with method torch.cuda.get_arch_list()
+
+        Returns:
+            List of AMDGPU family strings visible.
+    """
+    ret = []
+    if torch.cuda.is_available():
+        cnt_gpu = torch.cuda.device_count()
+        print(f"GPU count visible for pytorch: {cnt_gpu}")
+        for ii in range(cnt_gpu):
+            cuda_id = "cuda:" + str(ii)
+            device = torch.cuda.device(cuda_id)
+            if device:
+                device_prop = torch.cuda.get_device_properties(device)
+                if device_prop and hasattr(device_prop, 'gcnArchName'):
+                    # amd gpu's have gcnArchName
+                    ret.append(device_prop.gcnArchName)
+    return ret
+
 
 def detect_amdgpu_family(amdgpu_family: str = "") -> list[str]:
     """Detect and configure AMDGPU family using PyTorch.
@@ -189,68 +215,82 @@ def detect_amdgpu_family(amdgpu_family: str = "") -> list[str]:
             print("[ERROR] ROCm is not available or not detected by PyTorch")
             sys.exit(1)
 
-        available_gpus = torch.cuda.get_arch_list()
+        gpu_list_visible = get_visible_gpu_list()
+        gpu_list_supported = torch.cuda.get_arch_list()
 
-        if len(available_gpus) == 0:
+        if len(gpu_list_supported) == 0:
             print("[ERROR] No AMD GPUs detected by PyTorch")
             sys.exit(1)
 
-        print(f"Available AMD GPUs: {available_gpus}")
+        print(f"AMD GPUs supported by Pytorch build: {gpu_list_supported}")
+        print(f"AMD GPUs visible: {gpu_list_visible}")
 
         # Determine which GPU to use based on input
         selected_gpu_indices = []
         selected_gpu_archs = []
 
         if not amdgpu_family:
-            # Mode 1: Auto-detect - use first available GPU
-            selected_gpu_indices = [0]
-            selected_gpu_archs = [available_gpus[0]]
-            print(
-                f"AMDGPU Arch auto-detected (using GPU at index 0): {selected_gpu_archs}"
-            )
+            # Mode 1: Auto-detect
+            # use first available GPU that is both visible and supported
+            for idx, gpu_arch in enumerate(gpu_list_visible):
+                if gpu_arch in gpu_list_supported:
+                    selected_gpu_indices = [idx]
+                    selected_gpu_archs = [gpu_arch]
+            if len(selected_gpu_archs) == 0:
+                print(f"[ERROR] No GPU found that is supported by pytorch build.")
+                print(f"    AMD GPUs supported by pytorch build: {gpu_list_supported}")
+                print(f"    AMD GPUs visible: {gpu_list_visible}")
+                sys.exit(1)
+            print(f"AMDGPU Arch auto-detected")
+            print(f"    GPU arch_list: {selected_gpu_archs}")
+            print(f"    GPU index list: {selected_gpu_indices}")
         elif amdgpu_family.split("-")[0].upper().endswith("X"):
             # Mode 2: Wildcard match (e.g., "gfx94X" matches "gfx942", "gfx940", etc.)
             family_part = amdgpu_family.split("-")[0]
             partial_match = family_part[:-1]  # Remove the 'X'
-
-            for idx, gpu in enumerate(available_gpus):
-                if partial_match in gpu:
+            print(f"family_part: {family_part}")
+            print(f"partial_match: {partial_match}")
+            # validate that the matched gpu is also available both in the
+            # - gpu list visible for the pytorch
+            # - gpu list supported by the current pytorch build
+            for idx, gpu_arch in enumerate(gpu_list_visible):
+                if gpu_arch in gpu_list_supported and partial_match in gpu_arch:
                     selected_gpu_indices += [idx]
-                    selected_gpu_archs += [gpu]
-            print(
-                f"AMDGPU Arch detected via wildcard match '{partial_match}': "
-                f"{selected_gpu_archs} (GPU indices {selected_gpu_indices})"
-            )
-
+                    selected_gpu_archs += [gpu_arch]
             if len(selected_gpu_archs) == 0:
-                print(
-                    f"[ERROR] No GPU found matching wildcard pattern '{amdgpu_family}'. "
-                    f"Available GPUs: {available_gpus}"
-                )
+                print(f"[ERROR] No GPU found matching wildcard pattern '{amdgpu_family}'.")
+                print(f"    AMD GPUs supported by pytorch build: {gpu_list_supported}")
+                print(f"    AMD GPUs visible: {gpu_list_visible}")
                 sys.exit(1)
+            print(f"AMDGPU Arch detected via wildcard match: {partial_match}")
+            print(f"    GPU arch_list: {selected_gpu_archs}")
+            print(f"    GPU index list: {selected_gpu_indices}")
         else:
-            # Mode 3: Specific GPU arch - validate it exists in available GPUs
-            for idx, gpu in enumerate(available_gpus):
-                if gpu == amdgpu_family or amdgpu_family in gpu:
-                    selected_gpu_indices += [idx]
-                    selected_gpu_archs += [gpu]
-                    print(
-                        f"AMDGPU Arch validated: {selected_gpu_archs} "
-                        f"(GPU indices {selected_gpu_indices})"
-                    )
-                    break
-
-            if selected_gpu_archs is None:
-                print(
-                    f"[ERROR] Requested GPU '{amdgpu_family}' not found in available GPUs. "
-                    f"Available GPUs: {available_gpus}"
-                )
+            # Mode 3: Specific GPU arch
+            # validate that the matched gpu is also available both in the
+            # - gpu list visible for the pytorch
+            # - gpu list supported by the current pytorch build
+            for idx, gpu_arch in enumerate(gpu_list_visible):
+                if gpu_arch in gpu_list_supported:
+                    if gpu_arch == amdgpu_family or amdgpu_family in gpu_arch:
+                        selected_gpu_indices += [idx]
+                        selected_gpu_archs += [gpu_arch]
+                        print(
+                            f"AMDGPU Arch validated: {selected_gpu_archs} "
+                            f"(GPU indices {selected_gpu_indices})"
+                        )
+                        break
+            if len(selected_gpu_archs) == 0:
+                print(f"[ERROR] Requested GPU '{amdgpu_family}' not found in available GPUs.")
+                print(f"    AMD GPUs supported by pytorch build: {gpu_list_supported}")
+                print(f"    AMD GPUs visible: {gpu_list_visible}")
                 sys.exit(1)
 
         # Set HIP_VISIBLE_DEVICES to select the specific GPU
         str_indices = ",".join(str(idx) for idx in selected_gpu_indices)
         os.environ["HIP_VISIBLE_DEVICES"] = str_indices
-        print(f"Set HIP_VISIBLE_DEVICES={str_indices}")
+        print("Adjusting the list of GPUs visible for ROCM/Pytorch:")
+        print(f"    HIP_VISIBLE_DEVICES={str_indices}")
 
         return selected_gpu_archs
 
