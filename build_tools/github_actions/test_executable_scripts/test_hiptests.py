@@ -30,7 +30,8 @@ if os.name == 'nt':
         f"--test-dir",
         catch_tests_path,
         "--output-on-failure",
-        "--timeout 600"
+        "--timeout",
+        "600"
     ]
 else:
     cmd = [
@@ -40,7 +41,8 @@ else:
         "--output-on-failure",
         "--repeat",
         "until-pass:3",
-        "--timeout 600"
+        "--timeout",
+        "600"
     ]
 
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")
