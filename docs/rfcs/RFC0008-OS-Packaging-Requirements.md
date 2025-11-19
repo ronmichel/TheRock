@@ -13,8 +13,8 @@ With the implementation of TheRock build system new software packaging requireme
 
 Our goals are to:
 
-1. **Standardize packaging behaviour acros Linux, Windows, and Python ecosystems**
-2. **Ensure predicatble upgrade behaviour, side-by-side support, and compatibility with OS package managers**
+1. **Standardize packaging behaviour acros Linux, Windows, and Python ecosystems (pip and WheelNext)**
+2. **Ensure predicatble upgrade behaviour, side-by-side support, and compatibility with OS package managers (apt, dnf, yum, zypper for SLES)**
 3. **Comply with legal, licensing, and redistrobution rules**
 4. **Support automated packaging workflows in TheRock with productized deliverables**
 
@@ -200,3 +200,113 @@ Package granularity will be increased with ROCm 8.0. Developmentt packages are t
 | rocm-sysdeps |  | Bundled 3rd party dependencies (e.g. libdrm, libelf, numa) |  |
 
 ## Python Packaging Requirements
+
+### Standard pip WHeels
+
+Today's pip cannot handle cross-architecture extras without vitrual environments. The new packaging requirements will support the following options:
+
+```
+pip install rocm # GPU-agnostic
+pip install rocm[gfx908] # Single GPU architecture
+pip install rocm[gfx90a, gfx908] # Multiple GPU architectures (currently not supported)
+pip install rocm[all] # All GPU architectures
+```
+
+Engineering must validate the minimum Python version that supports bracket-extras.
+Dependencies should use `>=` (version X or newer) unless technical risk requires `==`.
+
+### WheelNext Variant Wheels
+
+WheelNext allows GPU detection via the amd-variant-provider which can be seen in the following examples:
+
+```
+uv pip install rocm
+uv pip install rocm[gfx90a, gfx908] # override default variant search
+uv pip install rocm[all]
+```
+
+TheRock must support building and publishing both:
+
+- Standard pip wheels
+- WheelNext variant wheels
+
+### Detection Requirements
+
+WheelNext must detect local GPUs via:
+
+- PCI bus scanning
+- ROCm driver presence
+- host-only variant
+
+## Versioning Requirements
+
+The following versioning format will be implemented as follows.
+
+Stable releases:
+
+```
+X.Y.Z
+```
+
+Prereleases:
+
+| Type of package | Version format | Version example |
+| :------------- | :------------- | :------------- |
+| Python | X.Y.ZrcN | 7.9.0rc0 |
+| Tarball | X.Y.ZrcN | 7.9.0rc0 |
+| Fedora (rpm) | X.Y.Z~rcN | 7.9.0~rc0 |
+| Debian (deb) | X.Y.Z~preN | 7.9.0~pre0 |
+
+Nightly Releases:
+
+| Type of package | Version format | Version example |
+| :------------- | :------------- | :------------- |
+| Python | X.Y.ZaYYYYMMDD | 7.10.0a20251006 |
+| Tarball | X.Y.ZaYYYYMMDD | 7.10.0a20251006 |
+| Fedora (rpm) | X.Y.Z~gitYYYYMMDD.${hash}-N | 7.10.0~git20251006.a961743280c591a1b8fe197ddf2928abd2f53a86-1 |
+| Debian (deb) | X.Y.Z~YYYYMMDD | 7.10.0~20251006 |
+
+TheRock must automate all formats.
+
+## Windows Packaging Requirements
+
+### Required Installation Technologies
+
+TheRock must provide:
+
+- MSI installer
+- Winget manifest and distrobution support
+- Side-by-side instal via windows assemblies
+- WSL package compatibility
+
+Folder Layout:
+
+```
+C:\Program Files\AMD\ROCm\Core-X.Y\
+```
+
+Installer Requirements:
+
+- Must not bundle GPU driver
+- Must provide driver download links
+- Must support side-by-side major.minor installations
+- MSI must support repair, modify, upgrade, uninstall
+
+### WinGet Requirements
+
+TheRock packaging system should enable winget to simplify deployment of software
+
+Winget must show multiple available versions of ROCm: 
+
+```
+C:\Users\<username>\ winget search "ROCm Core SDK" --versions
+
+Found AMD ROCm Core SDK [AMD.ROCmCore]
+Version
+-------
+9.0
+8.1
+8.0
+```
+
+As shown, winget supports multiple version of the ROCm Core SDK. By default, only major.minor versions are shown. If a patch version of the SDK is released, only the latest patch version is shown.
