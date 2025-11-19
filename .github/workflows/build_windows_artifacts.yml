@@ -152,18 +152,28 @@ jobs:
       - name: Build therock-archives and therock-dist
         run: |
           # Background telemetry loop
-          ( while true; do
-              echo "--- $(date) ---"
-              free -h
-              top -b -n1 | head -20
-              sleep 10
-            done ) &
-          TELEMETRY_PID=$!
+          $telemetryJob = Start-Job -ScriptBlock {
+              while ($true) {
+                  Write-Output ("--- {0} ---" -f (Get-Date))
+
+                  Get-CimInstance Win32_OperatingSystem |
+                      Select-Object `
+                          @{Name="Total Memory"; Expression={[math]::Round($_.TotalVisibleMemorySize/1MB,2)}},
+                          @{Name="Free Memory"; Expression={[math]::Round($_.FreePhysicalMemory/1MB,2)}}
+
+                  Get-Process |
+                      Sort-Object CPU -Descending |
+                      Select-Object -First 20 Name, Id, CPU, WorkingSet, StartTime
+
+                  Start-Sleep -Seconds 10
+              }
+          }
 
           cmake --build "${{ env.BUILD_DIR }}" --target therock-archives therock-dist -- -k 0
 
-          # Stop telemetry loop
-          kill $TELEMETRY_PID
+          # Stop the telemetry job
+          Stop-Job $telemetryJob.Id
+          Remove-Job $telemetryJob.Id
 
       - name: Report
         if: ${{ !cancelled() }}
