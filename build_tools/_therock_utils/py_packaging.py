@@ -365,9 +365,11 @@ class PopulatedDistPackage:
             )
         except subprocess.CalledProcessError:
             # patchelf failed (for wmma it was a binary with too many sections), skip normalization
-            log(f"  SKIP_RPATH: {file_path.name}: patchelf failed, skipping RPATH normalization", vlog=1)
+            log(
+                f"  SKIP_RPATH: {file_path.name}: patchelf failed, skipping RPATH normalization"
+            )
             return
-        
+
         if not existing_rpath:
             return
 
@@ -390,8 +392,7 @@ class PopulatedDistPackage:
                 stderr=subprocess.DEVNULL,
             )
         except subprocess.CalledProcessError:
-            log(f"  SKIP_RPATH_SET: {file_path.name}: patchelf could not modify RPATH", vlog=1)
-
+            log(f"  SKIP_RPATH_SET: {file_path.name}: patchelf could not modify RPATH")
 
     def populate_devel_files(
         self,
