@@ -301,6 +301,21 @@ def run(args):
 
     log("Upload manifest")
     log("----------------")
+    # For debugging.
+    args_artifact_group = args.artifact_group
+    os_getenv = os.getenv("ARTIFACT_GROUP")
+    run_id = args.run_id or os.getenv("GITHUB_RUN_ID")
+    job_id = os.getenv("GITHUB_JOB")
+    rocm_version = os.getenv("ROCM_VERSION")
+    plat = (os.getenv("RUNNER_OS")
+
+    log("[INFO] Manifest build_context (as seen by post_build_upload.py):")
+    log(f"       run_id               = {run_id}")
+    log(f"       platform             = {plat}")
+    log(f"       args_artifact_group  = {args_artifact_group}")
+    log(f"       os_getenv            = {os_getenv}")
+    log(f"       rocm_version         = {rocm_version}")
+    log(f"       job_id               = {job_id}")
     upload_manifest_to_s3(args.artifact_group, args.build_dir, bucket_uri)
 
     log("Write github actions build summary")
