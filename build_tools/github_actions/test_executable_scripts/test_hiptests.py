@@ -35,7 +35,7 @@ if os.name == 'nt':
     ]
 else:
     cmd = [
-        "ctest",
+        f"LD_LIBRARY_PATH=${THEROCK_BIN_DIR}/../lib ctest",
         "--test-dir",
         f"{THEROCK_BIN_DIR}/../share/hip/catch_tests",
         "--output-on-failure",
