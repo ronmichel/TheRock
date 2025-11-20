@@ -361,7 +361,7 @@ if(NOT WIN32)
   therock_add_feature(HIPTENSOR
     GROUP MATH_LIBS
     DESCRIPTION "Enables the hipTensor project"
-    REQUIRES COMPILER COMPOSABLE_KERNEL
+    REQUIRES COMPILER
   )
 endif()
 
