@@ -35,7 +35,7 @@ if os.name == 'nt':
         "600"
     ]
 else:
-    hip_library_path = "${THEROCK_BIN_DIR}/../lib"
+    hip_library_path = f"{THEROCK_BIN_DIR}/../lib"
     if "LD_LIBRARY_PATH" in env:
         env["LD_LIBRARY_PATH"] = f"{hip_library_path}:{env['LD_LIBRARY_PATH']}"
     else:
