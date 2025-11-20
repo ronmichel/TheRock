@@ -95,10 +95,8 @@ def get_os_id(os_release_path="/etc/os-release"):
     if "ubuntu" in os_id or "debian" in os_like:
         print("returning debian")
         return "debian"
-    elif any(x in os_id for x in ["rhel", "centos"]) or "redhat" in os_like:
-        return "redhat"
-    elif "suse" in os_id or "sles" in os_id:
-        return "suse"
+    elif any(x in os_id for x in ["rhel", "centos", "sles"]) or "redhat" in os_like:
+        return "rpm"
     else:
         return "unknown"
 

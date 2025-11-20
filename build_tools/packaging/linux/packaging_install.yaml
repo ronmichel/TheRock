@@ -1,8 +1,7 @@
 debian:
-    wheel_installation_method: pip
     package_type: deb
     test:
-        s3: https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}
+        s3: https://{{ bucket }}.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}
     daily:
         s3:
     nightly:
@@ -13,11 +12,10 @@ debian:
         s3:
     rc:
         s3:
-redhat:
-    wheel_installation_method: pip
+rpm:
     package_type: rpm
     test:
-        s3: https://therock-deb-rpm-test.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}/deb/pool/main/index.html
+        s3: https://{{ bucket }}.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}/deb/pool/main/index.html
     daily:
         s3:
     nightly:

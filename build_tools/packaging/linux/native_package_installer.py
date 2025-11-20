@@ -56,6 +56,9 @@ class PackageInstaller(PackageManagerBase):
         version_flag: bool,
         upload: str,
         artifact_group: str,
+        package_suffix: str,
+        bucket: str,
+        release_type: str,
         composite: bool,
         loader,
     ):
@@ -67,11 +70,14 @@ class PackageInstaller(PackageManagerBase):
         self.version_flag = version_flag
         self.os_family = get_os_id()
         self.artifact_group = artifact_group
+        self.package_suffix = package_suffix
+        self.bucket = bucket
+        self.release_type = release_type
         self.upload = upload
         self.loader = loader
         self.s3_config = load_yaml_config(
                 "build_tools/packaging/linux/packaging_install.yaml",
-                variables={"artifact_group": self.artifact_group, "run_id": self.run_id}
+                variables={"artifact_group": self.artifact_group, "run_id": self.run_id, "bucket": self.bucket}
             )
 
     def execute(self):
@@ -179,7 +185,7 @@ class PackageInstaller(PackageManagerBase):
         logger.info(f"Populating repo file for OS: {self.os_family}")
 
         try:
-            base_url = self.s3_config.get("debian", {}).get("test", {}).get("s3")
+            base_url = self.s3_config.get(self.os_family, {}).get(self.release_type, {}).get("s3")
             if base_url:
                 logger.info(f"Using S3 URL: {base_url}")
 
@@ -312,6 +318,15 @@ def parse_arguments():
     parser.add_argument(
         "--run-id", help="Unique identifier for this installation run (optional)"
     )
+    parser.add_argument(
+        "--package-suffix", help="Unique identifier for this installation run (optional)"
+    )
+    parser.add_argument(
+        "--release-type", help="Unique identifier for this installation run (optional)"
+    )
+    parser.add_argument(
+        "--bucket", help="Unique identifier for this installation run (optional)"
+    )
 
     return parser.parse_args()
 
@@ -352,6 +367,9 @@ def main():
         version_flag=args.version.lower() == "true",
         upload=upload,
         artifact_group=args.artifact_group,
+        package_suffix=args.package_suffix,
+        bucket=args.bucket,
+        release_type=args.release_type,
         composite=(args.composite.lower() == "true"),
         loader=loader,
     )
