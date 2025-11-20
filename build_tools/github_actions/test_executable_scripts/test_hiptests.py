@@ -41,6 +41,8 @@ else:
     else:
         env["LD_LIBRARY_PATH"] = hip_library_path
     cmd = [
+        "sudo",
+        "-E",
         f"ctest",
         "--test-dir",
         f"{THEROCK_BIN_DIR}/../share/hip/catch_tests",
