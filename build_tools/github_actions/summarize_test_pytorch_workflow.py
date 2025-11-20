@@ -35,10 +35,10 @@ def run(args: argparse.Namespace):
     summary = ""
 
     summary += "## PyTorch test environment reproduction instructions\n\n"
-    summary += "```bash\n"
 
     if not is_windows():
-        summary += "# (Optional) Run under Docker\n"
+        summary += "(Optional) Run under Docker\n"
+        summary += "```bash\n"
         summary += "sudo docker run -it" + LINE_CONTINUATION
         summary += "--device=/dev/kfd --device=/dev/dri" + LINE_CONTINUATION
         summary += (
@@ -46,35 +46,39 @@ def run(args: argparse.Namespace):
             + LINE_CONTINUATION
         )
         summary += "ghcr.io/rocm/no_rocm_image_ubuntu24_04:latest\n"
+        summary += "```\n\n"
+        summary += "```bash\n"
+        summary += "# Install extra packages\n"
         summary += "sudo apt install python3.12-venv -y\n"
-        summary += "\n"
+        summary += "```\n\n"
 
     pytorch_remote_name = "upstream" if args.pytorch_ref == "nightly" else "rocm"
     pytorch_repo_org = "pytorch" if args.pytorch_ref == "nightly" else "ROCm"
-    summary += "# (A) Clone pytorch source files, including tests\n"
-    summary += f"git clone -b {args.pytorch_ref} -o {pytorch_remote_name} https://github.com/{pytorch_repo_org}/pytorch.git\n"
-    summary += "# (B) Switch to pytorch ref using an existing checkout\n"
-    summary += "cd pytorch\n"
-    summary += f"git remote add {pytorch_remote_name} https://github.com/{pytorch_repo_org}/pytorch.git\n"
-    summary += f"git fetch {pytorch_remote_name} {args.pytorch_ref} && "
+    summary += "Fetch pytorch source files, including tests\n\n"
+    summary += "* (A) Clone pytorch if starting fresh\n\n"
+    summary += "    ```bash\n"
+    summary += f"    git clone --branch {args.pytorch_ref} --origin {pytorch_remote_name} https://github.com/{pytorch_repo_org}/pytorch.git\n"
+    summary += "    ```\n\n"
+    summary += "* (B) Switch to pytorch ref using an existing repository\n\n"
+    summary += "    ```bash\n"
+    summary += "    cd pytorch\n"
+    summary += f"    git remote add {pytorch_remote_name} https://github.com/{pytorch_repo_org}/pytorch.git\n"
+    summary += f"    git fetch {pytorch_remote_name} {args.pytorch_ref} && "
     summary += f"git checkout {pytorch_remote_name}/{args.pytorch_ref}\n"
-    summary += "\n"
+    summary += "    ```\n\n"
 
-    summary += "# Setup venv\n"
+    summary += "Install torch and test requirements into a venv\n\n"
+    summary += "```bash\n"
     if is_windows():
         summary += "python -m venv .venv && .venv\Scripts\Activate.bat\n"
     else:
         summary += "python3 -m venv .venv && source .venv/bin/activate\n"
-    summary += "\n"
-
-    summary += "# Install torch and test requirements\n"
     summary += "pip install" + LINE_CONTINUATION
     summary += f"--index-url={args.index_url}/{args.index_subdir}" + LINE_CONTINUATION
     summary += "torch"
     summary += f"=={args.torch_version}" if args.torch_version else ""
     summary += "\n"
     summary += "pip install -r pytorch/.ci/docker/requirements-ci.txt\n"
-
     summary += "```\n\n"
 
     summary += "## PyTorch testing instructions\n\n"
