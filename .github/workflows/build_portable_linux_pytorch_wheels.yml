@@ -126,7 +126,7 @@ jobs:
         with:
           # either use inputs or use the branch/tag/SHA that triggered the workflow
           repository: ${{ inputs.repository || github.action_repository }}
-          ref: ${{ inputs.ref || github.action_ref }}
+          ref: ${{ inputs.ref || github.ref_name }}
 
       - name: Configure Git Identity
         run: |
@@ -226,7 +226,7 @@ jobs:
         with:
           # either use inputs or use the branch/tag/SHA that triggered the workflow
           repository: ${{ inputs.repository || github.action_repository }}
-          ref: ${{ inputs.ref || github.action_ref }}
+          ref: ${{ inputs.ref || github.ref_name }}
 
       - name: Generating target to run
         id: configure
@@ -269,7 +269,7 @@ jobs:
         with:
           # either use inputs or use the branch/tag/SHA that triggered the workflow
           repository: ${{ inputs.repository || github.action_repository }}
-          ref: ${{ inputs.ref || github.action_ref }}
+          ref: ${{ inputs.ref || github.ref_name }}
 
       - name: Configure AWS Credentials
         if: always()
