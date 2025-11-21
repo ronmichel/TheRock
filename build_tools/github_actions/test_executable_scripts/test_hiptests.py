@@ -40,6 +40,10 @@ else:
         env["LD_LIBRARY_PATH"] = f"{hip_library_path}:{env['LD_LIBRARY_PATH']}"
     else:
         env["LD_LIBRARY_PATH"] = hip_library_path
+    # Set ROCM Path, to find rocm_agent_enum etc
+    ROCM_PATH = Path(THEROCK_BIN_DIR).resolve().parent
+    env["ROCM_PATH"] = str(ROCM_PATH)
+
     cmd = [
         "sudo",
         "-E",
