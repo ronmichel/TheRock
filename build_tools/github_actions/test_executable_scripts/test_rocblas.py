@@ -21,13 +21,13 @@ logging.basicConfig(level=logging.INFO)
 # If smoke tests are enabled, we run smoke tests only.
 # Otherwise, we run the normal test suite
 test_type = os.getenv("TEST_TYPE", "full")
-test_filter = []
-if test_type != "full":
-    if test_type == "smoke":
-        test_filter = ["--yaml", f"{THEROCK_BIN_DIR}/rocblas_smoke.yaml"]
-    else:
-        # only running smoke tests due to openBLAS issue: https://github.com/ROCm/TheRock/issues/1605
-        test_filter = ["--yaml", f"{THEROCK_BIN_DIR}/rocblas_smoke.yaml"]
+if test_type == "full":
+    test_filter = []
+elif test_type == "smoke":
+    test_filter = ["--yaml", f"{THEROCK_BIN_DIR}/rocblas_smoke.yaml"]
+else:
+    # only running smoke tests due to openBLAS issue: https://github.com/ROCm/TheRock/issues/1605
+    test_filter = ["--yaml", f"{THEROCK_BIN_DIR}/rocblas_smoke.yaml"]
 
 cmd = [f"{THEROCK_BIN_DIR}/rocblas-test"] + test_filter
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")

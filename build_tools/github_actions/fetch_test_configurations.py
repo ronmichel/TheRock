@@ -32,10 +32,10 @@ test_matrix = {
     "rocblas": {
         "job_name": "rocblas",
         "fetch_artifact_args": "--blas --tests",
-        "timeout_minutes": 15,
+        "timeout_minutes": 60,
         "test_script": f"python {_get_script_path('test_rocblas.py')}",
         "platform": ["linux", "windows"],
-        "total_shards": 1,
+        "total_shards": 6,
     },
     "rocroller": {
         "job_name": "rocroller",
@@ -69,7 +69,7 @@ test_matrix = {
         "timeout_minutes": 60,
         "test_script": f"python {_get_script_path('test_hipsolver.py')}",
         "platform": ["linux", "windows"],
-        "total_shards": 1,
+        "total_shards": 4,
     },
     "rocsolver": {
         "job_name": "rocsolver",
@@ -78,7 +78,7 @@ test_matrix = {
         "test_script": f"python {_get_script_path('test_rocsolver.py')}",
         # Issue for adding windows tests: https://github.com/ROCm/TheRock/issues/1770
         "platform": ["linux"],
-        "total_shards": 1,
+        "total_shards": 4,
     },
     # PRIM tests
     "rocprim": {
