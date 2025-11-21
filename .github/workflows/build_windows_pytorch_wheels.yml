@@ -129,8 +129,8 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           # either use inputs or use the branch/tag/SHA that triggered the workflow
-          repository: ${{ inputs.repository || github.action_repository }}
-          ref: ${{ inputs.ref || github.ref_name }}
+          repository: ${{ inputs.repository || github.repository }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Configure Git Identity
         run: |
@@ -262,8 +262,8 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           # either use inputs or use the branch/tag/SHA that triggered the workflow
-          repository: ${{ inputs.repository || github.action_repository }}
-          ref: ${{ inputs.ref || github.ref_name }}
+          repository: ${{ inputs.repository || github.repository }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Generating target to run
         id: configure
@@ -303,8 +303,8 @@ jobs:
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           # either use inputs or use the branch/tag/SHA that triggered the workflow
-          repository: ${{ inputs.repository || github.action_repository }}
-          ref: ${{ inputs.ref || github.ref_name }}
+          repository: ${{ inputs.repository || github.repository }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - name: Configure AWS Credentials
         if: always()
