@@ -52,19 +52,19 @@ def run(args: argparse.Namespace):
         summary += "sudo apt install python3.12-venv -y\n"
         summary += "```\n\n"
 
-    pytorch_remote_name = "upstream" if args.pytorch_ref == "nightly" else "rocm"
-    pytorch_repo_org = "pytorch" if args.pytorch_ref == "nightly" else "ROCm"
+    pytorch_remote_name = "upstream" if args.pytorch_git_ref == "nightly" else "rocm"
+    pytorch_repo_org = "pytorch" if args.pytorch_git_ref == "nightly" else "ROCm"
     summary += "Fetch pytorch source files, including tests\n\n"
     summary += "* (A) Clone pytorch if starting fresh\n\n"
     summary += "    ```bash\n"
-    summary += f"    git clone --branch {args.pytorch_ref} --origin {pytorch_remote_name} https://github.com/{pytorch_repo_org}/pytorch.git\n"
+    summary += f"    git clone --branch {args.pytorch_git_ref} --origin {pytorch_remote_name} https://github.com/{pytorch_repo_org}/pytorch.git\n"
     summary += "    ```\n\n"
     summary += "* (B) Switch to pytorch ref using an existing repository\n\n"
     summary += "    ```bash\n"
     summary += "    cd pytorch\n"
     summary += f"    git remote add {pytorch_remote_name} https://github.com/{pytorch_repo_org}/pytorch.git\n"
-    summary += f"    git fetch {pytorch_remote_name} {args.pytorch_ref} && "
-    summary += f"git checkout {pytorch_remote_name}/{args.pytorch_ref}\n"
+    summary += f"    git fetch {pytorch_remote_name} {args.pytorch_git_ref} && "
+    summary += f"git checkout {pytorch_remote_name}/{args.pytorch_git_ref}\n"
     summary += "    ```\n\n"
 
     summary += "Install torch and test requirements into a venv\n\n"
@@ -99,7 +99,7 @@ if __name__ == "__main__":
         help="torch package version to install (e.g. '2.7.1+rocm7.10.0a20251120'), or empty for latest",
     )
     parser.add_argument(
-        "--pytorch-ref",
+        "--pytorch-git-ref",
         type=str,
         default="nightly",
         help="PyTorch ref to checkout test sources from",

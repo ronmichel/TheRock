@@ -97,7 +97,7 @@ jobs:
         run: |
           python build_tools/github_actions/summarize_test_pytorch_workflow.py \
             --torch-version=${{ inputs.torch_version }} \
-            --pytorch-ref=${{ inputs.pytorch_ref }} \
+            --pytorch-ref=${{ inputs.pytorch_version }} \
             --index-url=${{ inputs.package_index_url }} \
             --index-subdir=${{ inputs.amdgpu_family }}
 
