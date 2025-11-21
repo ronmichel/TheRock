@@ -10,3 +10,19 @@ updates:
       github-actions:
         patterns:
           - "*"
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"        
+    schedule:
+      interval: "daily"
+    target-branch: "main"
+    allow:
+      - dependency-name: "half"
+      - dependency-name: "HIPIFY"
+      - dependency-name: "rccl"
+      - dependency-name: "rccl-tests"
+      - dependency-name: "rocprof-trace-decoder"
+      - dependency-name: "rocm-cmake"
+    reviewers:
+      - "ScottTodd"
+      - "marbre"
+    open-pull-requests-limit: 10
