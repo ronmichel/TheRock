@@ -19,6 +19,9 @@ Repository installation (uses run-id to fetch from remote repo):
     --package-json ./packages.json \
     --rocm-version 6.2.0 \
     --artifact-group gfx94X-dcgpu \
+    --package-suffix asan \
+    --release-type test \
+    --bucket therock-deb-rpm-test \
     --version true/false \
     --composite true/false
 ```
