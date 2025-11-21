@@ -31,7 +31,6 @@ include = [
 [components.test."profiler/rocprofiler-sdk/stage"]
 include = [
   "share/rocprofiler-sdk/tests/**",
-  "lib/cmake/rocprofiler-sdk/rocprofiler-sdk-config.cmake"
 ]
 
 # roctracer

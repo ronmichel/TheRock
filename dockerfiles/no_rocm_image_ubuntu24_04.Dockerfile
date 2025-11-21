@@ -32,14 +32,6 @@ RUN sudo apt-get update -y \
     psmisc \
     libgfortran5
 
-# Added for rocprofiler-sdk
-ENV HIP_PLATFORM=amd
-RUN sudo apt-get install -y \ 
-    build-essential \
-    libdw-dev \
-    pkg-config \
-    libopenmpi-dev
-
 RUN curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash && \
     sudo apt-get install git-lfs
 
