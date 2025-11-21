@@ -256,6 +256,12 @@ if(THEROCK_FLAG_INCLUDE_PROFILER)
     REQUIRES HIP_RUNTIME
   )
   set(_optional_profiler_requirements "ROCPROFV3")
+  # rocprofiler-systems
+  therock_add_feature(ROCPROFSYS
+    GROUP PROFILER
+    DESCRIPTION "Enables the rocprofiler-systems project (and ancillary deps)"
+    REQUIRES ROCPROFV3
+  )
 else()
   # No profiler SDK on Windows.
   set(_optional_profiler_requirements "")
