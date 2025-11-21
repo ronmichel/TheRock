@@ -22,6 +22,7 @@ updates:
       - dependency-name: "rccl-tests"
       - dependency-name: "rocprof-trace-decoder"
       - dependency-name: "rocm-cmake"
+      - dependency-name: "rocm-systems"
     reviewers:
       - "ScottTodd"
       - "marbre"
