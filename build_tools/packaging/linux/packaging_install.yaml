@@ -1,5 +1,4 @@
 debian:
-    package_type: deb
     test:
         s3: https://{{ bucket }}.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}
     daily:
@@ -13,9 +12,8 @@ debian:
     rc:
         s3:
 rpm:
-    package_type: rpm
     test:
-        s3: https://{{ bucket }}.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}/deb/pool/main/index.html
+        s3: https://{{ bucket }}.s3.us-east-2.amazonaws.com/{{ artifact_group }}_{{ run_id }}/
     daily:
         s3:
     nightly:
