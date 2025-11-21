@@ -55,6 +55,8 @@ def run(args):
     update_args = []
     if args.depth:
         update_args += ["--depth", str(args.depth)]
+    if args.progress:
+        update_args += ["--progress"]
     if args.jobs:
         update_args += ["--jobs", str(args.jobs)]
     if args.remote:
@@ -79,8 +81,6 @@ def run(args):
         ["git", "update-index", "--no-skip-worktree", "--"] + submodule_paths,
         cwd=THEROCK_DIR,
     )
-
-    populate_ancillary_sources(args)
 
     # Remove any stale .smrev files.
     remove_smrev_files(args, projects)
@@ -246,38 +246,6 @@ def get_submodule_revision(submodule_path: str) -> str:
     return ls_line.split()[1]
 
 
-def populate_ancillary_sources(args):
-    """Various subprojects have their own mechanisms for populating ancillary sources
-    needed to build. There is often something in CMake that attempts to automate it,
-    but it is also often broken. So we just do the right thing here as a transitionary
-    step to fixing the underlying software packages."""
-    populate_submodules_if_exists(args, THEROCK_DIR / "base" / "rocprofiler-register")
-    populate_submodules_if_exists(args, THEROCK_DIR / "profiler" / "rocprofiler-sdk")
-
-    # TODO(#36): Enable once rocprofiler-systems can be checked out on Windows
-    #     error: invalid path 'src/counter_analysis_toolkit/scripts/sample_data/L2_RQSTS:ALL_DEMAND_REFERENCES.data.reads.stat'
-    #  Upstream issues:
-    #   https://github.com/ROCm/rocprofiler-systems/issues/105
-    #   https://github.com/icl-utk-edu/papi/issues/321
-    if not is_windows():
-        populate_submodules_if_exists(
-            args, THEROCK_DIR / "profiler" / "rocprofiler-systems"
-        )
-
-
-def populate_submodules_if_exists(args, git_dir: Path):
-    if not git_dir.exists():
-        print(f"Not populating submodules for {git_dir} (does not exist)")
-        return
-    print(f"Populating submodules for {git_dir}:")
-    update_args = []
-    if args.depth is not None:
-        update_args = ["--depth", str(args.depth)]
-    if args.jobs:
-        update_args += ["--jobs", str(args.jobs)]
-    exec(["git", "submodule", "update", "--init"] + update_args, cwd=git_dir)
-
-
 def main(argv):
     parser = argparse.ArgumentParser(prog="fetch_sources")
     parser.add_argument(
@@ -306,6 +274,12 @@ def main(argv):
     )
     parser.add_argument(
         "--depth", type=int, help="Git depth when updating submodules", default=None
+    )
+    parser.add_argument(
+        "--progress",
+        default=False,
+        action="store_true",
+        help="Git progress displayed when updating submodules",
     )
     parser.add_argument(
         "--jobs",

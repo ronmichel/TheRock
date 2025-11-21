@@ -28,20 +28,32 @@ This incorporates advice from:
 
 ### Project and feature support status
 
-| Project / feature              | Linux support | Windows support |
-| ------------------------------ | ------------- | --------------- |
-| torch                          | ✅ Supported  | ✅ Supported    |
-| torchaudio                     | ✅ Supported  | ✅ Supported    |
-| torchvision                    | ✅ Supported  | ✅ Supported    |
-| Flash attention via [ao]triton | ✅ Supported  | ✅ Supported    |
+| Project / feature              | Linux support                                                                     | Windows support  |
+| ------------------------------ | --------------------------------------------------------------------------------- | ---------------- |
+| torch                          | ✅ Supported                                                                      | ✅ Supported     |
+| torchaudio                     | ✅ Supported                                                                      | ✅ Supported     |
+| torchvision                    | ✅ Supported                                                                      | ✅ Supported     |
+| Flash attention via [ao]triton | ✅ Supported                                                                      | ✅ Supported     |
+| FBGEMM GenAI                   | ❌ Not supported (see Issue [#2056](https://github.com/ROCm/TheRock/issues/2056)) | ❌ Not supported |
 
 ### Supported PyTorch versions
 
-We support building ROCm source and nightly releases together with several
-different PyTorch versions. The intent is to support the latest upstream PyTorch
-code (i.e. `main` or `nightly`) as well as recently published release branches
-which users depend on. Developers can also build variations of these versions to
-suite their own requirements.
+We support building various PyTorch versions compatible with the latest ROCm
+sources and release packages.
+
+Support for the latest upstream PyTorch code (i.e. `main` or `nightly`) uses the
+upstream projects directly, while extended support for older releases is maintained
+via backported release branches in https://github.com/ROCm/pytorch. Developers can
+also build variations of these versions to suite their own requirements.
+
+> [!NOTE]
+> We build "nightly" versions with alpha suffixes. Once
+> PyTorch promotes a new release version, we switch from the upstream branches
+> to the backported release branches in https://github.com/ROCm/pytorch without
+> such version suffixes (e.g. `2.7.0a0`-> `2.7.1`).
+>
+> Historical builds are archived at https://rocm.nightlies.amd.com according to
+> some retention policy.
 
 Each PyTorch version uses a combination of:
 
@@ -49,16 +61,15 @@ Each PyTorch version uses a combination of:
 - Git "repo hashtags" (branch names, tag names, or commit refs) for each project
 - Optional patches to be applied on top of a git checkout
 
-See the following table for how each version is supported. Previously supported
-versions are no longer being built but may have existing wheels in the [nightly build repo](https://rocm.nightlies.amd.com/v2/).
+See the following table for how each version is supported:
 
-| PyTorch version      | Linux                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Windows                                                                                                                                                                                                                                                                                            |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| main (2.10 alpha)    | (Similar to nightly)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | ✅ Using upstream pytorch<br><ul><li>[pytorch/pytorch `main` branch](https://github.com/pytorch/pytorch/tree/main)</li><li>[pytorch/audio `main` branch](https://github.com/pytorch/audio/tree/main)</li><li>[pytorch/vision `main` branch](https://github.com/pytorch/vision/tree/main)</li></ul> |
-| nightly (2.10 alpha) | ✅ Using upstream pytorch<br><ul><li>[pytorch/pytorch `nightly` branch](https://github.com/pytorch/pytorch/tree/nightly)<ul><li>[ROCm/triton](https://github.com/ROCm/triton) - [`ci_commit_pins/triton.txt`](https://github.com/pytorch/pytorch/blob/nightly/.ci/docker/ci_commit_pins/triton.txt)</li></ul></li><li>[pytorch/audio `nightly` branch](https://github.com/pytorch/audio/tree/nightly)</li><li>[pytorch/vision `nightly` branch](https://github.com/pytorch/vision/tree/nightly)</li></ul>                                                                                                                                            | (Similar to main)                                                                                                                                                                                                                                                                                  |
-| 2.9 alpha            | Previously supported                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Previously supported                                                                                                                                                                                                                                                                               |
-| 2.8                  | Unsupported                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Unsupported                                                                                                                                                                                                                                                                                        |
-| 2.7                  | ✅ Using downstream ROCm/pytorch fork<br><ul><li>[ROCm/pytorch `release/2.7` branch](https://github.com/ROCm/pytorch/tree/release/2.7)<ul><li>[ROCm/triton](https://github.com/ROCm/triton) - [`ci_commit_pins/triton.txt`](https://github.com/ROCm/pytorch/blob/release/2.7/.ci/docker/ci_commit_pins/triton.txt)</li></ul></li><li>[pytorch/audio](https://github/com/pytorch/audio) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.7/related_commits)</li><li>[pytorch/vision](https://github/com/pytorch/vision) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.7/related_commits)</li></ul> | Unsupported                                                                                                                                                                                                                                                                                        |
+| PyTorch version | Linux                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Windows                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.10 alpha      | ✅ Using upstream pytorch<br><ul><li>[pytorch/pytorch `nightly` branch](https://github.com/pytorch/pytorch/tree/nightly)<ul><li>[ROCm/triton](https://github.com/ROCm/triton) - [`ci_commit_pins/triton.txt`](https://github.com/pytorch/pytorch/blob/nightly/.ci/docker/ci_commit_pins/triton.txt)</li></ul></li><li>[pytorch/audio `nightly` branch](https://github.com/pytorch/audio/tree/nightly)</li><li>[pytorch/vision `nightly` branch](https://github.com/pytorch/vision/tree/nightly)</li></ul>                                                                                                                                            | ✅ Using upstream pytorch<br><ul><li>[pytorch/pytorch `nightly` branch](https://github.com/pytorch/pytorch/tree/nightly)</li><li>[pytorch/audio `nightly` branch](https://github.com/pytorch/audio/tree/nightly)</li><li>[pytorch/vision `nightly` branch](https://github.com/pytorch/vision/tree/nightly)</li></ul>                                                                                                                                           |
+| 2.9             | ✅ Using downstream ROCm/pytorch fork<br><ul><li>[ROCm/pytorch `release/2.9` branch](https://github.com/ROCm/pytorch/tree/release/2.9)<ul><li>[ROCm/triton](https://github.com/ROCm/triton) - [`ci_commit_pins/triton.txt`](https://github.com/ROCm/pytorch/blob/release/2.9/.ci/docker/ci_commit_pins/triton.txt)</li></ul></li><li>[pytorch/audio](https://github.com/pytorch/audio) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.9/related_commits)</li><li>[pytorch/vision](https://github.com/pytorch/vision) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.9/related_commits)</li></ul> | ✅ Using downstream ROCm/pytorch fork<br><ul><li>[ROCm/pytorch `release/2.9` branch](https://github.com/ROCm/pytorch/tree/release/2.9)</li><li>[pytorch/audio](https://github.com/pytorch/audio) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.9/related_commits)</li><li>[pytorch/vision](https://github.com/pytorch/vision) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.9/related_commits)</li></ul> |
+| 2.9 alpha       | Previously built                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Previously built                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 2.8             | ✅ Using downstream ROCm/pytorch fork<br><ul><li>[ROCm/pytorch `release/2.8` branch](https://github.com/ROCm/pytorch/tree/release/2.8)<ul><li>[ROCm/triton](https://github.com/ROCm/triton) - [`ci_commit_pins/triton.txt`](https://github.com/ROCm/pytorch/blob/release/2.8/.ci/docker/ci_commit_pins/triton.txt)</li></ul></li><li>[pytorch/audio](https://github.com/pytorch/audio) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.8/related_commits)</li><li>[pytorch/vision](https://github.com/pytorch/vision) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.8/related_commits)</li></ul> | Unsupported                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 2.7             | ✅ Using downstream ROCm/pytorch fork<br><ul><li>[ROCm/pytorch `release/2.7` branch](https://github.com/ROCm/pytorch/tree/release/2.7)<ul><li>[ROCm/triton](https://github.com/ROCm/triton) - [`ci_commit_pins/triton.txt`](https://github.com/ROCm/pytorch/blob/release/2.7/.ci/docker/ci_commit_pins/triton.txt)</li></ul></li><li>[pytorch/audio](https://github.com/pytorch/audio) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.7/related_commits)</li><li>[pytorch/vision](https://github.com/pytorch/vision) - ["rocm related commit"](https://github.com/ROCm/pytorch/blob/release/2.7/related_commits)</li></ul> | Unsupported                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
 See also:
 
@@ -126,9 +137,9 @@ Now checkout repositories using their default branches:
 - On Windows, use shorter paths to avoid command length limits:
 
   ```batch
-  python pytorch_torch_repo.py checkout --repo C:/b/pytorch
-  python pytorch_audio_repo.py checkout --repo C:/b/audio
-  python pytorch_vision_repo.py checkout --repo C:/b/vision
+  python pytorch_torch_repo.py checkout --checkout-dir C:/b/pytorch
+  python pytorch_audio_repo.py checkout --checkout-dir C:/b/audio
+  python pytorch_vision_repo.py checkout --checkout-dir C:/b/vision
   ```
 
 Now note the gfx target you want to build for and then...
@@ -225,7 +236,7 @@ The `rocm[libraries,devel]` packages can be installed in multiple ways:
 
   # OR from therock-dev-python
   python -m pip install \
-    --index-url https://d25kgig7rdsyks.cloudfront.net/v2/gfx110X-dgpu/ \
+    --index-url https://rocm.devreleases.amd.com/v2/gfx110X-dgpu/ \
     rocm[libraries,devel]
   ```
 
@@ -240,8 +251,7 @@ The `rocm[libraries,devel]` packages can be installed in multiple ways:
   python ./build_tools/fetch_artifacts.py \
     --run-id=17123441166 \
     --target=gfx110X-dgpu \
-    --output-dir=$HOME/.therock/17123441166/artifacts \
-    --all
+    --output-dir=$HOME/.therock/17123441166/artifacts
 
   python ./build_tools/build_python_packages.py \
     --artifact-dir=$HOME/.therock/17123441166/artifacts \
@@ -473,7 +483,7 @@ python pytorch_torch_repo.py checkout --repo-hashtag nightly
 python pytorch_audio_repo.py checkout --repo-hashtag nightly
 python pytorch_vision_repo.py checkout --repo-hashtag nightly
 # Note that triton will be checked out at the PyTorch pin.
-python pytorch_triton_repo.py checkout
+python pytorch_triton_repo.py checkout --patch --patch-set nightly
 ```
 
 #### ROCm PyTorch release branches
@@ -493,11 +503,29 @@ have proper defaults.
 You are welcome to maintain your own branches that extend one of AMD's.
 Change origins and tags as appropriate.
 
-#### ROCm release v2.7.x branch
+##### ROCm release v2.9.x branch
 
-NOTE: Presently broken at runtime on a HIP major version incompatibility in the
-pre-built aotriton (#1025). Must build with
-`USE_FLASH_ATTENTION=0 USE_MEM_EFF_ATTENTION=0` until fixed.
+```bash
+python pytorch_torch_repo.py checkout \
+  --gitrepo-origin https://github.com/ROCm/pytorch.git \
+  --repo-hashtag release/2.9
+python pytorch_audio_repo.py checkout --require-related-commit
+python pytorch_vision_repo.py checkout --require-related-commit
+python pytorch_triton_repo.py checkout
+```
+
+##### ROCm release v2.8.x branch
+
+```bash
+python pytorch_torch_repo.py checkout \
+  --gitrepo-origin https://github.com/ROCm/pytorch.git \
+  --repo-hashtag release/2.8
+python pytorch_audio_repo.py checkout --require-related-commit
+python pytorch_vision_repo.py checkout --require-related-commit
+python pytorch_triton_repo.py checkout
+```
+
+##### ROCm release v2.7.x branch
 
 ```bash
 python pytorch_torch_repo.py checkout \

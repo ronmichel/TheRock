@@ -166,6 +166,7 @@ include = [
   "bin/*_rtest.xml",
   "bin/rocsparse-bench*",
   "bin/rocsparse-test*",
+  "libexec/rocsparse/test/rocsparse_gentest.py",
   "share/rocsparse/test/**",
   "clients/matrices/**"
 ]
@@ -193,6 +194,36 @@ include = [
   "bin/*_rtest.xml",
   "bin/hipsparse-bench*",
   "bin/hipsparse-test*",
+  "libexec/hipsparse/test/hipsparse_gentest.py",
+  "share/hipsparse/test/**",
   "clients/matrices/**"
 ]
 optional = true
+
+# hipSPARSELt
+[components.dbg."math-libs/BLAS/hipSPARSELt/stage"]
+optional = true
+[components.dev."math-libs/BLAS/hipSPARSELt/stage"]
+optional = true
+include = [
+  "**/*.cmake"
+]
+[components.doc."math-libs/BLAS/hipSPARSELt/stage"]
+optional = true
+[components.lib."math-libs/BLAS/hipSPARSELt/stage"]
+include = [
+  "bin/hipsparselt/library/**",
+  "lib/hipsparselt/library/**",
+]
+[components.test."math-libs/BLAS/hipSPARSELt/stage"]
+include = [
+  # Clients benchmarks
+  "bin/hipsparselt-bench*",
+  # Clients tests
+  "bin/hipsparselt-test*",
+  "bin/hipsparselt_gtest.data",
+  "bin/hipsparselt_gentest.py",
+  "bin/hipsparselt_*.yaml",
+  # Clients samples (may want these in a samples component at some point).
+  "bin/example_*",
+]

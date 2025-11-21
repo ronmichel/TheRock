@@ -15,9 +15,10 @@ set_property(GLOBAL PROPERTY THEROCK_DEFAULT_CMAKE_VARS
   CMAKE_PROGRAM_PATH
   CMAKE_PLATFORM_NO_VERSIONED_SONAME
   Python3_EXECUTABLE
-  Python3_FIND_VIRTUALENV
   THEROCK_SOURCE_DIR
   THEROCK_BINARY_DIR
+  THEROCK_ROCM_LIBRARIES_SOURCE_DIR
+  THEROCK_ROCM_SYSTEMS_SOURCE_DIR
   THEROCK_BUILD_TESTING
   THEROCK_USE_SAFE_DEPENDENCY_PROVIDER
   ROCM_SYMLINK_LIBS
@@ -38,13 +39,6 @@ set_property(GLOBAL PROPERTY THEROCK_DEFAULT_CMAKE_VARS
 # resolver).
 set_property(GLOBAL PROPERTY THEROCK_ALL_PROVIDED_PACKAGES)
 
-# Some sub-projects do not react well to not having any GPU targets to build.
-# In this case, we build them with a default target. This should only happen
-# with target filtering for non-production, single target builds, and we will
-# warn about it.
-set(THEROCK_SUBPROJECTS_REQUIRING_DEFAULT_GPU_TARGETS hipBLASLt)
-set(THEROCK_DEFAULT_GPU_TARGETS "gfx1100")
-
 set_property(GLOBAL PROPERTY THEROCK_SUBPROJECT_COMPILE_COMMANDS_FILES)
 
 if(CMAKE_C_VISIBILITY_PRESET)
@@ -52,6 +46,9 @@ if(CMAKE_C_VISIBILITY_PRESET)
 endif()
 if(CMAKE_CXX_VISIBILITY_PRESET)
   list(APPEND THEROCK_DEFAULT_CMAKE_VARS ${CMAKE_CXX_VISIBILITY_PRESET})
+endif()
+if(Python3_FIND_VIRTUALENV)
+  list(APPEND THEROCK_DEFAULT_CMAKE_VARS Python3_FIND_VIRTUALENV)
 endif()
 
 # CXX flags that we hard-code in the toolchain file when building projects
@@ -207,6 +204,12 @@ endfunction()
 # DISABLE_AMDGPU_TARGETS: Do not set any GPU_TARGETS or AMDGPU_TARGETS variables
 #   in the project. This is largely used for broken projects that cannot
 #   build with an explicit target list.
+# DEFAULT_GPU_TARGETS: List of GPU targets to use as a fallback when all targets
+#   are excluded via EXCLUDE_TARGET_PROJECTS in therock_amdgpu_targets.cmake.
+#   Most projects should NOT set this and will default to an empty list. Only
+#   set this for projects that cannot build with an empty target list. This
+#   should only be needed during bringup of new targets and is not intended
+#   for production use.
 # NO_MERGE_COMPILE_COMMANDS: Option to disable merging of this project's
 #   compile_commands.json into the overall project. This is useful for
 #   third-party projects that are excluded from all as it eliminates a
@@ -297,9 +300,9 @@ endfunction()
 function(therock_cmake_subproject_declare target_name)
   cmake_parse_arguments(
     PARSE_ARGV 1 ARG
-    "ACTIVATE;USE_DIST_AMDGPU_TAGETS;DISABLE_AMDGPU_TARGETS;EXCLUDE_FROM_ALL;BACKGROUND_BUILD;NO_MERGE_COMPILE_COMMANDS;OUTPUT_ON_FAILURE;NO_INSTALL_RPATH"
+    "ACTIVATE;USE_DIST_AMDGPU_TARGETS;DISABLE_AMDGPU_TARGETS;EXCLUDE_FROM_ALL;BACKGROUND_BUILD;NO_MERGE_COMPILE_COMMANDS;OUTPUT_ON_FAILURE;NO_INSTALL_RPATH"
     "EXTERNAL_SOURCE_DIR;BINARY_DIR;DIR_PREFIX;INSTALL_DESTINATION;COMPILER_TOOLCHAIN;INTERFACE_PROGRAM_DIRS;CMAKE_LISTS_RELPATH;INTERFACE_PKG_CONFIG_DIRS;INSTALL_RPATH_EXECUTABLE_DIR;INSTALL_RPATH_LIBRARY_DIR;LOGICAL_TARGET_NAME"
-    "BUILD_DEPS;RUNTIME_DEPS;CMAKE_ARGS;CMAKE_INCLUDES;INTERFACE_INCLUDE_DIRS;INTERFACE_LINK_DIRS;IGNORE_PACKAGES;EXTRA_DEPENDS;INSTALL_RPATH_DIRS;INTERFACE_INSTALL_RPATH_DIRS"
+    "BUILD_DEPS;RUNTIME_DEPS;CMAKE_ARGS;CMAKE_INCLUDES;INTERFACE_INCLUDE_DIRS;INTERFACE_LINK_DIRS;IGNORE_PACKAGES;EXTRA_DEPENDS;INSTALL_RPATH_DIRS;INTERFACE_INSTALL_RPATH_DIRS;DEFAULT_GPU_TARGETS"
   )
   if(TARGET "${target_name}")
     message(FATAL_ERROR "Cannot declare subproject '${target_name}': a target with that name already exists")
@@ -352,11 +355,20 @@ function(therock_cmake_subproject_declare target_name)
   set(_prefix_dir "${ARG_BINARY_DIR}/${ARG_DIR_PREFIX}prefix")
   make_directory("${_prefix_dir}")
 
-  # Collect LINK_DIRS and PROGRAM_DIRS from explicit args and RUNTIME_DEPS.
-  _therock_cmake_subproject_collect_runtime_deps(
-      _private_include_dirs _private_link_dirs _private_program_dirs _private_pkg_config_dirs _interface_install_rpath_dirs
-      _transitive_runtime_deps
+  # Collect transitive requirements from runtime and build deps.
+  # Include, link, program, pkgconfig and configure depends are derived transitively
+  # from build and runtime deps. RPATH and transitive runtime deps are only
+  # collected from runtime deps.
+  _therock_cmake_subproject_collect_build_deps(
+      _private_include_dirs
+      _private_link_dirs
+      _private_program_dirs
+      _private_pkg_config_dirs
       _transitive_configure_depend_files
+      ${ARG_RUNTIME_DEPS} ${ARG_BUILD_DEPS})
+  _therock_cmake_subproject_collect_runtime_deps(
+      _interface_install_rpath_dirs
+      _transitive_runtime_deps
       ${ARG_RUNTIME_DEPS})
 
   # Include dirs
@@ -429,7 +441,7 @@ function(therock_cmake_subproject_declare target_name)
   # GPU Targets.
   if(ARG_DISABLE_AMDGPU_TARGETS)
     set(_gpu_targets)
-  elseif(ARG_USE_DIST_AMDGPU_TAGETS)
+  elseif(ARG_USE_DIST_AMDGPU_TARGETS)
     set(_gpu_targets "${THEROCK_DIST_AMDGPU_TARGETS}")
   else()
     set(_gpu_targets "${THEROCK_AMDGPU_TARGETS}")
@@ -440,6 +452,7 @@ function(therock_cmake_subproject_declare target_name)
     THEROCK_SUBPROJECT cmake
     THEROCK_BUILD_POOL "${_build_pool}"
     THEROCK_AMDGPU_TARGETS "${_gpu_targets}"
+    THEROCK_DEFAULT_GPU_TARGETS "${ARG_DEFAULT_GPU_TARGETS}"
     THEROCK_DISABLE_AMDGPU_TARGETS "${ARG_DISABLE_AMDGPU_TARGETS}"
     THEROCK_EXCLUDE_FROM_ALL "${ARG_EXCLUDE_FROM_ALL}"
     THEROCK_NO_MERGE_COMPILE_COMMANDS "${ARG_NO_MERGE_COMPILE_COMMANDS}"
@@ -641,6 +654,7 @@ function(therock_cmake_subproject_activate target_name)
   endif()
 
   set(_init_contents)
+  string(APPEND _init_contents "set(THEROCK_PRIVATE_BUILD_RPATH_DIRS)\n")
   string(APPEND _init_contents "set(THEROCK_BUILD_STAMP_FILE \"@_build_stamp_file@\")\n")
   string(APPEND _init_contents "set(THEROCK_STAGE_STAMP_FILE \"@_stage_stamp_file@\")\n")
   string(APPEND _init_contents "set(THEROCK_SUBPROJECT_TARGET \"@target_name@\")\n")
@@ -757,6 +771,12 @@ function(therock_cmake_subproject_activate target_name)
   _therock_cmake_subproject_get_stage_dirs(
     _dist_source_dirs "${target_name}" ${_runtime_deps})
 
+  # Map THEROCK_VERBOSE to fileset_tool.py
+  set(_fileset_verbose_arg "")
+  if(THEROCK_VERBOSE)
+    set(_fileset_verbose_arg --verbose)
+  endif()
+
   if(EXISTS "${_prebuilt_file}")
     # If pre-built, just touch the stamp files, conditioned on the prebuilt
     # marker file (which may just be a stamp file or may contain a unique hash
@@ -775,7 +795,7 @@ function(therock_cmake_subproject_activate target_name)
     add_custom_command(
       OUTPUT "${_stage_stamp_file}"
       # Populate local dist directory with this+all transitive stage installs.
-      COMMAND "${Python3_EXECUTABLE}" "${_fileset_tool}" copy "${_dist_dir}" ${_dist_source_dirs}
+      COMMAND "${Python3_EXECUTABLE}" "${_fileset_tool}" copy ${_fileset_verbose_arg} "${_dist_dir}" ${_dist_source_dirs}
       COMMAND "${CMAKE_COMMAND}" -E touch "${_stage_stamp_file}"
       DEPENDS
         "${_prebuilt_file}"
@@ -909,7 +929,7 @@ function(therock_cmake_subproject_activate target_name)
       # Install to stage directory.
       COMMAND ${_install_log_prefix} "${CMAKE_COMMAND}" --install "${_binary_dir}" ${_install_strip_option}
       # Populate local dist directory with this+all transitive stage installs.
-      COMMAND "${Python3_EXECUTABLE}" "${_fileset_tool}" copy "${_dist_dir}" ${_dist_source_dirs}
+      COMMAND "${Python3_EXECUTABLE}" "${_fileset_tool}" copy ${_fileset_verbose_arg} "${_dist_dir}" ${_dist_source_dirs}
       COMMAND "${CMAKE_COMMAND}" -E touch "${_stage_stamp_file}"
       WORKING_DIRECTORY "${_binary_dir}"
       COMMENT "Stage installing sub-project ${target_name}"
@@ -1106,19 +1126,18 @@ function(_therock_cmake_subproject_deps_to_stamp out_stamp_files stamp_name)
   set(${out_stamp_files} "${_stamp_files}" PARENT_SCOPE)
 endfunction()
 
-# For a list of targets, gets absolute paths for all interface link directories
-# and transitive runtime deps. Both lists may contain duplicates if the DAG
-# includes the same dep multiple times.
-function(_therock_cmake_subproject_collect_runtime_deps
-    out_include_dirs out_link_dirs out_program_dirs out_pkg_config_dirs out_install_rpath_dirs
-    out_transitive_deps
+# For a list of targets, resolves several transitive properties relavent to build
+# and runtime deps.
+function(_therock_cmake_subproject_collect_build_deps
+    out_include_dirs
+    out_link_dirs
+    out_program_dirs
+    out_pkg_config_dirs
     out_transitive_configure_depend_files)
   set(_include_dirs)
-  set(_install_rpath_dirs)
   set(_link_dirs)
   set(_program_dirs)
   set(_pkg_config_dirs)
-  set(_transitive_deps)
   set(_transitive_configure_depend_files)
   foreach(target_name ${ARGN})
     _therock_assert_is_cmake_subproject("${target_name}")
@@ -1134,10 +1153,6 @@ function(_therock_cmake_subproject_collect_runtime_deps
     get_target_property(_link_dir "${target_name}" THEROCK_INTERFACE_LINK_DIRS)
     list(APPEND _link_dirs ${_link_dir})
 
-    # Transitive runtime target deps.
-    get_target_property(_deps "${target_name}" THEROCK_RUNTIME_DEPS)
-    list(APPEND _transitive_deps ${_deps} ${target_name})
-
     # Depend on stage installation.
     get_target_property(_program_dir "${target_name}" THEROCK_INTERFACE_PROGRAM_DIRS)
     if(_program_dir)
@@ -1150,6 +1165,27 @@ function(_therock_cmake_subproject_collect_runtime_deps
     if(_pkg_config_dir)
       list(APPEND _pkg_config_dirs ${_pkg_config_dir})
     endif()
+  endforeach()
+  set("${out_include_dirs}" "${_include_dirs}" PARENT_SCOPE)
+  set("${out_link_dirs}" "${_link_dirs}" PARENT_SCOPE)
+  set("${out_program_dirs}" "${_program_dirs}" PARENT_SCOPE)
+  set("${out_pkg_config_dirs}" "${_pkg_config_dirs}" PARENT_SCOPE)
+  set("${out_transitive_configure_depend_files}" "${_transitive_configure_depend_files}" PARENT_SCOPE)
+endfunction()
+
+# For a list of targets, resolves transitive properties relavent only to runtime
+# deps.
+function(_therock_cmake_subproject_collect_runtime_deps
+    out_install_rpath_dirs
+    out_transitive_deps)
+  set(_install_rpath_dirs)
+  set(_transitive_deps)
+  foreach(target_name ${ARGN})
+    _therock_assert_is_cmake_subproject("${target_name}")
+
+    # Transitive runtime target deps.
+    get_target_property(_deps "${target_name}" THEROCK_RUNTIME_DEPS)
+    list(APPEND _transitive_deps ${_deps} ${target_name})
 
     # RPATH dirs.
     get_target_property(_install_rpath_dir "${target_name}" THEROCK_INTERFACE_INSTALL_RPATH_DIRS)
@@ -1157,13 +1193,8 @@ function(_therock_cmake_subproject_collect_runtime_deps
       list(APPEND _install_rpath_dirs ${_install_rpath_dir})
     endif()
   endforeach()
-  set("${out_include_dirs}" "${_include_dirs}" PARENT_SCOPE)
   set("${out_install_rpath_dirs}" "${_install_rpath_dirs}" PARENT_SCOPE)
-  set("${out_link_dirs}" "${_link_dirs}" PARENT_SCOPE)
-  set("${out_program_dirs}" "${_program_dirs}" PARENT_SCOPE)
-  set("${out_pkg_config_dirs}" "${_pkg_config_dirs}" PARENT_SCOPE)
   set("${out_transitive_deps}" "${_transitive_deps}" PARENT_SCOPE)
-  set("${out_transitive_configure_depend_files}" "${_transitive_configure_depend_files}" PARENT_SCOPE)
 endfunction()
 
 # Transforms a list to be absolute paths if not already.
@@ -1195,11 +1226,12 @@ function(_therock_filter_project_gpu_targets out_var target_name)
   endif()
 
   if(NOT _filtered)
-    if("${target_name}" IN_LIST THEROCK_SUBPROJECTS_REQUIRING_DEFAULT_GPU_TARGETS)
-      set(_filtered ${THEROCK_DEFAULT_GPU_TARGETS})
+    get_target_property(_default_gpu_targets "${target_name}" THEROCK_DEFAULT_GPU_TARGETS)
+    if(_default_gpu_targets)
+      set(_filtered ${_default_gpu_targets})
       message(WARNING
         "Project ${target_name} cannot build with no gpu targets but was "
-        "instructed to do so. Overriding to the default ${_filtered}. "
+        "instructed to do so. Overriding to the project-specific default ${_filtered}. "
         "This message should never appear for production/supported gfx targets."
       )
     endif()
@@ -1286,8 +1318,18 @@ function(_therock_cmake_subproject_setup_toolchain
     endif()
   endif()
 
+  # Configure sanitizer.
+  set(_sanitizer_stanza)
+  set(_sanitizer_enabled)
+
   if(NOT compiler_toolchain)
     # Make any additional customizations if no toolchain specified.
+    therock_sanitizer_configure(
+      _sanitizer_stanza
+      _sanitizer_enabled
+      "${CMAKE_CXX_COMPILER}"
+      "${compiler_toolchain}"
+      "${target_name}")
   elseif(compiler_toolchain STREQUAL "amd-llvm" OR compiler_toolchain STREQUAL "amd-hip")
     # The "amd-llvm" and "amd-hip" toolchains are configured very similarly so
     # we commingle them, but they are different:
@@ -1322,6 +1364,13 @@ function(_therock_cmake_subproject_setup_toolchain
     string(APPEND _toolchain_contents "set(CMAKE_LINKER \"@AMD_LLVM_LINKER@\")\n")
     string(APPEND _toolchain_contents "string(APPEND CMAKE_CXX_FLAGS_INIT \" ${_amd_llvm_cxx_flags_spaces}\")\n")
 
+    therock_sanitizer_configure(
+      _sanitizer_stanza
+      _sanitizer_enabled
+      "${AMD_LLVM_CXX_COMPILER}"
+      "${compiler_toolchain}"
+      "${target_name}")
+
     if(THEROCK_VERBOSE)
       string(JOIN " " _filtered_gpu_targets_spaces ${_filtered_gpu_targets})
       message(STATUS "Compiler toolchain ${compiler_toolchain}:")
@@ -1330,6 +1379,9 @@ function(_therock_cmake_subproject_setup_toolchain
       message(STATUS "CMAKE_CXX_COMPILER = ${AMD_LLVM_CXX_COMPILER}")
       message(STATUS "CMAKE_LINKER = ${AMD_LLVM_LINKER}")
       message(STATUS "GPU_TARGETS = ${_filtered_gpu_targets_spaces}")
+      if(_sanitizer_enabled)
+        message(STATUS "SANITIZER = ${_sanitizer_enabled}")
+      endif()
     endif()
   else()
     message(FATAL_ERROR "Unsupported COMPILER_TOOLCHAIN = ${compiler_toolchain} (supported: 'amd-llvm' or none)")
@@ -1350,6 +1402,7 @@ function(_therock_cmake_subproject_setup_toolchain
     endif()
   endif()
 
+  string(APPEND _toolchain_contents "${_sanitizer_stanza}")
   set(_compiler_toolchain_addl_depends "${_compiler_toolchain_addl_depends}" PARENT_SCOPE)
   set(_compiler_toolchain_init_contents "${_compiler_toolchain_init_contents}" PARENT_SCOPE)
   set(_build_env_pairs "${_build_env_pairs}" PARENT_SCOPE)

@@ -16,12 +16,15 @@ cmake_policy(SET CMP0135 NEW)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(CMakeDependentOption)
 include(ExternalProject)
+include(therock_globals)
 include(therock_default_targets)
+include(therock_detect_python_versions)
 include(therock_amdgpu_targets)
 include(therock_artifacts)
 include(therock_compiler_config)
 include(therock_external_source)
 include(therock_features)
+include(therock_sanitizers)
 include(therock_subproject)
 include(therock_job_pools)
 include(therock_testing)
@@ -73,6 +76,11 @@ set(THEROCK_ARTIFACT_ARCHIVE_SUFFIX "" CACHE STRING "Suffix to add to artifact a
 
 option(THEROCK_BUNDLE_SYSDEPS "Builds bundled system deps for portable builds into lib/rocm_sysdeps" ON)
 option(THEROCK_ENABLE_MPI "Enables building components with Message Passing Interface (MPI) support" OFF)
+
+set(THEROCK_SANITIZER "" CACHE STRING "Enable project wide sanitizer build (e.g. 'ASAN')")
+
+# List of python executables to use for multi-version python builds
+set(THEROCK_DIST_PYTHON_EXECUTABLES "" CACHE STRING "Build for multiple python versions in supported projects (default to Python3_EXECUTABLE if empty)")
 
 # Source settings.
 # Use the rocm-libraries superrepo tracked in TheRock's `.gitmodules` or
@@ -135,10 +143,24 @@ endblock()
 # Feature flags
 # Project wide flags for controlling the build system.
 ################################################################################
+
+# Note that delay-loading is incompatible with ASAN until a more robust mechanism
+# is implemented. See: https://github.com/ROCm/TheRock/issues/1783
 cmake_dependent_option(
   THEROCK_FLAG_COMGR_DELAY_LOAD
   "Enables delay loading and linker namespacing of the amd_comgr library (Linux only)"
   ON "LINUX" OFF)
+
+# Flag: -DTHEROCK_FLAG_INCLUDE_PROFILER=OFF
+# Note that the profiler is an integral part of the system and disabling it is not
+# fully supported. However, in early bringup, it can be useful to disable building
+# it, even though that may cause problems in other libraries.
+# On some platforms (WIN32 presently), the profiler is always disabled.
+cmake_dependent_option(
+  THEROCK_FLAG_INCLUDE_PROFILER
+  "Allows the profiler to be manually disabled by setting to OFF"
+  ON "NOT WIN32" OFF)
+
 
 ################################################################################
 # Debug Options
@@ -146,6 +168,7 @@ cmake_dependent_option(
 
 option(THEROCK_SPLIT_DEBUG_INFO "Enables splitting of debug info into dbg artifacts (and strips primary packages)" OFF)
 option(THEROCK_MINIMAL_DEBUG_INFO "Enables compiler-specific flags for minimal debug symbols suitable for shipping in packages" OFF)
+option(THEROCK_COMPILER_RT_DEBUG "Enables compiler-rt debug build" OFF)
 option(THEROCK_QUIET_INSTALL "Enable quiet install logging (install logs only go to the logfile)" ON)
 option(THEROCK_USE_SAFE_DEPENDENCY_PROVIDER "Enable the safe dependency provider, performing strict package checks" ON)
 
@@ -213,8 +236,14 @@ therock_add_feature(HIP_RUNTIME
   REQUIRES COMPILER ${_hip_runtime_platform_requirements}
 )
 
+therock_add_feature(OCL_RUNTIME
+  GROUP CORE
+  DESCRIPTION "Enables the OCL runtime"
+  REQUIRES COMPILER ${_hip_runtime_platform_requirements}
+)
+
 # Profiler Features.
-if(NOT WIN32)
+if(THEROCK_FLAG_INCLUDE_PROFILER)
   therock_add_feature(ROCPROF_TRACE_DECODER_BINARY
     GROUP PROFILER
     DESCRIPTION "Enables the closed-source rocprof trace decoder binary"
@@ -267,7 +296,7 @@ therock_add_feature(FFT
 )
 therock_add_feature(SPARSE
   GROUP MATH_LIBS
-  DESCRIPTION "Enables sparse libraries (hipsparse, rocsparse)"
+  DESCRIPTION "Enables sparse libraries (hipsparse, hipsparselt, rocsparse)"
   REQUIRES COMPILER HIP_RUNTIME BLAS PRIM ${_optional_profiler_requirements}
 )
 if(NOT WIN32)
@@ -290,12 +319,41 @@ if(NOT WIN32)
   cmake_dependent_option(THEROCK_MIOPEN_USE_COMPOSABLE_KERNEL "Enables composable kernel in MIOpen" ON ${THEROCK_ENABLE_COMPOSABLE_KERNEL} OFF)
 endif()
 
+cmake_dependent_option(THEROCK_ROCWMMA_USE_ROCBLAS "Enables rocBLAS validation in rocWMMA" ON "THEROCK_ENABLE_ROCWMMA;THEROCK_ENABLE_BLAS" OFF)
+cmake_dependent_option(THEROCK_ROCWMMA_ENABLE_BENCHMARKS "Enables building rocWMMA benchmarks" OFF "THEROCK_ENABLE_ROCWMMA;THEROCK_BUILD_TESTING" OFF)
+if(THEROCK_ROCWMMA_USE_ROCBLAS)
+  set(_rocwmma_blas_requirements "BLAS")
+else()
+  set(_rocwmma_blas_requirements "")
+endif()
+therock_add_feature(ROCWMMA
+  GROUP MATH_LIBS
+  DESCRIPTION "Enables rocWMMA"
+  REQUIRES COMPILER HIP_RUNTIME ${_rocwmma_blas_requirements}
+)
+
 # ML-Libs Features.
 therock_add_feature(MIOPEN
   GROUP ML_LIBS
   DESCRIPTION "Enables the MIOpen project (with minimal deps defaults to ON)"
   REQUIRES COMPILER HIP_RUNTIME BLAS RAND ${_optional_profiler_requirements}
 )
+
+# hipDNN on Windows is disabled for now, but will be enabled in a follow-up change.
+# Windows support issue tracked at: https://github.com/ROCm/TheRock/issues/1822
+if(NOT WIN32)
+  therock_add_feature(HIPDNN
+    GROUP ML_LIBS
+    DESCRIPTION "Enables the hipDNN project"
+    REQUIRES COMPILER HIP_RUNTIME
+  )
+
+  therock_add_feature(MIOPEN_PLUGIN
+    GROUP ML_LIBS
+    DESCRIPTION "Enables the MIOpen plugin project"
+    REQUIRES COMPILER MIOPEN HIPDNN HIP_RUNTIME
+  )
+endif()
 
 # Finalize all feature flags.
 therock_finalize_features()
@@ -361,6 +419,7 @@ endif()
 set(THEROCK_BUNDLED_BZIP2)
 set(THEROCK_BUNDLED_ELFUTILS)
 set(THEROCK_BUNDLED_LIBDRM)
+set(THEROCK_BUNDLED_LIBLZMA)
 set(THEROCK_BUNDLED_NUMACTL)
 set(THEROCK_BUNDLED_SQLITE3)
 set(THEROCK_BUNDLED_ZLIB)
@@ -380,6 +439,7 @@ if(THEROCK_BUNDLE_SYSDEPS)
     set(THEROCK_BUNDLED_BZIP2 therock-bzip2)
     set(THEROCK_BUNDLED_ELFUTILS therock-elfutils)
     set(THEROCK_BUNDLED_LIBDRM therock-libdrm)
+    set(THEROCK_BUNDLED_LIBLZMA therock-liblzma)
     set(THEROCK_BUNDLED_NUMACTL therock-numactl)
     set(THEROCK_BUNDLED_SQLITE3 therock-sqlite3)
     set(THEROCK_BUNDLED_ZLIB therock-zlib)

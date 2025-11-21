@@ -10,7 +10,7 @@ part of Continuous Delivery (CD) nightly releases. See also the
 > [!WARNING]
 > These instructions assume familiarity with how to use ROCm. Please see
 > https://rocm.docs.amd.com/ for general information about the ROCm software
-> platform.
+> platform. In addition, Linux users, please be aware of the [prerequisites](https://rocm.docs.amd.com/projects/install-on-linux/en/latest/install/prerequisites.html#configuring-permissions-for-gpu-access), including enabling GPU access, needed to run ROCm.
 >
 > **Note: these install steps are a substitute for those on that website**.
 
@@ -219,11 +219,12 @@ usage: rocm-sdk {command} ...
 ROCm SDK Python CLI
 
 positional arguments:
-  {path,test,version,targets}
+  {path,test,version,targets,init}
     path                Print various paths to ROCm installation
     test                Run installation tests to verify integrity
     version             Print version information
     targets             Print information about the GPU targets that are supported
+    init                Expand devel contents to initialize rocm[devel]
 
 $ rocm-sdk test
 ...
@@ -234,33 +235,54 @@ $ rocm-sdk targets
 gfx1100;gfx1101;gfx1102
 ```
 
+To initialize the `rocm[devel]` package, use the `rocm-sdk` tool to _eagerly_ expand development
+contents:
+
+```console
+$ rocm-sdk init
+Devel contents expanded to '.venv/lib/python3.12/site-packages/_rocm_sdk_devel'
+```
+
+These contents are useful for using the package outside of Python and _lazily_ expanded on the
+first use when used from Python.
+
 Once you have verified your installation, you can continue to use it for
 standard ROCm development or install PyTorch or another supported Python ML
 framework.
 
 ### Installing PyTorch Python packages
 
-> [!WARNING]
-> This is under **active** development. Compatibility matrix for these wheels is in progress.
->
-> Each `torchaudio` package is compiled against a specific version of `torch`; please refer to the [PyTorch compatibility matrix](https://docs.pytorch.org/audio/main/installation.html#compatibility-matrix) for compatible versions of torch and torchaudio.
-> The build dates for nightly wheels should also be consistent with each other.
+Using the index pages [listed above](#installing-rocm-python-packages), you can
+also install `torch`, `torchaudio`, and `torchvision`.
 
 > [!NOTE]
-> These installation commands will install the latest versions, including prerelease wheels,
-> by default. Older versions can also be installed from available versions found at
+> By default, pip will install the latest versions of each package. If you want to
+> install older versions take note of the compatibility matrix:
 >
-> - The [nightly releases page](https://rocm.nightlies.amd.com/v2/)
-> - Documentation for [Supported PyTorch versions](https://github.com/ROCm/TheRock/tree/main/external-builds/pytorch#supported-pytorch-versions)
+> | torch version | torchaudio version | torchvision version |
+> | ------------- | ------------------ | ------------------- |
+> | 2.10          | 2.10               | 0.25                |
+> | 2.9           | 2.9                | 0.24                |
+> | 2.8           | 2.8                | 0.23                |
+> | 2.7           | 2.7.1a0            | 0.22.1              |
 >
 > For example, `torch` 2.7.1 and compatible wheels can be installed by specifying
 >
 > ```
 > torch==2.7.1 torchaudio==2.7.1a0 torchvision==0.22.1
 > ```
+>
+> See also
+>
+> - [Supported PyTorch versions in TheRock](https://github.com/ROCm/TheRock/tree/main/external-builds/pytorch#supported-pytorch-versions)
+> - [Installing previous versions of PyTorch](https://pytorch.org/get-started/previous-versions/)
+> - [torchvision installation - compatixbility matrix](https://github.com/pytorch/vision?tab=readme-ov-file#installation)
+> - [torchaudio installation - compatixbility matrix](https://docs.pytorch.org/audio/main/installation.html#compatibility-matrix)
 
-Using the index pages [listed above](#installing-rocm-python-packages), you can install `torch`, `torchaudio`, and
-`torchvision` instead of `rocm[libraries,devel]`:
+> [!TIP]
+> The `torch` packages depend on `rocm[libraries]`, so ROCm packages should
+> be installed automatically for you and you do not need to explicitly install
+> ROCm first.
 
 #### torch for gfx94X-dcgpu
 
@@ -363,12 +385,11 @@ wrapper Python wheels or utility scripts.
 ### Installing release tarballs
 
 Release tarballs are automatically uploaded to AWS S3 buckets.
-The S3 buckets do not yet have index pages.
 
-| S3 bucket                                                                    | Description                                       |
-| ---------------------------------------------------------------------------- | ------------------------------------------------- |
-| [therock-nightly-tarball](https://therock-nightly-tarball.s3.amazonaws.com/) | Nightly builds from the `main` branch             |
-| [therock-dev-tarball](https://therock-dev-tarball.s3.amazonaws.com/)         | ⚠️ Development builds from project maintainers ⚠️ |
+| S3 bucket                                                                              | Description                                       |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [therock-nightly-tarball](https://therock-nightly-tarball.s3.amazonaws.com/index.html) | Nightly builds from the `main` branch             |
+| [therock-dev-tarball](https://therock-dev-tarball.s3.amazonaws.com/index.html)         | ⚠️ Development builds from project maintainers ⚠️ |
 
 After downloading, simply extract the release tarball into place:
 

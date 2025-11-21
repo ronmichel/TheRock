@@ -3,28 +3,27 @@ name: Build Windows Python Packages
 on:
   workflow_dispatch:
     inputs:
+      artifact_github_repo:
+        description: GitHub repository for artifact_run_id
+        type: string
+        default: ROCm/TheRock
       artifact_run_id:
+        description: Workflow run ID to download artifacts from
         type: string
         default: "17865324892" # TODO: default to the most recent successful run (using a script)
-      amdgpu_family:
-        type: choice
-        options:
-          - gfx110X-dgpu
-          - gfx1151
-          - gfx120X-all
-          - gfx94X-dcgpu
-          - gfx950-dcgpu
-        default: gfx1151
-      # TODO: scripts and/or reusable workflow for versions and release types
+      artifact_group:
+        description: "The artifact group to build (ex: gfx94X-dcgpu, gfx101X-dgpu, gfx1151, gfx120X-all)"
+        type: string
       package_version:
         type: string
-        default: "7.0.0.dev0"
   workflow_call:
     inputs:
+      artifact_github_repo:
+        type: string
       artifact_run_id:
         type: string
         default: ""
-      amdgpu_family:
+      artifact_group:
         type: string
       package_version:
         type: string
@@ -34,7 +33,7 @@ permissions:
 
 jobs:
   build:
-    name: Build | ${{ inputs.amdgpu_family }}
+    name: Build Python | ${{ inputs.artifact_group }}
     runs-on: ${{ github.repository_owner == 'ROCm' && 'azure-windows-scale-rocm' || 'windows-2022' }}
     env:
       ARTIFACT_RUN_ID: "${{ inputs.artifact_run_id != '' && inputs.artifact_run_id || github.run_id }}"
@@ -44,7 +43,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
         with:
           python-version: '3.12'
@@ -58,8 +57,9 @@ jobs:
           IS_PR_FROM_FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
           python ./build_tools/fetch_artifacts.py \
+            --run-github-repo=${{ inputs.artifact_github_repo }} \
             --run-id=${{ env.ARTIFACT_RUN_ID }} \
-            --target=${{ inputs.amdgpu_family }} \
+            --artifact-group=${{ inputs.artifact_group }} \
             --output-dir="${{ env.ARTIFACTS_DIR }}" \
             _dev_ _lib_ _run_
 
@@ -68,7 +68,7 @@ jobs:
           python ./build_tools/build_python_packages.py \
             --artifact-dir="${{ env.ARTIFACTS_DIR }}" \
             --dest-dir="${{ env.PACKAGES_DIR }}" \
-            --version=${{ inputs.package_version }}
+            --version="${{ inputs.package_version }}"
 
       - name: Inspect Python packages
         run: |
