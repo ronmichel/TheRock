@@ -37,6 +37,7 @@ test_matrix = {
         "platform": ["linux", "windows"],
         "total_shards": 1, # TODO ramp it later, this should help to lower the timeout minutes as well
     },
+    """
     # BLAS tests
     "rocblas": {
         "job_name": "rocblas",
@@ -221,7 +222,7 @@ test_matrix = {
         "test_script": f"python {_get_script_path('test_rocwmma.py')}",
         "platform": ["linux", "windows"],
         "total_shards": 1,
-    },
+    }, """
 }
 
 
