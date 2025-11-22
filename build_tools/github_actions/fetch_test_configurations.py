@@ -222,7 +222,7 @@ test_matrix = {
         "test_script": f"python {_get_script_path('test_rocwmma.py')}",
         "platform": ["linux", "windows"],
         "total_shards": 1,
-    }, """
+    }""",
 }
 
 
