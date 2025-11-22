@@ -85,7 +85,7 @@ def get_all_wheel_versions(
         raise FileNotFoundError("Did not find triton wheel")
 
     if apex_version:
-        all_versions = all_versions | {"apex_version": triton_version}
+        all_versions = all_versions | {"apex_version": apex_version}
     elif os.lower() == "windows":
         _log("Did not find apex (that's okay, is not currently built on Windows)")
     else:
