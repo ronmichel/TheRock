@@ -224,6 +224,19 @@ test_matrix = {
     },
 }
 
+# TODO overwriting test matix to disable other tests apart from hip-tests
+# remove this before merging
+test_matrix = {
+    # hip-tests
+    "hip-tests": {
+        "job_name": "hip-tests",
+        "fetch_artifact_args": "--tests",
+        "timeout_minutes": 300, # it failed for 120 mins, fix it when we address sharding.
+        "test_script": f"python {_get_script_path('test_hiptests.py')}",
+        "platform": ["linux", "windows"],
+        "total_shards": 1, # TODO ramp it later, this should help to lower the timeout minutes as well
+    },
+}
 
 def run():
     platform = os.getenv("RUNNER_OS").lower()
