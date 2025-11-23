@@ -150,7 +150,7 @@ def parse_results() -> Tuple[List[Dict[str, Any]], PrettyTable]:
     log.info("Parsing Results")
     
     # Setup table
-    field_names = ['TestName', 'SubTests', 'Batch_Size', 'nGPU', 'Result', 'Scores', 'Units', 'Flag']
+    field_names = ['TestName', 'SubTests', 'BatchSize', 'nGPU', 'Result', 'Scores', 'Units', 'Flag']
     table = PrettyTable(field_names)
     
     test_results = []

@@ -24,8 +24,7 @@ export AMDGPU_FAMILIES=gfx950-dcgpu
 ### Run Benchmarks
 
 ```bash
-python build_tools/github_actions/test_executable_scripts/test_rocfft_benchmark.py
-python build_tools/github_actions/test_executable_scripts/test_rocrand_benchmark.py
+python3 build_tools/github_actions/test_executable_scripts/test_rocfft_benchmark.py
 ```
 
 ## Project Structure
@@ -49,7 +48,7 @@ build_tools/github_actions/
     └── results/                # Results handling
 ```
 
-## Configuration
+## Config setup
 
 ### Main Config: `configs/config.yml`
 
