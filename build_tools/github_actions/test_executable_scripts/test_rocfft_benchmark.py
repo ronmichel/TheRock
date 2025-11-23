@@ -27,7 +27,8 @@ THEROCK_BIN_DIR = os.getenv("THEROCK_BIN_DIR")
 ARTIFACT_RUN_ID = os.getenv("ARTIFACT_RUN_ID")
 AMDGPU_FAMILIES = os.getenv("AMDGPU_FAMILIES")
 SCRIPT_DIR = Path(__file__).resolve().parent
-THEROCK_DIR = SCRIPT_DIR.parent
+THEROCK_DIR = SCRIPT_DIR.parent.parent.parent
+
 
 def run_benchmarks() -> None:
     """Run ROCfft benchmarks and save output to log file."""
@@ -274,10 +275,16 @@ def main():
         raise ValueError("The table does not have a 'FinalResult' column.")
     
     final_result_index = final_table.field_names.index('FinalResult')
-    final_status = 'FAIL' if any(row[final_result_index] == 'FAIL' for row in final_table._rows) else 'PASS'
+    has_fail = any(row[final_result_index] == 'FAIL' for row in final_table._rows)
+    has_unknown = any(row[final_result_index] == 'UNKNOWN' for row in final_table._rows)
+    
+    final_status = 'FAIL' if has_fail else ('UNKNOWN' if has_unknown else 'PASS')
+    if has_unknown and not has_fail:
+        log.warning("Some results have UNKNOWN status (no LKG data available for comparison)")
     
     log.info(f"Final Status: {final_status}")
     
+    # Return 0 only if PASS, otherwise return 1 (for FAIL or UNKNOWN)
     return 0 if final_status == "PASS" else 1
 
 

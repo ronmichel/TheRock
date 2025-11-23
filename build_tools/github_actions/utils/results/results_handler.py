@@ -344,7 +344,7 @@ class ResultsHandler:
                 lkg_score_dec = Decimal(str(lkg_score))
                 if flag == 'H' and lkg_score_dec != 0:
                     diff = ((score - lkg_score_dec) / lkg_score_dec) * 100
-                elif flag == 'L' and score != 0:
+                elif flag == 'L' and lkg_score_dec != 0:
                     diff = ((lkg_score_dec - score) / lkg_score_dec) * 100
 
                 # Determine FinalResult
