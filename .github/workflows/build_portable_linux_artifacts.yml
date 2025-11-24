@@ -130,6 +130,13 @@ jobs:
         run: |
           cmake --build build --target therock-archives therock-dist -- -k 0
 
+      - name: Debug driver tools in container
+        run: |
+          echo "PATH = $PATH"
+          which amd-smi || echo "amd-smi not found on PATH"
+          which rocminfo || echo "rocminfo not found on PATH"
+          ls -R /opt || true
+
       - name: Print Driver and GPU info
         run: |
           ./build_tools/print_driver_gpu_info.py
