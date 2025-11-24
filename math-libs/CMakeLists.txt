@@ -360,7 +360,8 @@ if(THEROCK_ENABLE_COMPOSABLE_KERNEL)
       ${THEROCK_BUNDLED_BZIP2}
       ${optional_profiler_deps}
   )
-  therock_cmake_subproject_provide_package(composable_kernel composable_kernel lib/cmake/composable_kernel)
+  #therock_cmake_subproject_provide_package(composable_kernel composable_kernel lib/cmake/composable_kernel)
+  therock_cmake_subproject_provide_package(composable_kernel composable_kernel lib/cmake)
 
   therock_cmake_subproject_activate(composable_kernel)
 
@@ -381,6 +382,7 @@ if(THEROCK_ENABLE_HIPTENSOR)
   ##############################################################################
   # hipTensor
   ##############################################################################
+  set(ENV{CK_DIR} "${CMAKE_CURRENT_BINARY_DIR}/composable_kernel")
 
   therock_cmake_subproject_declare(hipTensor
     EXTERNAL_SOURCE_DIR "${THEROCK_ROCM_LIBRARIES_SOURCE_DIR}/projects/hiptensor"
@@ -406,6 +408,7 @@ if(THEROCK_ENABLE_HIPTENSOR)
     SUBDIRS
       .
   )
+  therock_cmake_subproject_provide_package(hipTensor hiptensor lib/cmake/hiptensor)
   therock_cmake_subproject_activate(hipTensor)
 
   therock_provide_artifact(hiptensor
