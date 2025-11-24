@@ -50,6 +50,7 @@ Exit Codes
 ----------
 0 : All tests passed
 1 : Test failures or collection errors
+? : Other exit codes from pytest
 15: SIGTERM for Windows (see notes below)
 Other : Pytest-specific error codes
 
@@ -63,7 +64,7 @@ Side-effects
 Windows special notes
 ---------------------
 To work around https://github.com/ROCm/TheRock/issues/999, this script
-writes 'exit_code.txt' to the current directory and then kills the process.
+writes 'run_pytorch_tests_exit_code.txt' to the current directory and then kills the process.
 """
 
 import argparse
@@ -504,7 +505,10 @@ def force_exit_with_code(retcode):
     """Forces termination to work around https://github.com/ROCm/TheRock/issues/999."""
     import signal
 
-    retcode_file = Path("exit_code.txt")
+    # We're going to kill the current process with SIGTERM below, which will
+    # return exit code 15. This preserves the original exit code in a file.
+    # Note: this path is relative to CWD, *not the script directory*.
+    retcode_file = Path("run_pytorch_tests_exit_code.txt")
     print(f"Writing retcode {retcode} to '{retcode_file}'")
     with open(retcode_file, "w") as f:
         f.write(str(retcode))

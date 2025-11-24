@@ -144,7 +144,7 @@ jobs:
           python ./external-builds/pytorch/run_pytorch_tests.py
 
       # HACK: The test process does not terminate on its own gracefully,
-      # so we write to exit_code.txt and then kill the process.
+      # so we write to run_pytorch_tests_exit_code.txt and then kill the process.
       # After killing the process we read the return code to signal it normally.
       # See https://github.com/ROCm/TheRock/issues/999.
       - name: (Windows) Run PyTorch tests
@@ -156,11 +156,11 @@ jobs:
       - name: (Windows) Read and propagate exit code
         if: ${{ runner.os == 'Windows' }}
         run: |
-          if [ -f exit_code.txt ]; then
-            EXIT_CODE=$(cat exit_code.txt)
+          if [ -f run_pytorch_tests_exit_code.txt ]; then
+            EXIT_CODE=$(cat run_pytorch_tests_exit_code.txt)
             echo "Exit code from file: $EXIT_CODE"
             exit $EXIT_CODE
           else
-            echo "No exit_code.txt found"
+            echo "No run_pytorch_tests_exit_code.txt found"
             exit 1
           fi
