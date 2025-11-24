@@ -102,13 +102,14 @@ skip_tests = {
         ],
     },
     "windows": {
-        # Skip tests that hang. Perhaps related to processes not terminating
-        # on their own: https://github.com/ROCm/TheRock/issues/999.
-        # Even if _test cases_ themselves terminate, the parent process still
-        # hangs though. In run_pytorch_tests.py we exit with `os.kill()` to
-        # force termination.
+        "torch": [
+            # Windows fatal exception: access violation
+            #   pointing to common_cuda.py `_create_scaling_models_optimizers`
+            "test_grad_scaling_autocast_foreach0_fused0_Adam_cuda_float32"
+        ],
         "cuda": [
             # This test uses subprocess.run, so it hangs.
+            # See https://github.com/ROCm/TheRock/issues/999.
             "test_pinned_memory_use_background_threads",
         ],
     },
