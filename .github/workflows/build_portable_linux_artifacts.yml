@@ -99,10 +99,6 @@ jobs:
             --dir "$(dirname $CCACHE_CONFIGPATH)" \
             --local-path "$CACHE_DIR/ccache"
 
-      - name: Print Driver and GPU info
-        run: |
-          ./build_tools/print_driver_gpu_info.py
-
       - name: Runner health status
         run: |
           ./build_tools/health_status.py
@@ -133,6 +129,10 @@ jobs:
       - name: Build therock-archives and therock-dist
         run: |
           cmake --build build --target therock-archives therock-dist -- -k 0
+
+      - name: Print Driver and GPU info
+        run: |
+          ./build_tools/print_driver_gpu_info.py
 
       - name: Test Packaging
         if: ${{ github.event.repository.name == 'TheRock' }}
