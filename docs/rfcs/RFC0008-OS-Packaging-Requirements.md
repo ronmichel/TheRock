@@ -111,8 +111,8 @@ This will reduce the number of packages visible via the package manager.
 Using `yum` ROCm Core SDK runtime components and ROCm Core SDK runtime + development components can be installed.
 
 ```
-yum install rocm # ROCm 8.0 or latest release
-yum install rocm-core # ROCm 8.0 or latest release
+yum install rocm # ROCm 8.0
+yum install rocm-core # ROCm 8.0
 yum install rocm-core-<ver>
 yum install rocm-core-devel
 yum install rocm-core-devel-<ver>
