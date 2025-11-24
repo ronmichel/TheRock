@@ -183,7 +183,7 @@ if AMDGPU_FAMILIES != "gfx950-dcgpu":
 # Otherwise, we run the normal test suite
 test_type = os.getenv("TEST_TYPE", "full")
 if test_type == "full":
-    test_filter = []
+    test_filter = ""
 elif test_type == "smoke":
     test_filter = "--gtest_filter=" + ":".join(smoke_filter)
 else:
