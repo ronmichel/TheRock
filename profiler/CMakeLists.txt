@@ -47,6 +47,19 @@ if(THEROCK_ENABLE_ROCPROFV3)
   )
   therock_cmake_subproject_activate(aqlprofile)
 
+  therock_provide_artifact(aqlprofile
+    DESCRIPTOR artifact-aqlprofile.toml
+    COMPONENTS
+      dbg
+      dev
+      doc
+      lib
+      run
+      test
+    SUBPROJECT_DEPS
+      aqlprofile
+  )
+
   ##############################################################################
   # rocprofiler-sdk
   ##############################################################################
@@ -168,7 +181,6 @@ if(THEROCK_ENABLE_ROCPROFV3)
       run
       test
     SUBPROJECT_DEPS
-      aqlprofile
       rocprofiler-sdk
       roctracer
       ${_rocprofiler_sdk_optional_deps}
@@ -185,7 +197,6 @@ if(THEROCK_ENABLE_ROCPROFV3)
       run
       test
     SUBPROJECT_DEPS
-      aqlprofile
       rocprofiler-sdk
       rocprofiler-compute
       roctracer
