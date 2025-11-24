@@ -17,7 +17,7 @@ where
 The [`version.json`](/version.json) file at the root of TheRock defines the
 base version used for packages, while subprojects may have their own independent
 library versions (for example `HIPBLASLT_PROJECT_VERSION` in
-[`rocm-libraries/projects/hipblaslt/CMakeLists.txt`](/rocm-libraries/projects/hipblaslt/CMakeLists.txt)).
+[`rocm-libraries/projects/hipblaslt/CMakeLists.txt`](https://github.com/ROCm/rocm-libraries/blob/develop/projects/hipblaslt/CMakeLists.txt)).
 
 <!-- TODO: touch on ABI versions in libraries (.so/.dll) -->
 
@@ -40,21 +40,21 @@ For Fedora packages see:
 
 - https://docs.fedoraproject.org/en-US/packaging-guidelines/Versioning/
 
-## Release channels (dev, nightly, release)
+## Distribution channels (dev, nightly, release)
 
-Most users are expected to use stable releases, but several other release
+Most users are expected to use stable releases, but several other distribution
 channels are also available and may be of interest to project developers,
 users who want early previews of upcoming releases, and QA/test team members.
 
 ### Python package release channels
 
-| Release channel | Version scheme    | Index URL                                                        | Source of builds                                                                                                                                                                                          |
-| --------------- | ----------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| stable          | `X.Y.Z`           | https://repo.amd.com/rocm/whl/                                   | Manually promoted prereleases                                                                                                                                                                             |
-| prerelease      | `X.Y.ZrcN`        | https://rocm.prereleases.amd.com/whl/                            | Manually triggered workflows in [rockrel](https://github.com/ROCm/rockrel)                                                                                                                                |
-| nightly         | `X.Y.ZaYYYYMMDD`  | https://rocm.nightlies.amd.com/v2/                               | Scheduled workflows in [TheRock](https://github.com/ROCm/TheRock)                                                                                                                                         |
-| dev releases    | `X.Y.Z.dev0+NNNN` | https://d25kgig7rdsyks.cloudfront.net/v2/<br>(Nicer URL pending) | Manually triggered test workflows in [TheRock](https://github.com/ROCm/TheRock)                                                                                                                           |
-| dev builds      | `X.Y.Z.dev0+NNNN` | No central index                                                 | Local builds and per-commit workflows in [TheRock](https://github.com/ROCm/TheRock), [rocm-libraries](https://github.com/ROCm/rocm-libraries), [rocm-systems](https://github.com/ROCm/rocm-systems), etc. |
+| Distribution channel | Version scheme    | Base index URL                        | Source of builds                                                                                                                                                                                          |
+| -------------------- | ----------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| stable               | `X.Y.Z`           | https://repo.amd.com/rocm/whl/        | Manually promoted prereleases                                                                                                                                                                             |
+| prerelease           | `X.Y.ZrcN`        | https://rocm.prereleases.amd.com/whl/ | Manually triggered workflows in [rockrel](https://github.com/ROCm/rockrel)                                                                                                                                |
+| nightly              | `X.Y.ZaYYYYMMDD`  | https://rocm.nightlies.amd.com/v2/    | Scheduled workflows in [TheRock](https://github.com/ROCm/TheRock)                                                                                                                                         |
+| dev releases         | `X.Y.Z.dev0+NNNN` | https://rocm.devreleases.amd.com/v2/  | Manually triggered test workflows in [TheRock](https://github.com/ROCm/TheRock)                                                                                                                           |
+| dev builds           | `X.Y.Z.dev0+NNNN` | No central index                      | Local builds and per-commit workflows in [TheRock](https://github.com/ROCm/TheRock), [rocm-libraries](https://github.com/ROCm/rocm-libraries), [rocm-systems](https://github.com/ROCm/rocm-systems), etc. |
 
 <!-- TODO: specific examples -->
 
