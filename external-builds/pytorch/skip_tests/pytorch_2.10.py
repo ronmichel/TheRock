@@ -101,4 +101,15 @@ skip_tests = {
             "test_terminate_handler_on_crash",  # flaky !! hangs forever or works... can need up to 30 sec to pass
         ],
     },
+    "windows": {
+        # Skip tests that hang. Perhaps related to processes not terminating
+        # on their own: https://github.com/ROCm/TheRock/issues/999.
+        # Even if _test cases_ themselves terminate, the parent process still
+        # hangs though. In run_pytorch_tests.py we exit with `os.kill()` to
+        # force termination.
+        "cuda": [
+            # This test uses subprocess.run, so it hangs.
+            "test_pinned_memory_use_background_threads",
+        ],
+    },
 }
