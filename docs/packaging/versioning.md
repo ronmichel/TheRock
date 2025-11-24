@@ -46,29 +46,29 @@ Most users are expected to use stable releases, but several other distribution
 channels are also available and may be of interest to project developers,
 users who want early previews of upcoming releases, and QA/test team members.
 
-| Distribution channel | Base URL                          | Source of builds                                                                                                                                                                                          |
-| -------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| stable releases      | https://repo.amd.com/rocm/        | Manually promoted prereleases                                                                                                                                                                             |
-| prereleases          | https://rocm.prereleases.amd.com/ | Manually triggered workflows in [rockrel](https://github.com/ROCm/rockrel)                                                                                                                                |
-| nightly releases     | https://rocm.nightlies.amd.com/   | Scheduled workflows in [TheRock](https://github.com/ROCm/TheRock)                                                                                                                                         |
-| dev releases         | https://rocm.devreleases.amd.com/ | Manually triggered test workflows in [TheRock](https://github.com/ROCm/TheRock)                                                                                                                           |
-| dev builds           | No central index                  | Local builds and per-commit workflows in [TheRock](https://github.com/ROCm/TheRock), [rocm-libraries](https://github.com/ROCm/rocm-libraries), [rocm-systems](https://github.com/ROCm/rocm-systems), etc. |
+| Distribution channel | Base URL                          | Source of builds                                                                                                                                                                                             |
+| -------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| stable releases      | https://repo.amd.com/rocm/        | Manually promoted prereleases                                                                                                                                                                                |
+| prereleases          | https://rocm.prereleases.amd.com/ | Manually triggered workflows in [rockrel](https://github.com/ROCm/rockrel)                                                                                                                                   |
+| nightly releases     | https://rocm.nightlies.amd.com/   | Scheduled workflows in [TheRock](https://github.com/ROCm/TheRock)                                                                                                                                            |
+| dev releases         | https://rocm.devreleases.amd.com/ | Manually triggered test workflows in [TheRock](https://github.com/ROCm/TheRock)                                                                                                                              |
+| dev builds           | No central index                  | Local builds and per-commit workflows in [TheRock](https://github.com/ROCm/TheRock),<br>[rocm-libraries](https://github.com/ROCm/rocm-libraries), [rocm-systems](https://github.com/ROCm/rocm-systems), etc. |
 
 ## Python package versions
 
 Python package versions are handled by scripts:
 
 - [`build_tools/compute_rocm_package_version.py`](/build_tools/compute_rocm_package_version.py)
-- [`build_tools/tests/compute_rocm_package_version_test.py`](/build_tools/tests/compute_rocm_package_version_test.py)
+  - [`build_tools/tests/compute_rocm_package_version_test.py`](/build_tools/tests/compute_rocm_package_version_test.py)
 
 The script produces these versions for each distribution channel:
 
-| Distribution channel | Version format    | Version example                                                                                                                                        |
-| -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| stable releases      | `X.Y.Z`           | `7.10.0`                                                                                                                                               |
-| prereleases          | `X.Y.ZrcN`        | `7.10.0rc0`                                                                                                                                            |
-| nightly releases     | `X.Y.ZaYYYYMMDD`  | `7.10.0a20251124`                                                                                                                                      |
-| dev builds/releases  | `X.Y.Z.dev0+NNNN` | `7.10.0.dev0+efed3c3b10a5cce8578f58f8eb288582c26d18c4`<br>(for commit https://github.com/ROCm/TheRock/commit/efed3c3b10a5cce8578f58f8eb288582c26d18c4) |
+| Distribution channel | Version format    | Version example                                                                                                                                                     |
+| -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| stable releases      | `X.Y.Z`           | `7.10.0`                                                                                                                                                            |
+| prereleases          | `X.Y.ZrcN`        | `7.10.0rc0`                                                                                                                                                         |
+| nightly releases     | `X.Y.ZaYYYYMMDD`  | `7.10.0a20251124`                                                                                                                                                   |
+| dev builds/releases  | `X.Y.Z.dev0+NNNN` | `7.10.0.dev0+efed3c3b10a5cce8578f58f8eb288582c26d18c4`<br>(for commit [`efed3c3`](https://github.com/ROCm/TheRock/commit/efed3c3b10a5cce8578f58f8eb288582c26d18c4)) |
 
 Each distribution channel (and GPU family within that channel) is currently
 hosted on a separate release index that can be selected with e.g.
@@ -91,13 +91,13 @@ generate a composite torch version `2.9.0+rocm7.9.0`.
 PyTorch packages versions are handled via scripts:
 
 - [`build_tools/github_actions/determine_version.py`](/build_tools/github_actions/determine_version.py) (this generates e.g. `--version-suffix +rocm7.10.0`)
-- [`build_tools/github_actions/tests/determine_version_test.py`](/build_tools/github_actions/tests/determine_version_test.py)
+  - [`build_tools/github_actions/tests/determine_version_test.py`](/build_tools/github_actions/tests/determine_version_test.py)
 - [`external-builds/pytorch/build_prod_wheels.py`](/external-builds/pytorch/build_prod_wheels.py) (this appends the version suffix to each build version)
 - [`build_tools/github_actions/write_torch_versions.py`](/build_tools/github_actions/write_torch_versions.py) (this finds the versions in built packages)
 
 The scripts produce these versions for each distribution channel:
 
-| Package name        | Example stable version                                                            | Example nightly version        |
+| Package name        | Example release version                                                           | Example nightly version        |
 | ------------------- | --------------------------------------------------------------------------------- | ------------------------------ |
 | torch               | `2.7.1+rocm7.9.0rc1`<br>_(future releases will drop the 'rc' suffix)_             | `2.10.0a0+rocm7.10.0a20251024` |
 | torchaudio          | `2.7.1a0+rocm7.9.0rc1`<br>_(future releases will drop the 'a' and 'rc' suffixes)_ | `2.10.0a0+rocm7.10.0a20251024` |
