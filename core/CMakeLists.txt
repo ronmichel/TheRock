@@ -251,9 +251,8 @@ if(THEROCK_ENABLE_OCL_RUNTIME)
       ROCR-Runtime
     )
 
-    # Make libamdocl64.so self-contained via RPATH/RUNPATH, so that it can
-    # find its dependencies (e.g. libamd_comgr_loader.so.1) one level up
-    # from dist/lib/opencl -> dist/lib
+    # Add linked library directories to the installed RPATH, enabling
+    # libamdocl64.so to locate its runtime dependencies.
     list(APPEND OCL_CLR_CMAKE_ARGS
       "-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=ON"
     )
