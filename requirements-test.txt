@@ -3,3 +3,6 @@ pytest==8.3.5
 pytest-check==2.5.3
 pytest-timeout==2.4.0
 PyYAML==6.0.2
+
+# libhipcxx test requirement
+lit==18.1.8
