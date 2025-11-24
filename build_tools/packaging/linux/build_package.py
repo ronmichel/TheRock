@@ -194,13 +194,9 @@ def generate_changelog_file(pkg_info, deb_dir, config: PackageConfig):
     name = name_part.strip()
     email = email_part.replace(">", "").strip()
     # version is used along with package name
-    version = (
-        config.rocm_version
-        + "."
-        + version_to_str(config.rocm_version)
-        + "-"
-        + config.version_suffix
-    )
+    version = str(config.rocm_version)
+    if config.version_suffix:
+        version += f"-{str(config.version_suffix)}"
 
     env = Environment(loader=FileSystemLoader(str(SCRIPT_DIR)))
     template = env.get_template("template/debian_changelog.j2")
@@ -261,7 +257,7 @@ def generate_rules_file(pkg_info, deb_dir, config: PackageConfig):
     """
     print_function_name()
     rules_file = Path(deb_dir) / "rules"
-    disable_dh_strip = is_key_defined(pkg_info, "Disable_DH_STRIP")
+    disable_dh_strip = is_key_defined(pkg_info, "Disable_DEB_STRIP")
     disable_dwz = is_key_defined(pkg_info, "Disable_DWZ")
     env = Environment(loader=FileSystemLoader(str(SCRIPT_DIR)))
     template = env.get_template("template/debian_rules.j2")
@@ -457,7 +453,7 @@ def generate_spec_file(pkg_name, specfile, config: PackageConfig):
 
     pkginfo = get_package_info(pkg_name)
     # populate packge version details
-    version = f"{config.rocm_version}.{version_to_str(config.rocm_version)}"
+    version = f"{config.rocm_version}"
     # TBD: Whether to use component version details?
     #    version = pkginfo.get("Version")
 
@@ -511,6 +507,7 @@ def generate_spec_file(pkg_name, specfile, config: PackageConfig):
         "install_prefix": config.install_prefix,
         "requires": requires,
         "rpmrecommends": rpmrecommends,
+        "disable_rpm_strip": is_rpm_stripping_disabled(pkginfo),
         "disable_debug_package": is_debug_package_disabled(pkginfo),
         "sourcedir_list": sourcedir_list,
     }
@@ -874,7 +871,7 @@ def main(argv: list[str]):
     p.add_argument(
         "--version-suffix",
         type=str,
-        required=True,
+        nargs="?",
         help="Version suffix to append to package names",
     )
 
