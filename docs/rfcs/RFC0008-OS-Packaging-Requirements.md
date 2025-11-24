@@ -74,7 +74,6 @@ The softlinks allow for an independent directory structure for ROCm expansions w
 
 - All ROCm packages must be built and shiped with `$ORIGIN`-based RPATH
 - RPMs must honor the `--prefix` argument for relocatable installs
-- Separate relocatable/reloc-rpms are not required
 
 ### Repository Layout
 
@@ -100,7 +99,9 @@ The primary OS root folder will include the following distrobutions where the pa
 ASAN packages may be separated into:
 
 ```
-repo.amd.com/rocm/packages-asan/
+repo.amd.com/rocm/oackages/$OS/$package-type
+
+Package-type = standard, asan, future variant
 ```
 
 This will reduce the number of packages visible via the package manager.
@@ -110,8 +111,8 @@ This will reduce the number of packages visible via the package manager.
 Using `yum` ROCm Core SDK runtime components and ROCm Core SDK runtime + development components can be installed.
 
 ```
-yum install rocm
-yum install rocm-core
+yum install rocm # ROCm 8.0 or latest release
+yum install rocm-core # ROCm 8.0 or latest release
 yum install rocm-core-<ver>
 yum install rocm-core-devel
 yum install rocm-core-devel-<ver>
