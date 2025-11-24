@@ -84,7 +84,7 @@ def parse_rocminfo(output: str) -> Dict[str, str]:
     Parse a minimal set of fields from rocminfo
     """
     info: Dict[str, str] = {}
-    
+
     # GFX target from ISA line: amdgcn-amd-amdhsa--gfx942
     isa_match = re.search(r"amdgcn-amd-amdhsa--(gfx[0-9a-zA-Z]+)", output)
     if isa_match:
