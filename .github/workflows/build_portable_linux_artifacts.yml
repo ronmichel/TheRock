@@ -56,8 +56,21 @@ permissions:
   contents: read
 
 jobs:
+  print_driver_gpu_info:
+    name: Print Driver and GPU info (host)
+    # Run on the same runner pool as the build job, but WITHOUT a container
+    runs-on: ${{ inputs.build_variant_label == 'asan' && 'azure-linux-scale-rocm-heavy' || 'azure-linux-scale-rocm' }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+
+      - name: Print Driver and GPU info
+        run: |
+          ./build_tools/print_driver_gpu_info.py
+
   build_portable_linux_artifacts:
     name: Build (xfail ${{ inputs.expect_failure }})
+    needs: print_driver_gpu_info
     # azure-linux-scale-rocm are used for regular CI builds
     # azure-linux-scale-rocm-heavy are used for CI builds that require more resources (ex: ASAN builds)
     runs-on: ${{ inputs.build_variant_label == 'asan' && 'azure-linux-scale-rocm-heavy' || 'azure-linux-scale-rocm' }}
@@ -129,20 +142,6 @@ jobs:
       - name: Build therock-archives and therock-dist
         run: |
           cmake --build build --target therock-archives therock-dist -- -k 0
-
-      - name: Debug driver tools in container
-        run: |
-          echo "PATH = $PATH"
-          which amd-smi || echo "amd-smi not found on PATH"
-          which amdsmi || echo "amd-smi not found on PATH"
-          which rocminfo || echo "rocminfo not found on PATH"
-          amd-smi
-          amdsmi
-          ls -R /opt || true
-
-      - name: Print Driver and GPU info
-        run: |
-          ./build_tools/print_driver_gpu_info.py
 
       - name: Test Packaging
         if: ${{ github.event.repository.name == 'TheRock' }}
