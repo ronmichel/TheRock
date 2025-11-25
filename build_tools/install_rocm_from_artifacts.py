@@ -14,8 +14,19 @@ python build_tools/install_rocm_from_artifacts.py
     (--artifact-group ARTIFACT_GROUP | --amdgpu_family AMDGPU_FAMILY)
     [--output-dir OUTPUT_DIR]
     (--run-id RUN_ID | --release RELEASE | --input-dir INPUT_DIR)
-    [--blas | --no-blas] [--fft | --no-fft] [--hipdnn | --no-hipdnn] [--miopen | --no-miopen] [--miopen-plugin | --no-miopen-plugin]
-    [--prim | --no-prim] [--rand | --no-rand] [--rccl | --no-rccl] [--tests | --no-tests] [--base-only]
+    [--blas | --no-blas]
+    [--fft | --no-fft]
+    [--hipdnn | --no-hipdnn]
+    [--miopen | --no-miopen]
+    [--miopen-plugin | --no-miopen-plugin]
+    [--prim | --no-prim]
+    [--rand | --no-rand]
+    [--rccl | --no-rccl]
+    [--rocprofiler-compute | --no-rocprofiler-compute]
+    [--rocprofiler-systems | --no-rocprofiler-systems]
+    [--rocwmma | --no-rocwmma]
+    [--tests | --no-tests]
+    [--base-only]
 
 Examples:
 - Downloads and unpacks the gfx94X S3 artifacts from GitHub CI workflow run 14474448215
@@ -32,7 +43,7 @@ Examples:
     ```
     python build_tools/install_rocm_from_artifacts.py \
         --release 6.4.0rc20250416 \
-        --amdgpu-family gfx110X-dgpu \
+        --amdgpu-family gfx110X-all \
         --output-dir build
     ```
 - Downloads and unpacks the version `6.4.0.dev0+8f6cdfc0d95845f4ca5a46de59d58894972a29a9`
@@ -170,6 +181,9 @@ def retrieve_artifacts_by_run_id(args):
             args.prim,
             args.rand,
             args.rccl,
+            args.rocprofiler_compute,
+            args.rocprofiler_systems,
+            args.rocwmma,
         ]
     ):
         argv.extend(base_artifact_patterns)
@@ -196,6 +210,12 @@ def retrieve_artifacts_by_run_id(args):
             extra_artifacts.append("rand")
         if args.rccl:
             extra_artifacts.append("rccl")
+        if args.rocprofiler_compute:
+            extra_artifacts.append("rocprofiler-compute")
+        if args.rocprofiler_systems:
+            extra_artifacts.append("rocprofiler-systems")
+        if args.rocwmma:
+            extra_artifacts.append("rocwmma")
 
         extra_artifact_patterns = [f"{a}_lib" for a in extra_artifacts]
         if args.tests:
@@ -374,6 +394,27 @@ def main(argv):
         "--rccl",
         default=False,
         help="Include 'rccl' artifacts",
+        action=argparse.BooleanOptionalAction,
+    )
+
+    artifacts_group.add_argument(
+        "--rocprofiler-compute",
+        default=False,
+        help="Include 'rocprofiler-compute' artifacts",
+        action=argparse.BooleanOptionalAction,
+    )
+
+    artifacts_group.add_argument(
+        "--rocprofiler-systems",
+        default=False,
+        help="Include 'rocprofiler-systems' artifacts",
+        action=argparse.BooleanOptionalAction,
+    )
+
+    artifacts_group.add_argument(
+        "--rocwmma",
+        default=False,
+        help="Include 'rocwmma' artifacts",
         action=argparse.BooleanOptionalAction,
     )
 

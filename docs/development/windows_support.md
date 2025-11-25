@@ -43,7 +43,9 @@ mainline, in open source, using MSVC, etc.).
 | core                | [hipInfo from hip-tests](https://github.com/ROCm/hip-tests)                                                              | ✅        |                                               |
 | core                | [clr](https://github.com/ROCm/clr)                                                                                       | 🟡        | Needs a folder with prebuilt static libraries |
 |                     |                                                                                                                          |           |                                               |
-| profiler            | [rocprofiler-sdk](https://github.com/ROCm/rocprofiler-sdk)                                                               | ❌        | Unsupported                                   |
+| profiler            | [rocprofiler-sdk](https://github.com/ROCm/rocm-systems/tree/develop/projects/rocprofiler-sdk)                            | ❌        | Unsupported                                   |
+| profiler            | [rocprofiler-compute](https://github.com/ROCm/rocm-systems/tree/develop/projects/rocprofiler-compute)                    | ❌        | Unsupported                                   |
+| profiler            | [rocprofiler-systems](https://github.com/ROCm/rocm-systems/tree/develop/projects/rocprofiler-systems)                    | ❌        | Unsupported                                   |
 |                     |                                                                                                                          |           |                                               |
 | comm-libs           | [rccl](https://github.com/ROCm/rccl)                                                                                     | ❌        | Unsupported                                   |
 |                     |                                                                                                                          |           |                                               |
@@ -65,6 +67,7 @@ mainline, in open source, using MSVC, etc.).
 | math-libs (BLAS)    | [rocSOLVER](https://github.com/ROCm/rocSOLVER)                                                                           | ✅        |                                               |
 | math-libs (BLAS)    | [hipSOLVER](https://github.com/ROCm/hipSOLVER)                                                                           | ✅        |                                               |
 | math-libs (BLAS)    | [hipBLAS](https://github.com/ROCm/hipBLAS)                                                                               | ✅        |                                               |
+| math-libs           | [rocWMMA](https://github.com/ROCm/rocm-libraries/tree/develop/projects/rocwmma)                                          | ✅        |                                               |
 |                     |                                                                                                                          |           |                                               |
 | ml-libs             | [Composable Kernel](https://github.com/ROCm/composable_kernel)                                                           | ❌        | Unsupported                                   |
 | ml-libs             | [MIOpen](https://github.com/ROCm/MIOpen)                                                                                 | ✅        |                                               |
