@@ -161,6 +161,9 @@ jobs:
       S3_STAGING_SUBDIR: ${{ inputs.s3_staging_subdir || 'v2-staging' }}
 
     steps:
+      - name: Check PowerShell
+        shell: cmd
+        run: where powershell
       - name: "Checking out repository"
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
@@ -186,6 +189,10 @@ jobs:
           echo "$PATH;C:\Strawberry\c\bin" >> $GITHUB_PATH
           choco install --no-progress -y awscli
           echo "$PATH;C:\Program Files\Amazon\AWSCLIV2" >> $GITHUB_PATH
+
+      - name: Check PowerShell2
+        shell: cmd
+        run: where powershell
 
       - uses: iterative/setup-dvc@v2
 
