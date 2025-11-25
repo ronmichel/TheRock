@@ -1,0 +1,37 @@
+ROCm Package Configuration Test Report
+=======================================
+
+Test Date: @CMAKE_CONFIGURE_DATE@
+Build Directory: @PROJECT_BINARY_DIR@
+Install Prefix: @CMAKE_INSTALL_PREFIX@
+CMake Version: @CMAKE_VERSION@
+
+Build Configuration
+-------------------
+Build Type: @CMAKE_BUILD_TYPE@
+C++ Compiler: @CMAKE_CXX_COMPILER@
+C++ Standard: @CMAKE_CXX_STANDARD@
+
+CMake Search Paths
+------------------
+CMAKE_PREFIX_PATH:
+@CMAKE_PREFIX_PATH@
+
+CMAKE_MODULE_PATH:
+@CMAKE_MODULE_PATH@
+
+Package Test Results
+--------------------
+Total Packages Tested: @_total_count@
+Packages Found: @_found_count@
+Packages Not Found: @_not_found_count@
+
+Packages Found:
+@ROCM_PACKAGES_FOUND@
+
+Packages Not Found:
+@ROCM_PACKAGES_NOT_FOUND@
+
+Test Status: @ROCM_TEST_STATUS@
+
+
