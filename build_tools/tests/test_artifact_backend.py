@@ -8,6 +8,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+sys.path.insert(0, os.fspath(Path(__file__).parent.parent))
+
 from _therock_utils.artifact_backend import (
     ArtifactBackend,
     LocalDirectoryBackend,
