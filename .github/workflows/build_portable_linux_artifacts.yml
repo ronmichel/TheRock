@@ -134,7 +134,10 @@ jobs:
         run: |
           echo "PATH = $PATH"
           which amd-smi || echo "amd-smi not found on PATH"
+          which amdsmi || echo "amd-smi not found on PATH"
           which rocminfo || echo "rocminfo not found on PATH"
+          amd-smi
+          amdsmi
           ls -R /opt || true
 
       - name: Print Driver and GPU info
