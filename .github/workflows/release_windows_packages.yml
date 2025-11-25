@@ -189,9 +189,9 @@ jobs:
           # https://github.com/ninja-build/ninja/issues/2616
           choco install --no-progress --allow-downgrade -y ninja --version 1.12.1
           choco install --no-progress -y strawberryperl
-          echo "$PATH;C:\Strawberry\c\bin" >> $GITHUB_PATH
+          set "PATH=C:\Strawberry\c\bin;%PATH%"
           choco install --no-progress -y awscli
-          echo "$PATH;C:\Program Files\Amazon\AWSCLIV2" >> $GITHUB_PATH
+          set "PATH=C:\Program Files\Amazon\AWSCLIV2;%PATH%"
 
       - name: Check PowerShell2
         shell: cmd
