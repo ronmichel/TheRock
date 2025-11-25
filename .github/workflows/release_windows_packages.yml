@@ -148,11 +148,11 @@ jobs:
         target_bundle: ${{ fromJSON(needs.setup_metadata.outputs.package_targets) }}
     env:
       TEATIME_LABEL_GH_GROUP: 1
-      BUILD_DIR: B:\build
+      BUILD_DIR: "${{github.workspace}}/build"
       CACHE_DIR: "${{github.workspace}}/.cache"
       CCACHE_DIR: "${{github.workspace}}/.cache/ccache"
       CCACHE_MAXSIZE: "4000M"
-      DIST_ARCHIVE: "B:/build/artifacts/therock-dist-windows-${{ matrix.target_bundle.amdgpu_family }}${{ inputs.package_suffix }}-${{ needs.setup_metadata.outputs.version }}.tar.gz"
+      DIST_ARCHIVE: "${{github.workspace}}/build/artifacts/therock-dist-windows-${{ matrix.target_bundle.amdgpu_family }}${{ inputs.package_suffix }}-${{ needs.setup_metadata.outputs.version }}.tar.gz"
       RELEASE_TYPE: "${{ needs.setup_metadata.outputs.release_type }}"
       S3_BUCKET_TAR: "therock-${{ needs.setup_metadata.outputs.release_type }}-tarball"
       S3_SUBDIR_TAR: ${{ needs.setup_metadata.outputs.s3_subdir_tar }}
@@ -161,9 +161,6 @@ jobs:
       S3_STAGING_SUBDIR: ${{ inputs.s3_staging_subdir || 'v2-staging' }}
 
     steps:
-      - name: Check PowerShell
-        shell: cmd
-        run: where powershell
       - name: "Checking out repository"
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
@@ -193,12 +190,9 @@ jobs:
           choco install --no-progress -y awscli
           set "PATH=C:\Program Files\Amazon\AWSCLIV2;%PATH%"
 
-      - name: Check PowerShell2
-        shell: cmd
-        run: where powershell
-
-      - uses: iterative/setup-dvc@v2
-
+      - uses: iterative/setup-dvc@4bdfd2b0f6f1ad7e08afadb03b1a895c352a5239 # v2.0.0
+        with:
+          version: '3.62.0'
 
       # After other installs, so MSVC get priority in the PATH.
       - name: Configure MSVC
