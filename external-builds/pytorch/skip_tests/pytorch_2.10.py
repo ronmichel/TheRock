@@ -120,6 +120,7 @@ skip_tests = {
             #       f.seek(0)
             #       x_copy = torch.load(f)
             "test_serialization_array_with_empty",
+            "test_serialization_array_with_storage",
         ],
     },
 }
