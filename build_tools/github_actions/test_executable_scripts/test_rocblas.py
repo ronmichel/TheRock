@@ -16,6 +16,9 @@ environ_vars = os.environ.copy()
 environ_vars["GTEST_SHARD_INDEX"] = str(int(SHARD_INDEX) - 1)
 environ_vars["GTEST_TOTAL_SHARDS"] = str(TOTAL_SHARDS)
 
+# assign OpenMP threads count to the 80% of cpus available. OR atleast 1.
+environ_vars["OMP_NUM_THREADS"] = str(int(os.cpu_count() * 0.8) or 1)
+
 logging.basicConfig(level=logging.INFO)
 
 # If smoke tests are enabled, we run smoke tests only.
@@ -32,8 +35,4 @@ else:
 cmd = [f"{THEROCK_BIN_DIR}/rocblas-test"] + test_filter
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")
 
-subprocess.run(
-    cmd,
-    cwd=THEROCK_DIR,
-    check=True,
-)
+subprocess.run(cmd, cwd=THEROCK_DIR, check=True, env=environ_vars)

@@ -36,8 +36,4 @@ else:
 
 cmd = [f"{THEROCK_BIN_DIR}/hipfft-test"] + test_filter
 logging.info(f"++ Exec [{THEROCK_DIR}]$ {shlex.join(cmd)}")
-subprocess.run(
-    cmd,
-    cwd=THEROCK_DIR,
-    check=True,
-)
+subprocess.run(cmd, cwd=THEROCK_DIR, check=True, env=envion_vars)
