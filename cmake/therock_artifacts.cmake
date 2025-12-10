@@ -36,11 +36,31 @@ function(therock_provide_artifact slice_name)
     )
   endif()
 
+  # Fail-fast: Check if artifact is defined in topology
+  if(DEFINED THEROCK_TOPOLOGY_ARTIFACTS)
+    if(NOT "${slice_name}" IN_LIST THEROCK_TOPOLOGY_ARTIFACTS)
+      message(FATAL_ERROR
+        "Artifact '${slice_name}' is not defined in BUILD_TOPOLOGY.toml. "
+        "All artifacts must be declared in the topology. "
+        "Valid artifacts are: ${THEROCK_TOPOLOGY_ARTIFACTS}"
+      )
+    endif()
+  endif()
+
   # Normalize arguments.
   set(_target_name "artifact-${slice_name}")
   set(_archive_target_name "archive-${slice_name}")
+
+  # Check if targets exist from topology (expected) vs duplicate definition (error)
+  set(_target_exists FALSE)
   if(TARGET "${_target_name}")
-    message(FATAL_ERROR "Artifact slice '${slice_name}' provided more than once")
+    # Target exists - check if it's from topology or a duplicate
+    # If THEROCK_TOPOLOGY_ARTIFACTS is defined, we expect the target to exist
+    if(DEFINED THEROCK_TOPOLOGY_ARTIFACTS)
+      set(_target_exists TRUE)
+    else()
+      message(FATAL_ERROR "Artifact slice '${slice_name}' provided more than once")
+    endif()
   endif()
   if(TARGET "${_archive_target_name}")
     message(FATAL_ERROR "Archive slice '${slice_name}' provided more than once")
@@ -50,6 +70,7 @@ function(therock_provide_artifact slice_name)
     set(ARG_DESCRIPTOR "artifact.toml")
   endif()
   cmake_path(ABSOLUTE_PATH ARG_DESCRIPTOR BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+  file(SHA256 "${ARG_DESCRIPTOR}" _descriptor_fprint)
 
   if(NOT DEFINED ARG_DISTRIBUTION)
     set(ARG_DISTRIBUTION "rocm")
@@ -102,6 +123,24 @@ function(therock_provide_artifact slice_name)
   set(_stamp_file_deps)
   _therock_cmake_subproject_deps_to_stamp(_stamp_file_deps "stage.stamp" ${ARG_SUBPROJECT_DEPS})
 
+  # Compute fingerprint of dependencies.
+  # TODO: Potentially prime content with some environment/machine state.
+  set(_fprint_content "ARTIFACT=${slice_name}" "DESCRIPTOR=${_descriptor_fprint}")
+  set(_fprint_is_valid TRUE)
+  foreach(_subproject_dep ${ARG_SUBPROJECT_DEPS})
+    get_target_property(_subproject_fprint "${_subproject_dep}" THEROCK_FPRINT)
+    if(_subproject_fprint)
+      list(APPEND _fprint_content "${_subproject_dep}=${_subproject_fprint}")
+    else()
+      message(STATUS "Cannot compute fprint for artifact ${slice_name} (no fprint for ${_subproject_dep})")
+      set(_fprint_is_valid FALSE)
+    endif()
+  endforeach()
+  set(_fprint)
+  if(_fprint_is_valid)
+    string(SHA256 _fprint "${_fprint_content}")
+  endif()
+
   # Populate commands.
   set(_fileset_tool "${THEROCK_SOURCE_DIR}/build_tools/fileset_tool.py")
   set(_artifact_command
@@ -140,22 +179,41 @@ function(therock_provide_artifact slice_name)
       "${ARG_DESCRIPTOR}"
       "${_fileset_tool}"
   )
-  add_custom_target(
-    "${_target_name}"
-    DEPENDS ${_manifest_files}
-  )
+  # If target exists from topology, create a helper target for file dependencies
+  if(_target_exists)
+    # Target already exists from topology - create a helper target for file dependencies
+    add_custom_target(
+      "${_target_name}_files"
+      DEPENDS ${_manifest_files}
+    )
+    add_dependencies("${_target_name}" "${_target_name}_files")
+  else()
+    # Create new target (fallback for when topology is not loaded)
+    add_custom_target(
+      "${_target_name}"
+      DEPENDS ${_manifest_files}
+    )
+  endif()
   add_dependencies(therock-artifacts "${_target_name}")
   if(ARG_DISTRIBUTION)
     add_dependencies("dist-${ARG_DISTRIBUTION}" "${_target_name}")
   endif()
 
-  # Generate artifact archive commands.
+  # Generate artifact archive commands and save fingerprints.
   set(_archive_files)
   set(_archive_sha_files)
+  set(_artifacts_dir "${THEROCK_BINARY_DIR}/artifacts")
+  file(MAKE_DIRECTORY "${_artifacts_dir}")
   foreach(_component ${ARG_COMPONENTS})
-    set(_component_dir "${THEROCK_BINARY_DIR}/artifacts/${slice_name}_${_component}${_bundle_suffix}")
+    set(_component_dir "${_artifacts_dir}/${slice_name}_${_component}${_bundle_suffix}")
+    set(_fprint_file "${_component_dir}.fprint")
+    if(_fprint_is_valid)
+      file(WRITE "${_fprint_file}" "${_fprint}")
+    elseif(EXISTS "${_fprint_file}")
+      file(REMOVE "${_fprint_file}")
+    endif()
     set(_manifest_file "${_component_dir}/artifact_manifest.txt")
-    set(_archive_file "${THEROCK_BINARY_DIR}/artifacts/${slice_name}_${_component}${_bundle_suffix}${THEROCK_ARTIFACT_ARCHIVE_SUFFIX}.tar.xz")
+    set(_archive_file "${_component_dir}${THEROCK_ARTIFACT_ARCHIVE_SUFFIX}.tar.xz")
     list(APPEND _archive_files "${_archive_file}")
     set(_archive_sha_file "${_archive_file}.sha256sum")
     list(APPEND _archive_sha_files "${_archive_sha_file}")
